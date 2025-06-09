@@ -20,7 +20,9 @@ const appKeyGuard = new AppKeyGuard()
 
 router.get('/', async () => {
   return {
-    hello: 'bonjour je suis boulingui mounguengui josue',
+    hello: 'Hello World',
+    message: "Bienvenue sur l'API de gestion des utilisateurs",
+    version: '1.0.0',
   }
 })
 
