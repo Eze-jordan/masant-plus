@@ -89,7 +89,7 @@ router
       })
     })
   })
-  .middleware([throttle])
+  .middleware([throttle]);
 
 router
   .post('/register', async (ctx) => {
