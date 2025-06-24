@@ -3,6 +3,7 @@ import Role from '#models/role'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { createUserValidator } from '#validators/create_user'
 import { Status } from '../enum/enums.js'
+import nodemailer from 'nodemailer'
 
 export default class RegisterController {
   public async register(ctx: HttpContextContract) {
@@ -11,10 +12,11 @@ export default class RegisterController {
     ctx.logger.info('[RegisterController] Données brutes reçues :', raw)
 
     // Préparer les données à valider (sans certificat)
+    const password = raw.password || 'changeme123'
     const requestData = {
-      username: raw.firstName, // firstName comme username
+      username: raw.firstName,
       email: raw.email,
-      password: raw.password || 'changeme123',
+      password: password,
       first_name: raw.firstName,
       last_name: raw.lastName,
       phone: raw.phone,
@@ -53,8 +55,36 @@ export default class RegisterController {
       const user = await User.create(userData)
       ctx.logger.info('[RegisterController] Utilisateur créé :', user.id)
 
+      // ✉️ ENVOI EMAIL APRÈS CRÉATION
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_EMAIL,
+          pass: process.env.SMTP_PASSWORD,
+        },
+      })
+
+      await transporter.sendMail({
+        from: `"Clinique" <${process.env.SMTP_EMAIL}>`,
+        to: validatedData.email,
+        subject: 'Création de votre compte Clinique',
+        html: `
+          <p>Bonjour ${validatedData.first_name},</p>
+          <p>Votre compte a été créé avec succès.</p>
+          <p>Voici vos identifiants :</p>
+          <ul>
+            <li><strong>Email :</strong> ${validatedData.email}</li>
+            <li><strong>Mot de passe :</strong> ${password}</li>
+          </ul>
+          <p>Merci de changer votre mot de passe à votre première connexion.</p>
+          <p>— L'équipe Clinique</p>
+        `,
+      })
+
+      ctx.logger.info('[RegisterController] Email envoyé à :', validatedData.email)
+
       return ctx.response.status(201).send({
-        message: 'Utilisateur créé avec succès.',
+        message: 'Utilisateur créé avec succès. Un email a été envoyé.',
         user,
       })
     } catch (error: any) {
@@ -66,7 +96,7 @@ export default class RegisterController {
       return ctx.response.status(500).send({
         message: 'Erreur création utilisateur.',
         error: error.message,
-        stack: error.stack, // temporaire pour debug, à retirer en prod
+        stack: error.stack,
         dataReceived: requestData,
       })
     }
