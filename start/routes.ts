@@ -3,6 +3,7 @@ import { createReadStream, promises as fs } from 'fs'
 import mime from 'mime-types'
 import { normalize } from 'node:path'
 
+const doctorsController = new DoctorsController()
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
 import { throttle } from '#start/limiter'
@@ -11,11 +12,11 @@ import RegisterController from '#controllers/RegisterController'
 import AuthController from '#controllers/auth_controller'
 import PatientsController from '#controllers/patients_controller'
 import ConsultationsController from '#controllers/consultations_controller'
-import AppointmentsController from '#controllers/consultations_controller'
+import PaymentsController from '#controllers/payments_controller'
+import DoctorsController from '#controllers/doctors_controller'
 
 const patientsController = new PatientsController()
 const consultationsController = new ConsultationsController()
-const appointmentsController = new AppointmentsController() // <-- Instanciation
 
 const authController = new AuthController()
 const onlyFrontend = new OnlyFrontendMiddleware()
@@ -96,19 +97,31 @@ router.get('/patients/count/:userId', async (ctx) => {
 }).middleware([throttle])
 
 // Consultations count route
-router.get('/consultations/count/:userId', async (ctx) => {
+router.get('/consultations/:userId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return consultationsController.count(ctx)
+      return consultationsController.list(ctx)
     })
   })
 }).middleware([throttle])
 
-// Appointments count route (corrigée pour utiliser appointmentsController)
-router.get('/appointments/count/:userId', async (ctx) => {
+// payment
+
+router.get('/paiements/solde/:userId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return appointmentsController.count(ctx)
+      const controller = new PaymentsController()
+      return controller.getBalance(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+
+router.get('/medecins/:userId/specialty', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return doctorsController.getDoctorSpecialty(ctx)
     })
   })
 }).middleware([throttle])
