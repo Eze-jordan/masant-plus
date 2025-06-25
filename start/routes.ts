@@ -14,6 +14,7 @@ import PatientsController from '#controllers/patients_controller'
 import ConsultationsController from '#controllers/consultations_controller'
 import PaymentsController from '#controllers/payments_controller'
 import DoctorsController from '#controllers/doctors_controller'
+import ChangePasswordController from '#controllers/ChangePasswordController'
 
 const patientsController = new PatientsController()
 const consultationsController = new ConsultationsController()
@@ -116,6 +117,11 @@ router.get('/paiements/solde/:userId', async (ctx) => {
   })
 }).middleware([throttle])
 
+
+router.put('/users/reset-password', async (ctx) => {
+  const controller = new ChangePasswordController()
+  return controller.forceUpdateByEmail(ctx)
+})
 
 
 router.get('/medecins/:userId/specialty', async (ctx) => {
