@@ -1,0 +1,39 @@
+import { DateTime } from 'luxon'
+import Discussion from './discussion.js'
+import User from './user.js'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+
+
+export default class DiscussionMessagery extends BaseModel {
+  @column({ isPrimary: true })
+  public id!: number
+
+  @column()
+  public idDiscussion!: number
+
+  @column()
+  public idUserSender!: number
+
+  @column()
+  public message!: string
+
+  @column()
+  public typeMessage!: string
+
+  @column.dateTime({ autoCreate: true })
+  public createdAt!: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  public updatedAt!: DateTime
+
+  @belongsTo(() => Discussion, {
+    foreignKey: 'idDiscussion',
+  })
+  public discussion!: BelongsTo<typeof Discussion>
+
+  @belongsTo(() => User, {
+    foreignKey: 'idUserSender',
+  })
+  public sender!: BelongsTo<typeof User>
+}
