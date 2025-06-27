@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
-import User from './user.js'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import User from './user.js'
 
 export default class SessionUser extends BaseModel {
   @column({ isPrimary: true })
@@ -13,6 +13,9 @@ export default class SessionUser extends BaseModel {
   @column()
   public token!: string
 
+  @column.dateTime()
+  public expiresAt!: DateTime
+
   @column.dateTime({ autoCreate: true })
   public createdAt!: DateTime
 
@@ -21,4 +24,12 @@ export default class SessionUser extends BaseModel {
 
   @belongsTo(() => User)
   public user!: BelongsTo<typeof User>
+
+  /**
+   * Définit la date d'expiration à 7 jours après la création
+   */
+  @beforeCreate()
+  public static setExpiration(session: SessionUser) {
+    session.expiresAt = DateTime.now().plus({ days: 7 })
+  }
 }
