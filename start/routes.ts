@@ -1,3 +1,4 @@
+
 import router from '@adonisjs/core/services/router'
 import { createReadStream, promises as fs } from 'fs'
 import mime from 'mime-types'
@@ -127,19 +128,18 @@ router.get('/upload/*', async ({ request, response }) => {
  *                   example: 1.0.0
  */
 
-
 router.get('/docs', async ({ response }) => {
-  const htmlPath = join(app.makePath('resources'), 'swagger.html')
-  const html = await readFile(htmlPath, 'utf-8')
-  response.type('text/html')
-  return response.send(html)
-})
+    const htmlPath = join(app.makePath('start/resources'), 'swagger.html')
 
-// Swagger JSON (servi dynamiquement)
-router.get('/docs/swagger.json', async ({ response }) => {
-  response.type('application/json')
-  return response.send(swaggerSpec)
-})
+    const html = await readFile(htmlPath, 'utf-8')
+    response.type('text/html')
+    return response.send(html)
+  })
+  
+  router.get('/docs/swagger.json', async ({ response }) => {
+    response.type('application/json')
+    return response.send(swaggerSpec)
+  })
 // Endpoint racine
 router.get('/', async () => {
   return {
@@ -787,7 +787,7 @@ router.put('/users/reset-password', async (ctx) => {
  *                   type: string
  *                   example: Médecin non trouvé
  *
- * /doctors/{userId}/specialty:
+ * /doctors/{useryyId}/specialty:
  *   get:
  *     tags:
  *       - Médecins
@@ -842,4 +842,4 @@ router.get('/medecins/:userId/specialty', async (ctx) => {
       return doctorsController.getDoctorSpecialty(ctx)
     })
   })
-}).middleware([throttle])
+}).middleware([throttle])  
