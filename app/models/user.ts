@@ -106,6 +106,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public roleId?: string
 
+  @column()
+public profileImage!: string
+
   @belongsTo(() => Role)
   public role!: BelongsTo<typeof Role>
 

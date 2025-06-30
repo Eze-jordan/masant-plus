@@ -4,14 +4,16 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { createUserValidator } from '#validators/create_user'
 import { Status } from '../enum/enums.js'
 import nodemailer from 'nodemailer'
+import fs from 'fs/promises'
+import drive from '@adonisjs/drive/services/main'
+import { cuid } from '@adonisjs/core/helpers'
 
 export default class RegisterController {
   public async register(ctx: HttpContextContract) {
-    const request = ctx.request
+    const { request, response, logger } = ctx
     const raw = request.all()
-    ctx.logger.info('[RegisterController] Données brutes reçues :', raw)
+    logger.info('[RegisterController] Données brutes reçues :', raw)
 
-    // Préparer les données à valider (sans certificat)
     const password = raw.password || 'changeme123'
     const requestData = {
       username: raw.firstName,
@@ -34,28 +36,38 @@ export default class RegisterController {
 
     try {
       const validatedData = await createUserValidator.validate(requestData)
-      ctx.logger.info('[RegisterController] Données validées :', validatedData)
 
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
-        return ctx.response.status(400).send({
-          message: 'Un utilisateur avec cet email existe déjà.',
-        })
+        return response.status(400).send({ message: 'Un utilisateur avec cet email existe déjà.' })
+      }
+
+      // Upload de la photo de profil
+      let profileImageUrl: string | undefined = undefined
+      const imageFile = request.file('profileImage', {
+        size: '2mb',
+        extnames: ['jpg', 'jpeg', 'png', 'webp'],
+      })
+
+      if (imageFile && imageFile.tmpPath) {
+        const fileName = `users/${cuid()}.${imageFile.extname}`
+        const buffer = await fs.readFile(imageFile.tmpPath)
+        await drive.use('s3').put(fileName, buffer)
+
+        const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
+        const bucket = process.env.S3_BUCKET
+        profileImageUrl = `${endpoint}/${bucket}/${fileName}`
       }
 
       const doctorRole = await Role.firstOrCreate({ label: 'DOCTOR' })
-      ctx.logger.info('[RegisterController] Rôle DOCTOR ID :', doctorRole.id)
-
       const { role, ...sanitizedData } = validatedData
-      const userData: Partial<typeof User.prototype> = {
+
+      const user = await User.create({
         ...sanitizedData,
         roleId: doctorRole.id,
-      }
+        profileImage: profileImageUrl,
+      })
 
-      const user = await User.create(userData)
-      ctx.logger.info('[RegisterController] Utilisateur créé :', user.id)
-
-      // ✉️ ENVOI EMAIL APRÈS CRÉATION
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -81,19 +93,18 @@ export default class RegisterController {
         `,
       })
 
-      ctx.logger.info('[RegisterController] Email envoyé à :', validatedData.email)
-
-      return ctx.response.status(201).send({
+      return response.status(201).send({
         message: 'Utilisateur créé avec succès. Un email a été envoyé.',
-        user,
+        user: user.serialize(), // Utilise serialize pour exposer les bonnes propriétés
       })
+      
     } catch (error: any) {
-      ctx.logger.error('[RegisterController] Erreur création utilisateur', {
+      logger.error('[RegisterController] Erreur création utilisateur', {
         message: error.message,
         stack: error.stack,
         dataSent: requestData,
       })
-      return ctx.response.status(500).send({
+      return response.status(500).send({
         message: 'Erreur création utilisateur.',
         error: error.message,
         stack: error.stack,
@@ -101,20 +112,33 @@ export default class RegisterController {
       })
     }
   }
+
   public async update({ request, response, params }: HttpContextContract) {
     try {
       const userId = params.id
-
-      // Valider les données reçues
       const payload = await request.validate({ schema: createUserValidator })
 
-      // Chercher l'utilisateur
       const user = await User.find(userId)
       if (!user) {
         return response.status(404).json({ message: 'Utilisateur non trouvé.' })
       }
 
-      // Mettre à jour uniquement les champs valides
+      // Upload image si nouvelle photo
+      const imageFile = request.file('profile_image', {
+        size: '2mb',
+        extnames: ['jpg', 'jpeg', 'png', 'webp'],
+      })
+
+      if (imageFile && imageFile.tmpPath) {
+        const fileName = `users/${cuid()}.${imageFile.extname}`
+        const buffer = await fs.readFile(imageFile.tmpPath)
+        await drive.use('s3').put(fileName, buffer)
+
+        const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
+        const bucket = process.env.S3_BUCKET
+        user.profileImage = `${endpoint}/${bucket}/${fileName}`
+      }
+
       user.merge(payload)
       await user.save()
 
@@ -122,7 +146,7 @@ export default class RegisterController {
         message: 'Utilisateur mis à jour avec succès.',
         user,
       })
-    } catch (error) {
+    } catch (error: any) {
       return response.status(400).json({
         message: 'Erreur lors de la mise à jour de l’utilisateur.',
         error: error.messages ?? error.message,
@@ -130,5 +154,3 @@ export default class RegisterController {
     }
   }
 }
-
-
