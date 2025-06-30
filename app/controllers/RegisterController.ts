@@ -101,4 +101,34 @@ export default class RegisterController {
       })
     }
   }
+  public async update({ request, response, params }: HttpContextContract) {
+    try {
+      const userId = params.id
+
+      // Valider les données reçues
+      const payload = await request.validate({ schema: createUserValidator })
+
+      // Chercher l'utilisateur
+      const user = await User.find(userId)
+      if (!user) {
+        return response.status(404).json({ message: 'Utilisateur non trouvé.' })
+      }
+
+      // Mettre à jour uniquement les champs valides
+      user.merge(payload)
+      await user.save()
+
+      return response.ok({
+        message: 'Utilisateur mis à jour avec succès.',
+        user,
+      })
+    } catch (error) {
+      return response.status(400).json({
+        message: 'Erreur lors de la mise à jour de l’utilisateur.',
+        error: error.messages ?? error.message,
+      })
+    }
+  }
 }
+
+

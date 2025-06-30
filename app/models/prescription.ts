@@ -1,14 +1,20 @@
 import { DateTime } from 'luxon'
 import Appointment from './appointment.js'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { randomUUID } from 'node:crypto'
 
 export default class Prescription extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
+
+  @beforeCreate()
+  static assignUuid(prescription: Prescription) {
+    prescription.id = randomUUID()
+  }
 
   @column()
-  public idAppointment!: number
+  public idAppointment!: string
 
   @column()
   public label?: string

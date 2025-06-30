@@ -5,7 +5,7 @@ export default class ModePaiements extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
       table.string('label').notNullable()
 
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())

@@ -5,10 +5,11 @@ export default class Creneaux extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      // UUID comme clé primaire avec génération automatique
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      // Clé étrangère vers disponibilites
-      table.integer('idDisponibilite').unsigned().notNullable()
+      // Clé étrangère UUID vers disponibilites
+      table.uuid('idDisponibilite').notNullable()
         .references('id').inTable('disponibilites')
         .onDelete('CASCADE')
 

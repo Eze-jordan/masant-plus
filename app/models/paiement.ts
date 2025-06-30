@@ -3,18 +3,24 @@ import User from './user.js'
 import Appointment from './appointment.js'
 import ModePaiement from './mode_paiement.js'
 import { StatusPaiement } from '../enum/enums.js'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { randomUUID } from 'node:crypto'
 
 export default class Paiement extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
+
+  @beforeCreate()
+  static assignUuid(paiement: Paiement) {
+    paiement.id = randomUUID()
+  }
 
   @column()
-  public idUser!: number
+  public idUser!: string
 
   @column()
-  public idAppointment!: number
+  public idAppointment!: string
 
   @column()
   public montant!: number
@@ -26,7 +32,7 @@ export default class Paiement extends BaseModel {
   public datePaiement!: DateTime
 
   @column()
-  public modeId!: number
+  public modeId!: string
 
   @belongsTo(() => User, { foreignKey: 'idUser' })
   public user!: BelongsTo<typeof User>

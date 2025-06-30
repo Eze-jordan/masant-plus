@@ -6,17 +6,16 @@ export default class Suggestions extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      // Clé étrangère vers users
-      table.integer('idUser').unsigned().notNullable()
+      // Clé étrangère UUID vers users
+      table.uuid('idUser').notNullable()
         .references('id').inTable('users')
         .onDelete('CASCADE')
 
       table.string('titre').notNullable()
       table.text('description').nullable()
 
-      // Enum pour le statut
       table.enum('statut', Object.values(StatutSuggestion), {
         useNative: true,
         enumName: 'statut_suggestion_enum',

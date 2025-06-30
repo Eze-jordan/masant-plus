@@ -34,6 +34,7 @@ router.use([
   () => import('@adonisjs/core/bodyparser_middleware'), // Parse JSON, multipart, etc.
   () => import('@adonisjs/auth/initialize_auth_middleware'), // Initialise le système d’auth
   () => import('#middleware/only_frontend_middleware'), // Limite aux appels frontend autorisés
+  () => import('#middleware/initialize_bouncer_middleware')
 ])
 
 /*

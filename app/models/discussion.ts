@@ -1,19 +1,25 @@
 import { DateTime } from 'luxon'
 import User from './user.js'
-import Message from './message.js' // Attention au pluriel, adapte selon nom exact de ton modèle
+import Message from './message.js'
 import DiscussionMessagery from './discussion_messagery.js'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, hasMany, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { randomUUID } from 'node:crypto'
 
 export default class Discussion extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
+
+  @beforeCreate()
+  static assignUuid(discussion: Discussion) {
+    discussion.id = randomUUID()
+  }
 
   @column()
-  public idDoctor!: number
+  public idDoctor!: string
 
   @column()
-  public idPatient!: number
+  public idPatient!: string
 
   @column.dateTime()
   public dateChat!: DateTime
@@ -35,12 +41,12 @@ export default class Discussion extends BaseModel {
   public patient!: BelongsTo<typeof User>
 
   @hasMany(() => Message, {
-    foreignKey: 'discussionId', // adapte selon ta colonne FK dans messages
+    foreignKey: 'discussionId',
   })
   public messages!: HasMany<typeof Message>
 
   @hasMany(() => DiscussionMessagery, {
-    foreignKey: 'discussionId', // adapte aussi ici selon ta migration
+    foreignKey: 'discussionId',
   })
   public messagery!: HasMany<typeof DiscussionMessagery>
 }

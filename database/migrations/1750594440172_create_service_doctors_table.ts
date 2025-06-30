@@ -5,10 +5,15 @@ export default class ServiceDoctors extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      table.integer('id_service').unsigned().references('id').inTable('services').onDelete('CASCADE')
-      table.integer('id_doctor').unsigned().references('id').inTable('users').onDelete('CASCADE')
+      table.uuid('id_service').notNullable()
+        .references('id').inTable('services')
+        .onDelete('CASCADE')
+
+      table.uuid('id_doctor').notNullable()
+        .references('id').inTable('users')
+        .onDelete('CASCADE')
 
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
     })
