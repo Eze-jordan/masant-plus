@@ -6,7 +6,8 @@ export default class Users extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      // Utilisation d'un UUID comme clé primaire
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
       table.string('username').nullable()
       table.string('email').unique().nullable()
@@ -32,7 +33,11 @@ export default class Users extends BaseSchema {
       table.string('specialisation').nullable()
       table.string('localisation').nullable()
 
-      table.integer('role_id').unsigned().references('id').inTable('roles').onDelete('SET NULL').nullable()
+      // role_id doit être UUID et nullable, on fait référence à roles(id) qui est aussi UUID
+      table.uuid('role_id').nullable()
+        .references('id')
+        .inTable('roles')
+        .onDelete('SET NULL')
 
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
       table.timestamp('updated_at', { useTz: true }).defaultTo(this.now())

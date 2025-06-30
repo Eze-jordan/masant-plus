@@ -1,15 +1,20 @@
 import { DateTime } from 'luxon'
 import User from './user.js'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-
+import { randomUUID } from 'node:crypto'
 
 export default class Feedback extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
+
+  @beforeCreate()
+  static assignUuid(feedback: Feedback) {
+    feedback.id = randomUUID()
+  }
 
   @column()
-  public idUser!: number
+  public idUser!: string
 
   @column()
   public sujet?: string

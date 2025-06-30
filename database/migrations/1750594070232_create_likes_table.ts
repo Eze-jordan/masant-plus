@@ -5,13 +5,13 @@ export default class Likes extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      table.integer('id_user').unsigned().notNullable()
+      table.uuid('id_user').notNullable()
         .references('id').inTable('users')
         .onDelete('CASCADE')
 
-      table.integer('id_doctor').unsigned().notNullable()
+      table.uuid('id_doctor').notNullable()
         .references('id').inTable('users')
         .onDelete('CASCADE')
 

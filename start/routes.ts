@@ -1,7 +1,7 @@
 import router from '@adonisjs/core/services/router'
-import { createReadStream, promises as fs } from 'fs'
-import mime from 'mime-types'
-import { normalize } from 'node:path'
+import { promises as fs } from 'fs'
+import drive from '@adonisjs/drive/services/main'
+import { cuid } from '@adonisjs/core/helpers'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 const doctorsController = new DoctorsController()
@@ -15,17 +15,33 @@ import PatientsController from '#controllers/patients_controller'
 import ConsultationsController from '#controllers/consultations_controller'
 import PaymentsController from '#controllers/payments_controller'
 import DoctorsController from '#controllers/doctors_controller'
-import ChangePasswordController from '#controllers/ChangePasswordController'
 import swaggerSpec from './swagger.js'
+import PasswordResetController from '#controllers/otps_controller'
+import AccountDeletionController from '#controllers/account_deletions_controller'
+import AccountManagementController from '#controllers/AccountManagementController'
+import FeedbackController from '#controllers/FeedbackController'
+import LikesController from '#controllers/likes_controller'
+import SuggestionController from '#controllers/suggestions_controller'
+import LivesController from '#controllers/lives_controller'
+import MessagesController from '#controllers/MessagesController'
+import PaiementsController from '#controllers/PaiementsController'
 
+
+const controller = new MessagesController()
+const livesController = new LivesController()
+
+const feedbackController = new FeedbackController()
+const deletecompte  = new AccountDeletionController()
+const suggestionController = new SuggestionController()
 const patientsController = new PatientsController()
 const consultationsController = new ConsultationsController()
-
+const admins   = new  AccountManagementController()
 const authController = new AuthController()
+const likesController = new LikesController()
 const onlyFrontend = new OnlyFrontendMiddleware()
 const appKeyGuard = new AppKeyGuard()
 const registerController = new RegisterController()
-
+const passwordResetController = new PasswordResetController()
 // Upload route sécurisée et filtrée
 
 /**
@@ -56,27 +72,48 @@ const registerController = new RegisterController()
  *         description: Fichier introuvable
  */
 
-router.get('/upload/*', async ({ request, response }) => {
-  const filePath = request.param('*').join('/')
-  const normalizedPath = normalize(filePath)
-  if (/(?:^|[\\/])\.\.(?:[\\/]|$)/.test(normalizedPath)) {
-    return response.badRequest('Chemin invalide.')
-  }
-  const absolutePath = app.makePath('public/upload', normalizedPath)
-  try {
-    await fs.access(absolutePath)
-  } catch {
-    return response.status(404).send('Fichier introuvable.')
-  }
-  const mimeType = mime.lookup(absolutePath) || 'application/octet-stream'
-  if (mimeType !== 'application/pdf') {
-    return response.status(403).send('Seuls les fichiers PDF sont autorisés.')
-  }
-  response.header('Content-Type', mimeType)
-  response.header('Content-Disposition', `inline; filename="${normalizedPath}"`)
-  const fileStream = createReadStream(absolutePath)
-  return response.stream(fileStream)
+
+// Upload route secured and filtered
+
+
+router.post('/upload/image', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const { request, response } = ctx
+
+      const file = request.file('file', {
+        size: '2mb',
+        extnames: ['jpg', 'jpeg', 'png', 'webp'],
+      })
+
+      if (!file || !file.tmpPath) {
+        return response.badRequest({ message: 'Aucun fichier fourni.' })
+      }
+
+      try {
+        const fileName = `${cuid()}.${file.extname}`
+        const fileBuffer = await fs.readFile(file.tmpPath)
+
+        // Upload vers S3
+        await drive.use('s3').put(`uploads/${fileName}`, fileBuffer)
+
+        // Construire l’URL publique (à adapter selon ta config)
+        const s3BaseUrl = process.env.S3_ENDPOINT?.replace(/\/$/, '') || ''
+        const bucket = process.env.S3_BUCKET || ''
+        const publicUrl = `${s3BaseUrl}/${bucket}/uploads/${fileName}`
+
+        return response.created({
+          message: 'Image envoyée avec succès',
+          url: publicUrl,
+        })
+      } catch (error) {
+        console.error(error)
+        return response.internalServerError({ message: 'Erreur lors de l’envoi de l’image' })
+      }
+    })
+  })
 })
+
 
 
 /**
@@ -260,11 +297,111 @@ router.get('/', async () => {
  */
 
 // Register route
+router.put('/users/:id', async (ctx) => {
+  console.log('[PUT /users/:id] Début de traitement')
+  console.log('[PUT /users/:id] Headers:', JSON.stringify(ctx.request.headers(), null, 2))
+  console.log('[PUT /users/:id] Query Params:', JSON.stringify(ctx.request.qs(), null, 2))
+  console.log('[PUT /users/:id] Body:', JSON.stringify(ctx.request.body(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[PUT /users/:id] Avant appel controller update')
+      return registerController.update(ctx)  // Ton controller update ici
+    })
+  })
+}).middleware([throttle])
+
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     tags:
+ *       - Users
+ *     summary: Met à jour un utilisateur par son ID (sans modification de l'email)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID de l'utilisateur à mettre à jour
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               first_name:
+ *                 type: string
+ *               last_name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               specialisation:
+ *                 type: string
+ *               years_experience:
+ *                 type: integer
+ *               registration_number:
+ *                 type: string
+ *               institution_name:
+ *                 type: string
+ *               about:
+ *                 type: string
+ *               account_status:
+ *                 type: string
+ *                 enum: [PENDING, ACTIVE, SUSPENDED]
+ *               availability:
+ *                 type: string
+ *               localisation:
+ *                 type: string
+ *             example:
+ *               username: johndoe
+ *               first_name: John
+ *               last_name: Doe
+ *               phone: "+123456789"
+ *               address: "123 rue de Paris"
+ *               specialisation: "Cardiologie"
+ *               years_experience: 5
+ *               registration_number: "ABC123"
+ *               institution_name: "Clinique Santé"
+ *               about: "Médecin passionné."
+ *               account_status: ACTIVE
+ *               availability: "Disponible du lundi au vendredi"
+ *               localisation: "Paris"
+ *     responses:
+ *       200:
+ *         description: Utilisateur mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   description: L'utilisateur mis à jour
+ *       400:
+ *         description: Données invalides ou email non modifiable
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+
+
 router.post('/register', async (ctx) => {
   console.log('[POST /register] Début de traitement')
   console.log('[POST /register] Headers:', JSON.stringify(ctx.request.headers(), null, 2))
   console.log('[POST /register] Query Params:', JSON.stringify(ctx.request.qs(), null, 2))
   console.log('[POST /register] Body:', JSON.stringify(ctx.request.body(), null, 2))
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       console.log('[POST /register] Avant appel controller')
@@ -272,6 +409,7 @@ router.post('/register', async (ctx) => {
     })
   })
 }).middleware([throttle])
+
 
 // Login route
 /**
@@ -720,10 +858,6 @@ router.get('/paiements/solde/:userId', async (ctx) => {
  */
 
 
-router.put('/users/reset-password', async (ctx) => {
-  const controller = new ChangePasswordController()
-  return controller.forceUpdateByEmail(ctx)
-})
 
 /**
  * @swagger
@@ -835,6 +969,779 @@ router.put('/users/reset-password', async (ctx) => {
  *                   example: Médecin non trouvé
  */
 
+/**
+ * @swagger
+ * /medecins/{userId}/specialty:
+ *   get:
+ *     tags:
+ *       - Médecins
+ *     summary: Récupérer la spécialisation du médecin
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du médecin
+ *     responses:
+ *       200:
+ *         description: Spécialisation récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 fullName:
+ *                   type: string
+ *                   example: Dr Dupont
+ *                 specialisation:
+ *                   type: string
+ *                   example: Cardiologie
+ *       403:
+ *         description: Utilisateur n'est pas un médecin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Utilisateur n'est pas un médecin
+ *       404:
+ *         description: Médecin non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Médecin non trouvé
+ */
+
+/**
+ * @swagger
+ * /auth/request-reset:
+ *   post:
+ *     tags:
+ *       - Authentification
+ *     summary: Demander la réinitialisation du mot de passe
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: Email de réinitialisation envoyé
+ *       400:
+ *         description: Erreur dans la requête
+ */
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     tags:
+ *       - Authentification
+ *     summary: Réinitialiser le mot de passe
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: "some-reset-token"
+ *               newPassword:
+ *                 type: string
+ *                 example: "newStrongPassword123"
+ *     responses:
+ *       200:
+ *         description: Mot de passe réinitialisé avec succès
+ *       400:
+ *         description: Token invalide ou expiré
+ */
+
+/**
+ * @swagger
+ * /account/delete/{userId}:
+ *   post:
+ *     tags:
+ *       - Compte
+ *     summary: Supprimer un compte utilisateur
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur à supprimer
+ *     responses:
+ *       200:
+ *         description: Compte supprimé avec succès
+ *       404:
+ *         description: Utilisateur non trouvé
+ */
+
+/**
+ * @swagger
+ * /admin/account/create:
+ *   post:
+ *     tags:
+ *       - Administration
+ *     summary: Créer un compte utilisateur (patient ou docteur)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 description: patient ou doctor
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *               - role
+ *     responses:
+ *       201:
+ *         description: Compte créé avec succès
+ */
+
+/**
+ * @swagger
+ * /admin/account/suspend/{userId}:
+ *   put:
+ *     tags:
+ *       - Administration
+ *     summary: Suspendre un compte utilisateur
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur à suspendre
+ *     responses:
+ *       200:
+ *         description: Compte suspendu avec succès
+ *       404:
+ *         description: Utilisateur non trouvé
+ */
+
+/**
+ * @swagger
+ * /admin/account/delete/{userId}:
+ *   delete:
+ *     tags:
+ *       - Administration
+ *     summary: Supprimer un compte utilisateur
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur à supprimer
+ *     responses:
+ *       200:
+ *         description: Compte supprimé avec succès
+ *       404:
+ *         description: Utilisateur non trouvé
+ */
+
+/**
+ * @swagger
+ * /admin/account/{userId}:
+ *   get:
+ *     tags:
+ *       - Administration
+ *     summary: Récupérer les détails d'un utilisateur
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de l'utilisateur
+ *     responses:
+ *       200:
+ *         description: Détails de l'utilisateur
+ *       404:
+ *         description: Utilisateur non trouvé
+ */
+
+/**
+ * @swagger
+ * /admin/accounts:
+ *   get:
+ *     tags:
+ *       - Administration
+ *     summary: Récupérer tous les utilisateurs (patients et docteurs)
+ *     responses:
+ *       200:
+ *         description: Liste des utilisateurs
+ */
+
+/**
+ * @swagger
+ * /feedbacks:
+ *   post:
+ *     tags:
+ *       - Feedbacks
+ *     summary: Créer un feedback
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 example: "Très bon service"
+ *               userId:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Feedback créé
+ */
+
+/**
+ * @swagger
+ * /feedbacks/{id}:
+ *   put:
+ *     tags:
+ *       - Feedbacks
+ *     summary: Mettre à jour un feedback
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du feedback
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               message:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Feedback mis à jour
+ *       404:
+ *         description: Feedback non trouvé
+ */
+
+/**
+ * @swagger
+ * /admin/feedbacks:
+ *   get:
+ *     tags:
+ *       - Feedbacks
+ *     summary: Récupérer tous les feedbacks
+ *     responses:
+ *       200:
+ *         description: Liste des feedbacks
+ */
+
+/**
+ * @swagger
+ * /admin/feedbacks/{id}:
+ *   delete:
+ *     tags:
+ *       - Feedbacks
+ *     summary: Supprimer un feedback
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du feedback à supprimer
+ *     responses:
+ *       200:
+ *         description: Feedback supprimé
+ */
+
+/**
+ * @swagger
+ * /likes:
+ *   post:
+ *     tags:
+ *       - Likes
+ *     summary: Créer un like
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               idUser:
+ *                 type: integer
+ *               idDoctor:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Like créé
+ */
+
+/**
+ * @swagger
+ * /likes/doctor/{idDoctor}:
+ *   get:
+ *     tags:
+ *       - Likes
+ *     summary: Récupérer les likes d'un docteur
+ *     parameters:
+ *       - in: path
+ *         name: idDoctor
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du docteur
+ *     responses:
+ *       200:
+ *         description: Liste des likes du docteur
+ */
+
+/**
+ * @swagger
+ * /suggestions:
+ *   post:
+ *     tags:
+ *       - Suggestions
+ *     summary: Créer une suggestion
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               idUser:
+ *                 type: integer
+ *               titre:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               statut:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Suggestion créée
+ */
+
+/**
+ * @swagger
+ * /suggestions/{id}:
+ *   put:
+ *     tags:
+ *       - Suggestions
+ *     summary: Mettre à jour une suggestion
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la suggestion
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               titre:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               statut:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Suggestion mise à jour
+ *       404:
+ *         description: Suggestion non trouvée
+ *   delete:
+ *     tags:
+ *       - Suggestions
+ *     summary: Supprimer une suggestion
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la suggestion
+ *     responses:
+ *       200:
+ *         description: Suggestion supprimée
+ */
+
+/**
+ * @swagger
+ * /suggestions:
+ *   get:
+ *     tags:
+ *       - Suggestions
+ *     summary: Récupérer toutes les suggestions
+ *     responses:
+ *       200:
+ *         description: Liste des suggestions
+ */
+
+/**
+ * @swagger
+ * /suggestions/{id}:
+ *   get:
+ *     tags:
+ *       - Suggestions
+ *     summary: Récupérer une suggestion par ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la suggestion
+ *     responses:
+ *       200:
+ *         description: Suggestion trouvée
+ *       404:
+ *         description: Suggestion non trouvée
+ */
+
+/**
+ * @swagger
+ * /messages:
+ *   post:
+ *     tags:
+ *       - Messages
+ *     summary: Créer un message (et discussion si besoin)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               idDiscussion:
+ *                 type: integer
+ *                 nullable: true
+ *               idUserSender:
+ *                 type: integer
+ *               idUserReceiver:
+ *                 type: integer
+ *               roleReceiver:
+ *                 type: string
+ *                 description: 'doctor' ou 'patient'
+ *               message:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Message créé
+ */
+
+/**
+ * @swagger
+ * /messages/discussion/{discussionId}:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: Récupérer tous les messages d'une discussion
+ *     parameters:
+ *       - in: path
+ *         name: discussionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Liste des messages
+ */
+
+/**
+ * @swagger
+ * /messages/{id}:
+ *   put:
+ *     tags:
+ *       - Messages
+ *     summary: Mettre à jour un message
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               message:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Message mis à jour
+ *       404:
+ *         description: Message non trouvé
+ *   delete:
+ *     tags:
+ *       - Messages
+ *     summary: Supprimer un message
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Message supprimé
+ */
+
+/**
+ * @swagger
+ * /messages/discussion/{discussionId}:
+ *   delete:
+ *     tags:
+ *       - Messages
+ *     summary: Supprimer tous les messages d'une discussion
+ *     parameters:
+ *       - in: path
+ *         name: discussionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Messages supprimés
+ */
+
+/**
+ * @swagger
+ * /lives:
+ *   post:
+ *     tags:
+ *       - Lives
+ *     summary: Créer un live
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Live créé
+ *   get:
+ *     tags:
+ *       - Lives
+ *     summary: Récupérer tous les lives
+ *     responses:
+ *       200:
+ *         description: Liste des lives
+ */
+
+
+/**
+ * @swagger
+ * /likes/doctor/{idDoctor}:
+ *   delete:
+ *     tags:
+ *       - Likes
+ *     summary: Supprimer tous les likes d'un docteur donné
+ *     parameters:
+ *       - in: path
+ *         name: idDoctor
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID du docteur dont on supprime les likes
+ *     responses:
+ *       200:
+ *         description: Tous les likes du docteur ont été supprimés avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Tous les likes du docteur 123 ont été supprimés.
+ *       404:
+ *         description: Docteur non trouvé.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Docteur non trouvé.
+ *       500:
+ *         description: Erreur serveur lors de la suppression.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Erreur lors de la suppression des likes.
+ *                 error:
+ *                   type: string
+ *                   example: Détail de l'erreur
+ */
+
+
+
+/**
+ * @swagger
+ * /lives/{id}:
+ *   put:
+ *     tags:
+ *       - Lives
+ *     summary: Mettre à jour un live existant
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du live à mettre à jour
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Nouveau nom du live
+ *     responses:
+ *       200:
+ *         description: Live mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Live mis à jour avec succès.
+ *                 live:
+ *                   type: object
+ *       404:
+ *         description: Live non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Live non trouvé.
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Erreur lors de la mise à jour du live.
+ *                 error:
+ *                   type: string
+ *                   example: Détail de l'erreur
+ */
+
+/**
+ * @swagger
+ * /lives/{id}:
+ *   delete:
+ *     tags:
+ *       - Lives
+ *     summary: Supprimer un live
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du live à supprimer
+ *     responses:
+ *       200:
+ *         description: Live supprimé avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Live supprimé avec succès.
+ *       404:
+ *         description: Live non trouvé.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Live non trouvé.
+ *       500:
+ *         description: Erreur serveur lors de la suppression.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Erreur lors de la suppression du live.
+ *                 error:
+ *                   type: string
+ *                   example: Détail de l'erreur
+ */
+
 
 router.get('/medecins/:userId/specialty', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
@@ -843,3 +1750,411 @@ router.get('/medecins/:userId/specialty', async (ctx) => {
     })
   })
 }).middleware([throttle])
+
+/**
+ * @swagger
+ * /paiements/mobile-money:
+ *   post:
+ *     description: Crée une facture Mobile Money et effectue un paiement
+ *     tags:
+ *       - Paiements
+ *     parameters:
+ *       - name: amount
+ *         in: body
+ *         description: Montant du paiement
+ *         required: true
+ *         schema:
+ *           type: number
+ *           example: 100.5
+ *       - name: payer_msisdn
+ *         in: body
+ *         description: Numéro de téléphone de l'utilisateur payant
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "0772345678"
+ *       - name: payer_email
+ *         in: body
+ *         description: Email de l'utilisateur payant
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "user@example.com"
+ *       - name: short_description
+ *         in: body
+ *         description: Brève description du paiement
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Facture de paiement"
+ *       - name: external_reference
+ *         in: body
+ *         description: Référence externe pour la transaction
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "REF12345"
+ *       - name: description
+ *         in: body
+ *         description: Description détaillée du paiement
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Paiement pour services"
+ *       - name: expiry_period
+ *         in: body
+ *         description: Période d'expiration pour la facture
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 3600
+ *       - name: payment_system_name
+ *         in: body
+ *         description: Nom du système de paiement
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "Mobile Money"
+ *     responses:
+ *       201:
+ *         description: Facture et paiement créés avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Facture créée et push USSD envoyé avec succès."
+ *                 bill_id:
+ *                   type: string
+ *                   example: "12345"
+ *                 invoice:
+ *                   type: object
+ *                   properties:
+ *                     e_bill:
+ *                       type: object
+ *                       properties:
+ *                         bill_id:
+ *                           type: string
+ *                           example: "12345"
+ *       500:
+ *         description: Erreur de traitement
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Erreur traitement Mobile Money."
+ *                 error:
+ *                   type: string
+ *                   example: "Erreur réseau"
+ */
+
+
+router.post('/paiements/mobile-money', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      // Créer une instance du contrôleur
+      const paiementsController = new PaiementsController()
+      
+      // Appeler la méthode d'instance sur l'objet paiementsController
+      return await paiementsController.createMobileMoneyInvoice(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.post('/auth/request-reset', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return passwordResetController.requestReset(ctx)
+    })
+  })
+})
+
+router.post('/auth/reset-password', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return passwordResetController.resetPassword(ctx)
+    })
+  })
+})
+
+
+router.post('/account/delete/:userId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return   deletecompte.deleteAccount(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/account/all', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.getAllUsers(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/paiement/invoice-status/:billId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.checkInvoiceStatus(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+router.get('/paiement/all', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.getAllPayments(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+// Créer un utilisateur (patient ou docteur)
+router.post('/admin/account/create', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.createAccount(ctx)
+    })
+  })
+})
+
+// Suspendre un utilisateur
+router.put('/admin/account/suspend/:userId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.suspendAccount(ctx)
+    })
+  })
+})
+
+// Supprimer un utilisateur
+router.delete('/admin/account/delete/:userId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.deleteAccount(ctx)
+    })
+  })
+})
+
+router.get('/admin/account/:userId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.getUserDetails(ctx)
+    })
+  })
+})
+
+// Récupérer tous les utilisateurs (patients et docteurs)
+router.get('/admin/accounts', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.getAllUsers(ctx)
+    })
+  })
+})
+
+// Récupérer les paiements Mobile Money
+router.get('/paiements/mobile-money', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.getMobileMoneyPayments(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+router.post('/feedbacks', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await feedbackController.create(ctx)
+    })
+  })
+})
+
+router.put('/feedbacks/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await feedbackController.update(ctx)
+    })
+  })
+})
+
+
+// Récupérer tous les feedbacks
+router.get('/admin/feedbacks', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.getAll(ctx)
+    })
+  })
+})
+
+// Supprimer un feedback
+router.delete('/admin/feedbacks/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await admins.delete(ctx)
+    })
+  })
+})
+
+
+router.post('/likes', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await likesController.create(ctx)
+    })
+  })
+})
+
+
+// Récupérer tous les likes pour un docteur donné
+router.get('/likes/doctor/:idDoctor', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await likesController.getLikesForDoctor(ctx)
+    })
+  })
+})
+
+// Supprimer tous les likes d'un docteur
+
+
+router.put('/lives/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await livesController.update(ctx)
+    })
+  })
+})
+
+
+router.delete('/lives/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await livesController.delete(ctx)
+    })
+  })
+})
+
+
+
+router.delete('/likes/doctor/:idDoctor', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await likesController.deleteLikesForDoctor(ctx)
+    })
+  })
+})
+router.post('/suggestions', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await suggestionController.create(ctx);
+    });
+  });
+});
+
+// Mettre à jour une suggestion par son ID
+router.put('/suggestions/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await suggestionController.update(ctx);
+    });
+  });
+});
+
+// Supprimer une suggestion par son ID
+router.delete('/suggestions/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await suggestionController.delete(ctx);
+    });
+  });
+});
+
+// Récupérer toutes les suggestions
+router.get('/suggestions', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await suggestionController.getAll(ctx);
+    });
+  });
+});
+
+// Récupérer une suggestion par son ID
+router.get('/suggestions/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await suggestionController.getById(ctx);
+    });
+  });
+});
+
+
+
+
+// Messages routes
+router.post('/messages', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await controller.create(ctx);
+    });
+  });
+});
+
+router.get('/messages/discussion/:discussionId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await controller.getByDiscussion(ctx);
+    });
+  });
+});
+
+router.put('/messages/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await controller.update(ctx);
+    });
+  });
+});
+
+router.delete('/messages/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await controller.delete(ctx);
+    });
+  });
+});
+
+router.delete('/messages/discussion/:discussionId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await controller.deleteAllByDiscussion(ctx);
+    });
+  });
+});
+
+// Lives routes
+router.post('/lives', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await livesController.create(ctx);
+    });
+  });
+});
+
+router.get('/lives', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await livesController.index(ctx);
+    });
+  });
+});

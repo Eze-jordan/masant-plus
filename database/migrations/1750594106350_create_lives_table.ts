@@ -5,7 +5,7 @@ export default class Lives extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
       table.string('name').notNullable()
 
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())

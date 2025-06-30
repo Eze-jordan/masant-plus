@@ -5,10 +5,12 @@ export default class Appointments extends BaseSchema {
 
   public async up () {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      // UUID comme clé primaire avec génération automatique
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      table.integer('id_user').unsigned().references('id').inTable('users').onDelete('CASCADE')
-      table.integer('id_doctor').unsigned().references('id').inTable('users').onDelete('CASCADE')
+      // Clés étrangères UUID
+      table.uuid('id_user').nullable().references('id').inTable('users').onDelete('CASCADE')
+      table.uuid('id_doctor').nullable().references('id').inTable('users').onDelete('CASCADE')
 
       table.timestamp('date_rdv', { useTz: true }).notNullable()
       table.string('heure_debut').notNullable()
