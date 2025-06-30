@@ -4,6 +4,8 @@ import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 const doctorsController = new DoctorsController()
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
@@ -113,8 +115,55 @@ router.post('/upload/image', async (ctx) => {
     })
   })
 })
+router.get('/get-url/:fileName', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const { response, params } = ctx
+      const fileName = params.fileName
 
+      if (!fileName) {
+        return response.badRequest({ message: 'Nom du fichier manquant.' })
+      }
 
+      const accessKeyId = process.env.AWS_ACCESS_KEY_ID
+      const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+      const region = process.env.AWS_REGION
+      const endpoint = process.env.S3_ENDPOINT
+      const bucket = process.env.S3_BUCKET
+      const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true'
+
+      if (!accessKeyId || !secretAccessKey || !region || !endpoint || !bucket) {
+        return response.internalServerError({
+          message: 'Configuration AWS incomplète.',
+        })
+      }
+
+      try {
+        const s3 = new S3Client({
+          region,
+          credentials: {
+            accessKeyId,
+            secretAccessKey,
+          },
+          endpoint,
+          forcePathStyle,
+        })
+
+        const command = new GetObjectCommand({
+          Bucket: bucket,
+          Key: `uploads/${fileName}`,
+        })
+
+        const url = await getSignedUrl(s3, command, { expiresIn: 3600 })
+
+        return response.ok({ url })
+      } catch (error) {
+        console.error(error)
+        return response.internalServerError({ message: 'Erreur lors de la génération de l’URL.' })
+      }
+    })
+  })
+})
 
 /**
  * @swagger
