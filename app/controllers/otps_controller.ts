@@ -45,6 +45,7 @@ export default class PasswordResetController {
 
     // Enregistrer le nouveau code avec expiration (10 minutes)
     await PasswordReset.create({
+      
       userId: user.id,     
       email,
       code,
