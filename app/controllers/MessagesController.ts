@@ -1,6 +1,7 @@
 import Message from '#models/message'
 import User from '#models/user'
 import Discussion from '#models/discussion'
+import Notification from '#models/notification'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { DateTime } from 'luxon'
 
@@ -67,6 +68,14 @@ export default class MessagesController {
         message,
       })
 
+      // Création de la notification pour le destinataire
+      await Notification.create({
+        idUser: idUserReceiver,
+        titre: 'Nouveau message reçu',
+        description: `Vous avez reçu un nouveau message de ${sender.email || 'un utilisateur'}.`,
+        isRead: false,
+      })
+
       return response.created({
         message: 'Message envoyé avec succès.',
         data: newMessage,
@@ -79,6 +88,62 @@ export default class MessagesController {
     }
   }
 
+
+  public async getByUser({ params, response }: HttpContextContract) {
+    const userId = params.userId;
+  
+    try {
+      // Récupérer toutes les discussions où l'utilisateur est impliqué
+      const discussions = await Discussion.query()
+        .where('idDoctor', userId)
+        .orWhere('idPatient', userId)
+        .preload('doctor')
+        .preload('patient');
+  
+      if (discussions.length === 0) {
+        return response.ok({
+          message: "Aucune discussion trouvée pour cet utilisateur.",
+          data: [],
+        });
+      }
+  
+      const results = [];
+  
+      for (const discussion of discussions) {
+        // Dernier message de cette discussion
+        const lastMessage = await Message.query()
+          .where('idDiscussion', discussion.id)
+          .orderBy('createdAt', 'desc')
+          .first();
+  
+        if (!lastMessage) continue;
+  
+        // Trouver l'autre utilisateur dans la discussion
+        const otherUser = discussion.idDoctor === userId ? discussion.patient : discussion.doctor;
+  
+        results.push({
+          id: discussion.id,
+          name: `${otherUser.firstName} ${otherUser.lastName}`,
+          lastMessage: lastMessage.message,
+          time: lastMessage.createdAt.toFormat('HH:mm'),
+          unread: false, // à adapter si tu veux suivre les messages lus
+          avatar: otherUser.profileImage || `https://ui-avatars.com/api/?name=${otherUser.firstName}+${otherUser.lastName}`,
+          isOnline: false, // à gérer plus tard avec un système de présence
+        });
+      }
+  
+      return response.ok({
+        message: 'Discussions récupérées avec succès.',
+        data: results,
+      });
+    } catch (error: any) {
+      return response.status(500).send({
+        message: 'Erreur lors de la récupération des messages.',
+        error: error.message,
+      });
+    }
+  }
+  
   /**
    * Récupérer les messages d'une discussion
    */
@@ -106,8 +171,7 @@ export default class MessagesController {
   /**
    * Mettre à jour un message
    */
-
-  public async update({  params, request, response }: HttpContextContract) {
+  public async update({ params, request, response }: HttpContextContract) {
     const messageId = params.id
     const { message } = request.only(['message'])
 
@@ -117,7 +181,7 @@ export default class MessagesController {
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
 
-      // 🔐 Vérifier les autorisations
+      // 🔐 Vérifier les autorisations ici
 
       if (message !== undefined) {
         existingMessage.message = message
@@ -137,6 +201,9 @@ export default class MessagesController {
     }
   }
 
+  /**
+   * Supprimer un message
+   */
   public async delete({ params, response }: HttpContextContract) {
     try {
       const message = await Message.find(params.id)
@@ -144,7 +211,7 @@ export default class MessagesController {
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
 
-      // 🔐 Vérifier les autorisations
+      // 🔐 Vérifier les autorisations ici
 
       await message.delete()
 
@@ -159,6 +226,9 @@ export default class MessagesController {
     }
   }
 
+  /**
+   * Supprimer tous les messages d'une discussion
+   */
   public async deleteAllByDiscussion({ params, response }: HttpContextContract) {
     try {
       const discussionId = params.discussionId
@@ -169,8 +239,7 @@ export default class MessagesController {
         return response.status(404).send({ message: 'Aucun message trouvé pour cette discussion.' })
       }
 
-      // 🔐 Vérifier l'autorisation sur chaque message
-     
+      // 🔐 Vérifier les autorisations ici
 
       await Message.query().where('idDiscussion', discussionId).delete()
 
@@ -184,5 +253,4 @@ export default class MessagesController {
       })
     }
   }
-
 }

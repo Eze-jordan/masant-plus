@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Paiement from '#models/paiement'
+import { DateTime } from 'luxon' // ou dayjs/moment selon ton setup
 import { StatusPaiement } from '../enum/enums.js'
 
 export default class PaymentsController {
@@ -19,6 +20,29 @@ export default class PaymentsController {
       return response.ok({ userId, solde: Number(total) })
     } catch (error) {
       console.error('Erreur lors du calcul du solde:', error)
+      return response.status(500).json({ message: 'Erreur serveur' })
+    }
+  }
+  public async getMonthlyEarnings({ params, response }: HttpContextContract) {
+    try {
+      const userId = params.userId
+
+      const startOfMonth = DateTime.now().startOf('month').toJSDate()
+      const endOfMonth = DateTime.now().endOf('month').toJSDate()
+
+      const result = await Paiement
+        .query()
+        .where('id_user', userId)
+        .andWhere('statut', StatusPaiement.PAYE)
+        .andWhere('created_at', '>=', startOfMonth)
+        .andWhere('created_at', '<=', endOfMonth)
+        .sum('montant as total')
+
+      const total = result[0]?.$extras.total ?? 0
+
+      return response.ok({ userId, monthlyEarnings: Number(total) })
+    } catch (error) {
+      console.error('Erreur lors du calcul des gains du mois:', error)
       return response.status(500).json({ message: 'Erreur serveur' })
     }
   }
