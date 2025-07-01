@@ -6,7 +6,6 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-const doctorsController = new DoctorsController()
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
 import { throttle } from '#start/limiter'
@@ -27,11 +26,12 @@ import SuggestionController from '#controllers/suggestions_controller'
 import LivesController from '#controllers/lives_controller'
 import MessagesController from '#controllers/MessagesController'
 import PaiementsController from '#controllers/PaiementsController'
+import NotificationController from '#controllers/notifications_controller'
 
-
+ const  NotificationControllers  = new  NotificationController()
 const controller = new MessagesController()
 const livesController = new LivesController()
-
+const doctorsController = new DoctorsController()
 const feedbackController = new FeedbackController()
 const deletecompte  = new AccountDeletionController()
 const suggestionController = new SuggestionController()
@@ -819,6 +819,14 @@ router.get('/paiements/solde/:userId', async (ctx) => {
   })
 }).middleware([throttle])
 
+router.get('/paiements/gains-mois/:userId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new PaymentsController()
+      return controller.getMonthlyEarnings(ctx)  // méthode à créer dans ton controller
+    })
+  })
+}).middleware([throttle])
 
 /**
  * @swagger
@@ -1930,7 +1938,15 @@ router.post('/auth/reset-password', async (ctx) => {
     })
   })
 })
+///auth/verify-otp
 
+router.post('/auth/verify-otp', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return passwordResetController.verifyOtp(ctx)
+    })
+  })
+})
 
 router.post('/account/delete/:userId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
@@ -2159,6 +2175,15 @@ router.post('/messages', async (ctx) => {
   });
 });
 
+router.get('/messages/user/:userId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await controller.getByUser(ctx)
+    })
+  })
+})
+
+
 router.get('/messages/discussion/:discussionId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -2183,6 +2208,53 @@ router.delete('/messages/:id', async (ctx) => {
   });
 });
 
+
+// Récupérer toutes les notifications de l'utilisateur authentifié
+
+// Récupérer toutes les notifications de l'utilisateur authentifié
+
+
+// Récupérer une notification spécifique par ID
+router.get('/notifications/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await NotificationControllers.index(ctx)
+    })
+  })
+})
+
+// Marquer une notification comme lue
+router.put('/notifications/:id/read', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await NotificationControllers.markAsRead(ctx);
+    });
+  });
+});
+
+
+// routes.ts
+
+router.put('/notifications/:id/readAll', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      // Passer l'ID utilisateur dans les paramètres à la méthode `markAllAsRead`
+      await NotificationControllers.markAllAsRead(ctx);
+    });
+  });
+});
+
+
+
+
+// Supprimer une notification spécifique par ID
+router.delete('/notifications/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await NotificationControllers.destroy(ctx)
+    })
+  })
+})
 router.delete('/messages/discussion/:discussionId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {

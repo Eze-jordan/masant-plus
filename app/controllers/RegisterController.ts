@@ -77,9 +77,9 @@ export default class RegisterController {
       })
 
       await transporter.sendMail({
-        from: `"Clinique" <${process.env.SMTP_EMAIL}>`,
+        from: `"masanteplus" <${process.env.SMTP_EMAIL}>`,
         to: validatedData.email,
-        subject: 'Création de votre compte Clinique',
+        subject: 'Création de votre compte masanteplus',
         html: `
           <p>Bonjour ${validatedData.first_name},</p>
           <p>Votre compte a été créé avec succès.</p>
