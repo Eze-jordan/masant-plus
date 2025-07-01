@@ -17,7 +17,7 @@ export default class AccountDeletionController {
     const reason = request.input('reason')
 
     const deletionRequest = await AccountDeletionRequest.create({
-      userId: String(user.id),
+      userId: user.id,
       reason,
       processed: true,
     })
