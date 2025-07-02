@@ -27,9 +27,11 @@ import LivesController from '#controllers/lives_controller'
 import MessagesController from '#controllers/MessagesController'
 import PaiementsController from '#controllers/PaiementsController'
 import NotificationController from '#controllers/notifications_controller'
+import UsersController from '#controllers/UsersController'
 
  const  NotificationControllers  = new  NotificationController()
 const controller = new MessagesController()
+const user  = new  UsersController()
 const livesController = new LivesController()
 const doctorsController = new DoctorsController()
 const feedbackController = new FeedbackController()
@@ -344,6 +346,18 @@ router.get('/', async () => {
  *                 dataReceived:
  *                   type: object
  */
+
+router.get('/users/:id', async (ctx) => {
+  console.log('[GET /users/:id] Début de traitement')
+  console.log('[GET /users/:id] Params:', JSON.stringify(ctx.request.params(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /users/:id] Avant appel controller show')
+      return user.show(ctx)  // Méthode pour récupérer l'utilisateur
+    })
+  })
+}).middleware([throttle])
 
 // Register route
 router.put('/users/:id', async (ctx) => {
