@@ -43,6 +43,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public phone?: string
 
+
   @column({ serializeAs: null })
   public password?: string
 
