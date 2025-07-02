@@ -52,7 +52,9 @@ export default class RegisterController {
       if (imageFile && imageFile.tmpPath) {
         const fileName = `users/${cuid()}.${imageFile.extname}`
         const buffer = await fs.readFile(imageFile.tmpPath)
-        await drive.use('s3').put(fileName, buffer)
+        await drive.use('s3').put(fileName, buffer, {
+          visibility: 'public', // ✅ rendre le fichier accessible publiquement
+        })
 
         const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
         const bucket = process.env.S3_BUCKET
@@ -95,9 +97,9 @@ export default class RegisterController {
 
       return response.status(201).send({
         message: 'Utilisateur créé avec succès. Un email a été envoyé.',
-        user: user.serialize(), // Utilise serialize pour exposer les bonnes propriétés
+        user: user.serialize(),
       })
-      
+
     } catch (error: any) {
       logger.error('[RegisterController] Erreur création utilisateur', {
         message: error.message,
@@ -116,14 +118,18 @@ export default class RegisterController {
   public async update({ request, response, params }: HttpContextContract) {
     try {
       const userId = params.id
-      const payload = await request.validate({ schema: createUserValidator })
-
       const user = await User.find(userId)
       if (!user) {
         return response.status(404).json({ message: 'Utilisateur non trouvé.' })
       }
 
-      // Upload image si nouvelle photo
+      const firstName = request.input('firstName')
+      const lastName = request.input('lastName')
+      const email = request.input('email')
+      const phone = request.input('phone')
+      const address = request.input('address')
+      const specialisation = request.input('specialisation')
+
       const imageFile = request.file('profile_image', {
         size: '2mb',
         extnames: ['jpg', 'jpeg', 'png', 'webp'],
@@ -132,21 +138,31 @@ export default class RegisterController {
       if (imageFile && imageFile.tmpPath) {
         const fileName = `users/${cuid()}.${imageFile.extname}`
         const buffer = await fs.readFile(imageFile.tmpPath)
-        await drive.use('s3').put(fileName, buffer)
+        await drive.use('s3').put(fileName, buffer, {
+          visibility: 'public', // ✅ rendre l’image modifiée accessible
+        })
 
         const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
         const bucket = process.env.S3_BUCKET
         user.profileImage = `${endpoint}/${bucket}/${fileName}`
       }
 
-      user.merge(payload)
+      user.merge({
+        firstName,
+        lastName,
+        email,
+        phone,
+        address,
+        specialisation,
+      })
+
       await user.save()
 
       return response.ok({
         message: 'Utilisateur mis à jour avec succès.',
         user,
       })
-    } catch (error: any) {
+    } catch (error) {
       return response.status(400).json({
         message: 'Erreur lors de la mise à jour de l’utilisateur.',
         error: error.messages ?? error.message,
