@@ -3,6 +3,7 @@ import { promises as fs } from 'fs'
 import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
 import { readFile } from 'node:fs/promises'
+import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { join } from 'node:path'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
@@ -117,27 +118,26 @@ router.post('/upload/image', async (ctx) => {
     })
   })
 })
-router.get('/get-url/:fileName', async (ctx) => {
+router.get('/get-url', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      const { response, params } = ctx
-      const fileName = params.fileName
+      const fileName = ctx.request.qs().fileName as string | undefined;
 
       if (!fileName) {
-        return response.badRequest({ message: 'Nom du fichier manquant.' })
+        ctx.response.status(400).json({ message: 'Nom du fichier manquant.' });
+        return;
       }
 
-      const accessKeyId = process.env.AWS_ACCESS_KEY_ID
-      const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-      const region = process.env.AWS_REGION
-      const endpoint = process.env.S3_ENDPOINT
-      const bucket = process.env.S3_BUCKET
-      const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true'
+      const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+      const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+      const region = process.env.AWS_REGION;
+      const endpoint = process.env.S3_ENDPOINT;
+      const bucket = process.env.S3_BUCKET;
+      const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true';
 
       if (!accessKeyId || !secretAccessKey || !region || !endpoint || !bucket) {
-        return response.internalServerError({
-          message: 'Configuration AWS incomplète.',
-        })
+        ctx.response.status(500).json({ message: 'Configuration AWS incomplète.' });
+        return;
       }
 
       try {
@@ -149,23 +149,25 @@ router.get('/get-url/:fileName', async (ctx) => {
           },
           endpoint,
           forcePathStyle,
-        })
+        });
 
         const command = new GetObjectCommand({
           Bucket: bucket,
-          Key: `uploads/${fileName}`,
-        })
+          Key: fileName,  // clé complète, par ex: 'users/gxuswb2bhpr1xgppkr72l6pl.jpg'
+        });
 
-        const url = await getSignedUrl(s3, command, { expiresIn: 3600 })
+        const url = await getSignedUrl(s3, command, { expiresIn: 604800 }) // max 7 jours
 
-        return response.ok({ url })
+        ctx.response.status(200).json({ url });
       } catch (error) {
-        console.error(error)
-        return response.internalServerError({ message: 'Erreur lors de la génération de l’URL.' })
+        console.error(error);
+        ctx.response.status(500).json({ message: "Erreur lors de la génération de l’URL." });
       }
-    })
-  })
-})
+    });
+  });
+});
+
+
 
 /**
  * @swagger
@@ -778,6 +780,59 @@ router.get('/consultations/:userId', async (ctx) => {
     })
   })
 }).middleware([throttle])
+
+
+
+const bucket = process.env.S3_BUCKET;
+
+if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.S3_ENDPOINT || !process.env.S3_BUCKET) {
+  throw new Error("Variables d'environnement AWS/S3 manquantes !");
+}
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+  endpoint: process.env.S3_ENDPOINT!,
+  forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+});
+
+router.get('/list-files/:prefix?', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const prefixParam = ctx.params.prefix || "";
+      const prefix = prefixParam ? prefixParam + "/" : "";
+
+      const command = new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+      });
+
+      try {
+        const data = await s3.send(command);
+
+        if (!data.Contents || data.Contents.length === 0) {
+          ctx.response.status(404).json({ message: `Aucun fichier trouvé dans '${prefix}'` });
+          return;
+        }
+
+        const files = data.Contents.map(item => item.Key);
+
+        ctx.response.json({
+          prefix,
+          files,
+        });
+      } catch (err) {
+        console.error("Erreur lors de la liste des fichiers :", err);
+        ctx.response.status(500).json({ message: "Erreur interne lors de la récupération des fichiers." });
+      }
+    });
+  });
+}).middleware([throttle]);
+
+
 
 // payment
 /**
