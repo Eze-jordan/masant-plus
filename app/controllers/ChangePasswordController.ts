@@ -36,7 +36,7 @@ export default class AuthController {
       await user.save()
 
       return response.ok({ message: 'Mot de passe changé avec succès.' })
-    } catch (error) {
+    } catch (error:any) {
       logger.error(`[AuthController] Erreur lors du changement de mot de passe : ${error.message}`)
       return response.status(500).send({ error: 'Erreur interne.' })
     }

@@ -39,7 +39,7 @@ export default class DisponibiliteController {
       })
 
       return response.created(disponibilite)
-    } catch (error) {
+    } catch (error:any) {
       console.error(error)
       return response.status(500).send({
         message: 'Erreur lors de la création de la disponibilité.',
@@ -57,7 +57,7 @@ export default class DisponibiliteController {
         .orderBy('createdAt', 'desc')
 
       return response.ok(disponibilites)
-    } catch (error) {
+    } catch (error:any) {
       console.error(error)
       return response.status(500).send({
         message: 'Erreur lors de la récupération des disponibilités.',
@@ -115,7 +115,7 @@ export default class DisponibiliteController {
 
       await disponibilite.save()
       return response.ok(disponibilite)
-    } catch (error) {
+    } catch (error:any) {
       console.error(error)
       return response.status(404).send({
         message: 'Disponibilité non trouvée.',
@@ -130,7 +130,7 @@ export default class DisponibiliteController {
       const disponibilite = await Disponibilite.findOrFail(params.id)
       await disponibilite.delete()
       return response.ok({ message: 'Disponibilité supprimée avec succès.' })
-    } catch (error) {
+    } catch (error:any) {
       console.error(error)
       return response.status(404).send({
         message: 'Disponibilité non trouvée.',

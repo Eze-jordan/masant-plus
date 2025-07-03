@@ -26,7 +26,7 @@ export default class UsersController {
         message: 'Utilisateur trouvé avec succès',
         user,
       })
-    } catch (error) {
+    } catch (error:any) {
       console.error(error)
       return response.status(404).json({
         message: 'Utilisateur non trouvé',

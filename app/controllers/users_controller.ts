@@ -8,20 +8,20 @@ import { DateTime } from 'luxon'
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
     const { email, password } = request.only(['email', 'password'])
-  
+
     if (!email || !password) {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
-  
+
     const user = await User.findBy('email', email)
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
-  
+
     const storedHash = user.password?.trim() ?? ''
     logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)
     logger.info(`[AuthController] Mot de passe envoyé : ${password}`)
-  
+
     try {
       const isPasswordValid = await hash.verify(storedHash, password)
       if (!isPasswordValid) {
@@ -32,23 +32,23 @@ export default class AuthController {
       logger.error(`[AuthController] Erreur lors de la vérification du mot de passe : ${error.message}`)
       return response.status(500).send({ error: 'Erreur interne lors de la vérification du mot de passe.' })
     }
-  
+
     const token = generateJwtToken({ id: user.id, email: user.email })
-  
+
     await SessionUser.create({
       userId: String(user.id),
       token,
       expiresAt: DateTime.now().plus({ days: 7 }),
     })
-  
+
     response.cookie('token', token, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
       path: '/',
     })
-  
+
     return response.ok({
       user: {
         id: user.id,
@@ -65,19 +65,22 @@ export default class AuthController {
       token,
     })
   }
-  
 
-  // Déconnexion utilisateur
-  public async logout({ response, request, logger }: HttpContextContract) {
-    const token = request.cookie('token')
+  // ...login ici
 
+  public async logout({ response, request }: HttpContextContract) {
+    const token = request.cookies.token
+
+    // Supprimer la session côté base de données
     if (token) {
-      // Supprimer la session dans la base
       await SessionUser.query().where('token', token).delete()
-      logger.info('[AuthController] Session utilisateur supprimée lors de la déconnexion.')
     }
 
+    // Supprimer le cookie JWT
     response.clearCookie('token')
-    return response.send({ message: 'Déconnexion réussie' })
+
+    // Redirection ou réponse Inertia-friendly
+    return response.redirect('/') // ou response.status(200).send({ message: 'Déconnecté' })
   }
 }
+
