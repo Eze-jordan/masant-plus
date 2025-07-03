@@ -1,16 +1,17 @@
 import { DateTime } from 'luxon'
+import { BaseModel, beforeCreate, belongsTo, hasMany, column } from '@adonisjs/lucid/orm'
+import { randomUUID } from 'node:crypto'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+
 import User from './user.js'
 import Creneau from './creneau.js'
-import { BaseModel, belongsTo, column, hasMany, beforeCreate } from '@adonisjs/lucid/orm'
-import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
-import { randomUUID } from 'node:crypto'
 
 export default class Disponibilite extends BaseModel {
   @column({ isPrimary: true })
   public id!: string
 
   @beforeCreate()
-  static assignUuid(disponibilite: Disponibilite) {
+  public static assignUuid(disponibilite: Disponibilite) {
     disponibilite.id = randomUUID()
   }
 
@@ -18,13 +19,17 @@ export default class Disponibilite extends BaseModel {
   public idDoctor!: string
 
   @column()
-  public jour!: string
-
-  @column()
   public heureDebut!: string
 
   @column()
   public heureFin!: string
+
+  @column.dateTime({ columnName: 'date_debut' }) // ← ICI
+  public dateDebut: DateTime | null = null
+  
+  @column.dateTime({ columnName: 'date_fin' }) // ← ICI
+  public dateFin: DateTime | null = null
+  
 
   @column()
   public actif!: boolean

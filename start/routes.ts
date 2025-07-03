@@ -29,6 +29,10 @@ import MessagesController from '#controllers/MessagesController'
 import PaiementsController from '#controllers/PaiementsController'
 import NotificationController from '#controllers/notifications_controller'
 import UsersController from '#controllers/UsersController'
+import DisponibilitesController from '#controllers/disponibilities_controller'
+import UsersControllerAdmin from '#controllers/users_controller'
+import User from '#models/user'
+import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 
  const  NotificationControllers  = new  NotificationController()
 const controller = new MessagesController()
@@ -231,13 +235,8 @@ router.get('/docs/swagger.json', async ({ response }) => {
   return response.send(swaggerSpec)
 })
 // Endpoint racine
-router.get('/', async () => {
-  return {
-    hello: 'Hello Worlds',
-    message: "Bienvenue sur l'API de gestion des utilisateurs",
-    version: '1.0.0',
-  }
-})
+
+
 /**
  * @swagger
  * /register:
@@ -459,6 +458,62 @@ router.put('/users/:id', async (ctx) => {
  *       500:
  *         description: Erreur serveur
  */
+
+// Route GET /disponibilites (Liste toutes les disponibilités)
+router.get('/disponibilites', async (ctx) => {
+  console.log('[GET /disponibilites] Début')
+  
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return new DisponibilitesController().index(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route GET /disponibilites/:id (Affiche une disponibilité spécifique par ID)
+router.get('/disponibilites/:id', async (ctx) => {
+  console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
+  
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return new DisponibilitesController().show(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route POST /disponibilites (Créer une nouvelle disponibilité)
+router.post('/disponibilites', async (ctx) => {
+  console.log('[POST /disponibilites] Début')
+  console.log('[Body]', ctx.request.body())
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return new DisponibilitesController().store(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route PUT /disponibilites/:id (Met à jour une disponibilité par ID)
+router.put('/disponibilites/:id', async (ctx) => {
+  console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
+  
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return new DisponibilitesController().update(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route DELETE /disponibilites/:id (Supprime une disponibilité par ID)
+router.delete('/disponibilites/:id', async (ctx) => {
+  console.log(`[DELETE /disponibilites/${ctx.params.id}] Début`)
+  
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return new DisponibilitesController().destroy(ctx)
+    })
+  })
+}).middleware([throttle])
 
 
 router.post('/register', async (ctx) => {
@@ -2348,3 +2403,67 @@ router.get('/lives', async (ctx) => {
     });
   });
 });
+router.on('/').renderInertia('home')
+// routes.ts
+router.get('/auth', async ({ inertia }) => {
+  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
+})
+
+router.get('/register', async ({ inertia }) => {
+  return inertia.render('auth/register') // assure-toi que ce composant existe
+})
+
+router.get('/login', async ({ inertia }) => {
+  return inertia.render('auth/login') // correspond à resources/js/Pages/auth/login.tsx
+})
+
+router.post('/logins', [UsersControllerAdmin, 'login'] as any)  // ne pas utiliser Inertia ici
+
+
+
+router.get('/dashboard', async ({ request, response, inertia }) => {
+  const token = request.cookie('token')
+
+  if (!token) {
+    return response.redirect('/login')
+  }
+
+  try {
+    const payload = verifyJwtToken(token) as { id: string; email: string }
+    const currentUser = await User.find(payload.id)
+
+    if (!currentUser) {
+      return response.redirect('/login')
+    }
+
+    // Récupérer tous les utilisateurs
+    const users = await User.all()
+
+    // Mapper pour ne pas exposer d’infos sensibles
+    const safeUsers = users.map(user => ({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    }))
+
+    return inertia.render('dashboard/dashboard', {
+      user: {
+        id: currentUser.id,
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName,
+        email: currentUser.email,
+      },
+      users: safeUsers,
+    })
+  } catch (error) {
+    console.error('[Dashboard] Erreur JWT :', error.message)
+    return response.redirect('/login')
+  }
+})
+
+router.get('/forgot-password', async ({ inertia }) => {
+  return inertia.render('auth/forgot-password') // le fichier React attendu
+})
+
+
