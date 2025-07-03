@@ -1,50 +1,54 @@
-import React, { useState } from 'react'
-import { Head } from '@inertiajs/react'
-import { Inertia } from '@inertiajs/inertia'
-import AppLayout from '../../layouts/AppLayout'
+import React, { useState } from 'react';
+import { Head } from '@inertiajs/react';
+import { Inertia } from '@inertiajs/inertia';
+import AppLayout from '../../layouts/AppLayout.js';
+
+interface LoginResponse {
+  token: string;
+}
+
 const Login = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/logins', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-app-key': 'boulinguiboulingui', // Ajoute ce header si tu l'utilises côté backend
+          'x-app-key': 'boulinguiboulingui',
         },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
       if (!response.ok) {
-        const err = await response.json()
-        setError(err.message || 'Erreur inconnue')
-        setLoading(false)
-        return
+        const err: any = await response.json();
+        setError(err.message || 'Erreur inconnue');
+        setLoading(false);
+        return;
       }
 
-      const data = await response.json()
-      localStorage.setItem('auth_token', data.token)
+      const data = await response.json() as LoginResponse;
+      localStorage.setItem('auth_token', data.token);
 
-      Inertia.visit('/dashboard')
-    } catch (err) {
-      console.error('Erreur réseau', err)
-      setError('Erreur réseau')
+      Inertia.visit('/dashboard');
+    } catch (err: any) {
+      console.error('Erreur réseau', err);
+      setError('Erreur réseau');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <>
     <AppLayout>
       <Head title="Connexion" />
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -72,7 +76,7 @@ const Login = () => {
                     type="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="votre@email.com"
                     disabled={loading}
@@ -88,7 +92,7 @@ const Login = () => {
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
                     className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="••••••••"
                     disabled={loading}
@@ -109,8 +113,16 @@ const Login = () => {
               </div>
 
               <div>
-                <button type="submit" disabled={loading} className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                  {loading && <div className="absolute left-0 inset-y-0 flex items-center pl-3"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div></div>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  {loading && (
+                    <div className="absolute left-0 inset-y-0 flex items-center pl-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    </div>
+                  )}
                   {loading ? 'Connexion...' : 'Se connecter'}
                 </button>
               </div>
@@ -118,15 +130,17 @@ const Login = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Pas encore de compte ? <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">Créer un compte</a>
+                Pas encore de compte ?{' '}
+                <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                  Créer un compte
+                </a>
               </p>
             </div>
           </div>
         </div>
       </div>
-      </AppLayout>
-    </>
-  )
-}
+    </AppLayout>
+  );
+};
 
-export default Login
+export default Login;

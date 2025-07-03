@@ -14,7 +14,8 @@
     "alwaysStrict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["dom", "esnext"]  // Add this line to include DOM types
   },
   "include": ["**/*"],
   "exclude": ["node_modules", "build"]

@@ -37,7 +37,6 @@ import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 
  const  NotificationControllers  = new  NotificationController()
 const controller = new MessagesController()
-const adminsuser  = new UsersControllerAdmin()
 const user  = new  UsersController()
 const livesController = new LivesController()
 const doctorsController = new DoctorsController()

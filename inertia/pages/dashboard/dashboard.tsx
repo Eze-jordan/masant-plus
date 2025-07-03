@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react'
-import AppLayout from '../../layouts/AppLayout'
+import AppLayout from '../../layouts/AppLayout.js'
 
 type User = {
   id: string
