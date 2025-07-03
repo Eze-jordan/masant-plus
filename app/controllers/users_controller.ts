@@ -9,11 +9,13 @@ export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
     const { email, password } = request.only(['email', 'password'])
 
+
     if (!email || !password) {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
-
+    console.log(email , password)
     const user = await User.findBy('email', email)
+    console.log(user)
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
