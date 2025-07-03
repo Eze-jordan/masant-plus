@@ -5,7 +5,7 @@ export default class Roles extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      // Clé primaire UUID (string) à la place d'un entier auto-incrémenté
+      // Clé primaire UUID (string) à la place d'un entier auto-incrément
       table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
       
       table.string('label').notNullable().unique()
