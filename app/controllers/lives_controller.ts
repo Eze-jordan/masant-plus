@@ -21,7 +21,7 @@ export default class LivesController {
         message: 'Live créé avec succès.',
         live,
       })
-    } catch (error) {
+    } catch (error:any) {
       return response.status(500).send({
         message: 'Erreur lors de la création du live.',
         error: error.message,
@@ -37,7 +37,7 @@ export default class LivesController {
         message: 'Liste des lives récupérée avec succès.',
         lives,
       })
-    } catch (error) {
+    } catch (error:any) {
       return response.status(500).send({
         message: 'Erreur lors de la récupération des lives.',
         error: error.message,
@@ -65,7 +65,7 @@ export default class LivesController {
         message: 'Live mis à jour avec succès.',
         live,
       })
-    } catch (error) {
+    } catch (error:any) {
       return response.status(500).send({
         message: 'Erreur lors de la mise à jour du live.',
         error: error.message,
@@ -87,7 +87,7 @@ export default class LivesController {
       return response.ok({
         message: 'Live supprimé avec succès.',
       })
-    } catch (error) {
+    } catch (error:any) {
       return response.status(500).send({
         message: 'Erreur lors de la suppression du live.',
         error: error.message,

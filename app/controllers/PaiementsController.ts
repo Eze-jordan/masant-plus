@@ -24,7 +24,7 @@ export default class PaiementsController {
         message: 'Paiement créé avec succès',
         paiement,
       })
-    } catch (error) {
+    } catch (error:any) {
       return response.status(500).send({ message: 'Erreur création paiement', error: error.message })
     }
   }
@@ -103,7 +103,7 @@ export default class PaiementsController {
         invoice,
         ussdResponse,
       })
-    } catch (error) {
+    } catch (error:any) {
       console.error("Erreur lors du traitement Mobile Money:", error)
       return response.status(500).send({ message: 'Erreur traitement Mobile Money.', error: error.message })
     }

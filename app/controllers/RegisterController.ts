@@ -162,7 +162,7 @@ export default class RegisterController {
         message: 'Utilisateur mis à jour avec succès.',
         user,
       })
-    } catch (error) {
+    } catch (error:any) {
       return response.status(400).json({
         message: 'Erreur lors de la mise à jour de l’utilisateur.',
         error: error.messages ?? error.message,
