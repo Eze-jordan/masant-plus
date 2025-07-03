@@ -740,8 +740,7 @@ router.get('/lives', async (ctx) => {
     });
   });
 });
-router.on('/').renderInertia('home')
-// routes.ts
+
 router.get('/auth', async ({ inertia }) => {
   return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
 })
@@ -826,5 +825,5 @@ router.get('/logout', async (ctx) => {
   return ctx.response.redirect('/')
 })
 router.on('/').renderInertia('home')
-router.on('/').renderInertia('home')
+
 
