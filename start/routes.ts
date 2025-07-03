@@ -50,6 +50,7 @@ router.get('/upload/*', async ({ request, response }) => {
 // Endpoint racine
 router.get('/', async () => {
   return {
+    
     hello: 'Hello Worlds',
     message: "Bienvenue sur l'API de gestion des utilisateurs",
     version: '1.0.0',
