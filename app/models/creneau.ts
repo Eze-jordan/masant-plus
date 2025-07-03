@@ -1,15 +1,20 @@
 import { DateTime } from 'luxon'
 import Disponibilite from './disponibilite.js'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-
+import { randomUUID } from 'node:crypto'
 
 export default class Creneau extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
+
+  @beforeCreate()
+  static assignUuid(creneau: Creneau) {
+    creneau.id = randomUUID()
+  }
 
   @column()
-  public idDisponibilite!: number
+  public idDisponibilite!: string
 
   @column()
   public heureDebut!: string

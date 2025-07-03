@@ -1,19 +1,24 @@
 import { DateTime } from 'luxon'
 import Discussion from './discussion.js'
 import User from './user.js'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-
+import { randomUUID } from 'node:crypto'
 
 export default class DiscussionMessagery extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
+
+  @beforeCreate()
+  static assignUuid(message: DiscussionMessagery) {
+    message.id = randomUUID()
+  }
 
   @column()
-  public idDiscussion!: number
+  public idDiscussion!: string
 
   @column()
-  public idUserSender!: number
+  public idUserSender!: string
 
   @column()
   public message!: string

@@ -5,9 +5,9 @@ export default class Reviews extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      table.integer('id_appointment').unsigned().notNullable()
+      table.uuid('id_appointment').notNullable()
         .references('id').inTable('appointments')
         .onDelete('CASCADE')
 

@@ -4,18 +4,24 @@ import Prescription from './prescription.js'
 import Review from './review.js'
 import Paiement from './paiement.js'
 import { TypeRDV, EtatRDV } from '../enum/enums.js'
-import { BaseModel, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, hasMany, hasOne, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
+import { randomUUID } from 'node:crypto'
 
 export default class Appointment extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
+
+  @beforeCreate()
+  static assignUuid(appointment: Appointment) {
+    appointment.id = randomUUID()
+  }
 
   @column()
-  public idUser!: number
+  public idUser!: string
 
   @column()
-  public idDoctor!: number
+  public idDoctor!: string
 
   @column.dateTime()
   public dateRdv!: DateTime
@@ -42,8 +48,8 @@ export default class Appointment extends BaseModel {
   public paiements!: HasMany<typeof Paiement>
 
   @hasOne(() => Prescription, { foreignKey: 'idAppointment' })
-  public prescription!: HasOne<typeof Prescription> // si 1:1 changer plus tard
+  public prescription!: HasOne<typeof Prescription>
 
   @hasMany(() => Review, { foreignKey: 'idAppointment' })
-  public review!: HasMany<typeof Review> // idem
+  public review!: HasMany<typeof Review>
 }

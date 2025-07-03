@@ -3,9 +3,9 @@ import { BaseSchema } from "@adonisjs/lucid/schema"
 export default class CreateDiscussionMessageries extends BaseSchema {
   public async up() {
     this.schema.createTable('discussion_messageries', (table) => {
-      table.increments('id').primary()
-      table.integer('id_discussion').unsigned().notNullable()
-      table.integer('id_user_sender').unsigned().notNullable()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
+      table.uuid('id_discussion').notNullable()
+      table.uuid('id_user_sender').notNullable()
       table.text('message').notNullable()
       table.string('type_message').notNullable()
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())

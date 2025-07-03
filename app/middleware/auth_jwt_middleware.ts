@@ -18,7 +18,7 @@ export default class AuthJwtMiddleware {
     }
 
     try {
-      const decoded = jwt.verify(token, secret) as { id: number; email: string }
+      const decoded = jwt.verify(token, secret) as { id: string; email: string }
 
       // Tu peux stocker l'utilisateur dans le contexte si besoin
       ctx['authUser'] = decoded

@@ -14,7 +14,7 @@ import Notification from './notification.js'
 import Feedback from './feedback.js'
 import Suggestion from './suggestion.js'
 import Paiement from './paiement.js'
-import Messages from './message.js'
+import Message from './message.js'
 import Discussion from './discussion.js'
 import SpecialiteDoctor from './specialite_doctor.js'
 import ServiceDoctor from './service_doctor.js'
@@ -32,7 +32,7 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
 
 export default class User extends compose(BaseModel, AuthFinder) {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string
 
   @column()
   public username?: string
@@ -42,6 +42,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column()
   public phone?: string
+
 
   @column({ serializeAs: null })
   public password?: string
@@ -65,22 +66,22 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public certificateUrl?: string
 
   @column()
-  public licenseNumber?: string // 🔁 pour correspondre aux données envoyées
+  public licenseNumber?: string
 
   @column()
-  public certificate?: string    // 🔁 pour correspondre aux données envoyées
+  public certificate?: string
 
   @column()
-  public institution?: string    // 🔁 pour correspondre aux données envoyées
+  public institution?: string
 
   @column()
-  public address?: string        // 🔁 à ajouter pour correspondre au front
+  public address?: string
 
   @column()
-  public specialty?: string      // 🔁 pour correspondre au front
+  public specialty?: string
 
   @column()
-  public experience?: string     // 🔁 string comme envoyé depuis le front
+  public experience?: string
 
   @column()
   public accountStatus?: Status
@@ -104,7 +105,10 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public updatedAt!: DateTime
 
   @column()
-  public roleId?: number
+  public roleId?: string
+
+  @column()
+public profileImage!: string
 
   @belongsTo(() => Role)
   public role!: BelongsTo<typeof Role>
@@ -142,8 +146,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @hasMany(() => Paiement, { foreignKey: 'idUser' })
   public paiements!: HasMany<typeof Paiement>
 
-  @hasMany(() => Messages, { foreignKey: 'idUserSender' })
-  public messagesSent!: HasMany<typeof Messages>
+  @hasMany(() => Message, { foreignKey: 'idUserSender' })
+  public messagesSent!: HasMany<typeof Message>
 
   @hasMany(() => Discussion, { foreignKey: 'idDoctor' })
   public discussionsDoctor!: HasMany<typeof Discussion>
@@ -163,5 +167,5 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @hasMany(() => LiveUser)
   public liveUsers!: HasMany<typeof LiveUser>
 
-  static accessTokens = DbAccessTokensProvider.forModel(User)
+  public static accessTokens = DbAccessTokensProvider.forModel(User)
 }

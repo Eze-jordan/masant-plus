@@ -1,16 +1,16 @@
 import { DateTime } from 'luxon'
 import User from './user.js'
 import { StatutSuggestion } from '../enum/enums.js'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, beforeCreate, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-
+import { randomUUID } from 'node:crypto'
 
 export default class Suggestion extends BaseModel {
   @column({ isPrimary: true })
-  public id!: number
+  public id!: string  // passer à string pour UUID
 
-  @column()
-  public idUser!: number
+  @column({ columnName: 'idUser' }) // 👈 IMPORTANT !
+  public idUser!: string
 
   @column()
   public titre!: string
@@ -26,4 +26,9 @@ export default class Suggestion extends BaseModel {
 
   @belongsTo(() => User, { foreignKey: 'idUser' })
   public user!: BelongsTo<typeof User>
+
+  @beforeCreate()
+  public static assignUuid(suggestion: Suggestion) {
+    suggestion.id = randomUUID()
+  }
 }
