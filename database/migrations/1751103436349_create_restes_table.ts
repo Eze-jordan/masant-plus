@@ -8,7 +8,7 @@ export default class PasswordResets extends BaseSchema {
       // Utiliser UUID pour la clé primaire
       table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      // user_id en UUID, FK vers users.id (UUID aussi)
+      // user_id en UUID, FK vers users.id (UUID aussi)b
       table.uuid('user_id').notNullable()
         .references('id').inTable('users')
         .onDelete('CASCADE')
