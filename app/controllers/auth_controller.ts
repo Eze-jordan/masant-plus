@@ -28,7 +28,7 @@ export default class AuthController {
         logger.warn(`[AuthController] Mot de passe invalide pour : ${email}`)
         return response.status(401).send({ error: 'Mot de passe invalide.' })
       }
-    } catch (error) {
+    } catch (error:any) {
       logger.error(`[AuthController] Erreur lors de la vérification du mot de passe : ${error.message}`)
       return response.status(500).send({ error: 'Erreur interne lors de la vérification du mot de passe.' })
     }

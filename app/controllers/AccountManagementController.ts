@@ -46,7 +46,7 @@ export default class AccountManagementController {
         user,
       })
 
-    } catch (error) {
+    } catch (error:any) {
       return response.status(500).send({
         message: "Erreur lors de la création de l'utilisateur.",
         error: error.message,
