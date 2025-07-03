@@ -1,28 +1,25 @@
-import { BaseSchema } from '@adonisjs/lucid/schema'
+import { BaseSchema } from "@adonisjs/lucid/schema"
 
-export default class Disponibilites extends BaseSchema {
+export default class CreateDisponibilites extends BaseSchema {
   protected tableName = 'disponibilites'
 
-  public async up() {
+  public async up () {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary()
+      table.uuid('id_doctor').notNullable()
+      table.datetime('date_debut').nullable()
+      table.datetime('date_fin').nullable()
+      table.string('heure_debut').notNullable()
+      table.string('heure_fin').notNullable()
+      table.boolean('actif').notNullable()
+      table.timestamps(true, true)
 
-      // Clé étrangère vers users (doctors)
-      table.integer('idDoctor').unsigned().notNullable()
-        .references('id').inTable('users')
-        .onDelete('CASCADE')
-
-      table.string('jour').notNullable()
-      table.string('heureDebut').notNullable()
-      table.string('heureFin').notNullable()
-      table.boolean('actif').notNullable().defaultTo(true)
-
-      table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
-      table.timestamp('updated_at', { useTz: true }).defaultTo(this.now())
+      // You can add foreign key constraints if needed
+      table.foreign('id_doctor').references('users.id').onDelete('CASCADE')
     })
   }
 
-  public async down() {
+  public async down () {
     this.schema.dropTable(this.tableName)
   }
 }

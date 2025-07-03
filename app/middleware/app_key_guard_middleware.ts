@@ -1,13 +1,21 @@
 import { HttpContext } from '@adonisjs/core/http'
 
 export default class AppKeyGuard {
-  async handle({ request }: HttpContext, next: () => Promise<void>) {
+  async handle({ request, response }: HttpContext, next: () => Promise<void>) {
+    // Si la méthode est GET, on laisse passer sans vérification
+    if (request.method() === 'GET') {
+      await next()
+      return
+    }
+
+    // Sinon, on vérifie la clé API
     const receivedAppKey = request.header('x-app-key')
 
-    if (receivedAppKey) {
-      console.debug('[AppKeyGuard] Clé reçue :', receivedAppKey)
-    } else {
-      console.warn('[AppKeyGuard] Aucune clé reçue dans le header x-app-key')
+    if (receivedAppKey !== 'boulinguiboulingui') {
+      console.warn(`[AppKeyGuard] Accès refusé. Clé API invalide ou manquante.`)
+      return response.unauthorized({
+        message: 'Clé API invalide ou manquante.',
+      })
     }
 
     await next()

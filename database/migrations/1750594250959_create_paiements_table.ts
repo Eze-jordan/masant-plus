@@ -6,10 +6,10 @@ export default class Paiements extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
 
-      table.integer('id_user').unsigned().references('id').inTable('users').onDelete('CASCADE')
-      table.integer('id_appointment').unsigned().references('id').inTable('appointments').onDelete('CASCADE')
+      table.uuid('id_user').references('id').inTable('users').onDelete('CASCADE').notNullable()
+      table.uuid('id_appointment').references('id').inTable('appointments').onDelete('CASCADE').notNullable()
 
       table.decimal('montant', 10, 2).notNullable()
 
@@ -17,7 +17,7 @@ export default class Paiements extends BaseSchema {
 
       table.timestamp('date_paiement', { useTz: true }).notNullable()
 
-      table.integer('mode_id').unsigned().references('id').inTable('mode_paiements').onDelete('SET NULL')
+      table.uuid('mode_id').references('id').inTable('mode_paiements').onDelete('SET NULL').nullable()
 
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
       table.timestamp('updated_at', { useTz: true }).defaultTo(this.now())

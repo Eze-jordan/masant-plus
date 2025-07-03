@@ -5,13 +5,13 @@ export default class SpecialiteDoctors extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
       
-      table.integer('specialite_id').unsigned().notNullable()
+      table.uuid('specialite_id').notNullable()
         .references('id').inTable('specialites')
         .onDelete('CASCADE')
       
-      table.integer('doctor_id').unsigned().notNullable()
+      table.uuid('doctor_id').notNullable()
         .references('id').inTable('users')
         .onDelete('CASCADE')
       

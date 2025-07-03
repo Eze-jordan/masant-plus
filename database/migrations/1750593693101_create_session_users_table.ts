@@ -5,9 +5,9 @@ export default class SessionUsers extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').primary()
-      
-      table.integer('user_id').unsigned().notNullable()
+      table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
+
+      table.uuid('user_id').unsigned().notNullable()
         .references('id').inTable('users')
         .onDelete('CASCADE')
 
