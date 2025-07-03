@@ -825,4 +825,6 @@ router.get('/logout', async (ctx) => {
   await authController.logout(ctx) // ctx contient { request, response, ... }
   return ctx.response.redirect('/')
 })
+router.on('/').renderInertia('home')
+router.on('/').renderInertia('home')
 

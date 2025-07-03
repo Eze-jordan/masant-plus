@@ -11,16 +11,16 @@ const appName = import.meta.env.VITE_APP_NAME || 'AdonisJS'
 createInertiaApp({
   progress: { color: '#5468FF' },
 
-  title: (title:string) => `${title} - ${appName}`,
+  title: (title) => `${title} - ${appName}`,
 
-  resolve: (name:string) => {
+  resolve: (name) => {
     return resolvePageComponent(
-      `../pages/${name as string}.tsx`,
+      `../pages/${name}.tsx`,
       import.meta.glob('../pages/**/*.tsx'),
     )
   },
 
-  setup({ el, App, props }:any) {
+  setup({ el, App, props }) {
     
     hydrateRoot(el, <App {...props} />)
     
