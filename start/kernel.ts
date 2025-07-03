@@ -15,7 +15,6 @@ server.use([
   () => import('#middleware/force_json_response_middleware'),
   () => import('@adonisjs/cors/cors_middleware'),
   () => import('@adonisjs/inertia/inertia_middleware'),
-  () => import('@adonisjs/vite/vite_middleware'), // ✅ UNE SEULE FOIS et en dernier
 ])
 
 // --------------------------------------------------------------------------
