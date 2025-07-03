@@ -148,6 +148,8 @@ router.get('/', async () => {
     version: '1.0.0',
   }
 })
+
+
 /**
  * @swagger
  * /register:
