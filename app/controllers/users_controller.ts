@@ -7,6 +7,7 @@ import { DateTime } from 'luxon'
 
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
+    
     const { email, password } = request.only(['email', 'password'])
 
 
