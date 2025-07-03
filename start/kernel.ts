@@ -11,10 +11,11 @@ server.errorHandler(() => import('#exceptions/handler'))
 // --------------------------------------------------------------------------
 server.use([
   () => import('#middleware/container_bindings_middleware'),
-  
+
   () => import('#middleware/app_key_guard_middleware'),
   () => import('#middleware/force_json_response_middleware'),
   () => import('@adonisjs/cors/cors_middleware'),
+  () => import('@adonisjs/inertia/inertia_middleware')
 ])
 
 // --------------------------------------------------------------------------

@@ -5,6 +5,7 @@ import { cuid } from '@adonisjs/core/helpers'
 import { readFile } from 'node:fs/promises'
 import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { join } from 'node:path'
+import UsersControllerAdmin from '#controllers/users_controller'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
@@ -30,6 +31,8 @@ import PaiementsController from '#controllers/PaiementsController'
 import NotificationController from '#controllers/notifications_controller'
 import UsersController from '#controllers/UsersController'
 import DisponibilitesController from '#controllers/disponibilities_controller'
+import User from '#models/user'
+import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 
 
  const  NotificationControllers  = new  NotificationController()
@@ -670,7 +673,6 @@ router.delete('/messages/:id', async (ctx) => {
 
 // Récupérer toutes les notifications de l'utilisateur authentifié
 
-// Récupérer toutes les notifications de l'utilisateur authentifié
 
 
 // Récupérer une notification spécifique par ID
@@ -738,3 +740,91 @@ router.get('/lives', async (ctx) => {
     });
   });
 });
+router.on('/').renderInertia('home')
+// routes.ts
+router.get('/auth', async ({ inertia }) => {
+  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
+})
+
+router.get('/register', async ({ inertia }) => {
+  return inertia.render('auth/register') // assure-toi que ce composant existe
+})
+
+router.get('/login', async ({ inertia }) => {
+  return inertia.render('auth/login') // correspond à resources/js/Pages/auth/login.tsx
+})
+
+
+
+
+
+
+router.get('/forgot-password', async ({ inertia }) => {
+  return inertia.render('auth/forgot-password') // le fichier React attendu
+})
+router.on('/welcome').renderInertia('home')
+
+
+// routes.ts
+router.get('/logins', async ({ inertia }) => {
+  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
+})
+
+router.get('/registers', async ({ inertia }) => {
+  return inertia.render('auth/register') // assure-toi que ce composant existe
+})
+
+
+
+router.post('/logins', [UsersControllerAdmin, 'login'] as any)  // ne pas utiliser Inertia ici
+
+
+
+router.get('/dashboard', async ({ request, response, inertia }) => {
+  const token = request.cookie('token')
+
+  if (!token) {
+    return response.redirect('/login')
+  }
+
+  try {
+    const payload = verifyJwtToken(token) as { id: string; email: string }
+    const currentUser = await User.find(payload.id)
+
+    if (!currentUser) {
+      return response.redirect('/login')
+    }
+
+    // Récupérer tous les utilisateurs
+    const users = await User.all()
+
+    // Mapper pour ne pas exposer d’infos sensibles
+    const safeUsers = users.map(user => ({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    }))
+
+    return inertia.render('dashboard/dashboard', {
+      user: {
+        id: currentUser.id,
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName,
+        email: currentUser.email,
+      },
+      users: safeUsers,
+    })
+  } catch (error:any) {
+    console.error('[Dashboard] Erreur JWT :', error.message)
+    return response.redirect('/login')
+  }
+})
+
+router.get('/logout', async (ctx) => {
+  await authController.logout(ctx) // ctx contient { request, response, ... }
+  return ctx.response.redirect('/')
+})
+router.on('/').renderInertia('home')
+router.on('/').renderInertia('home')
+
