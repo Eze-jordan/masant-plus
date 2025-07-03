@@ -1,5 +1,4 @@
 import { Head } from '@inertiajs/react'
-import AppLayout from '../../layouts/AppLayout'
 
 type User = {
   id: string
@@ -16,7 +15,6 @@ type DashboardProps = {
 export default function Dashboard({ user, users }: DashboardProps) {
   return (
     <>
-      <AppLayout>
         <Head title="Dashboard" />
 
         <div className="min-h-screen bg-gray-100 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
@@ -53,7 +51,7 @@ export default function Dashboard({ user, users }: DashboardProps) {
             </div>
           </div>
         </div>
-      </AppLayout>
+    
     </>
   )
 }
