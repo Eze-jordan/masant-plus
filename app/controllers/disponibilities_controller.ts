@@ -1,69 +1,141 @@
-import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Disponibilite from '#models/disponibilite'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { DateTime } from 'luxon'
 
-export default class DisponibilitesController {
-  // 🔁 GET /disponibilites/:idDoctor
-  public async getDisponibilites({ params, response }: HttpContextContract) {
-    const { idDoctor } = params
+export default class DisponibiliteController {
+  // ➤ Créer une disponibilité
+  public async store({ request, response }: HttpContextContract) {
+    const data = request.only([
+      'idDoctor',
+      'heureDebut',
+      'heureFin',
+      'date_debut',
+      'date_fin',
+      'actif',
+    ])
+
+    if (!data.idDoctor || !data.heureDebut || !data.heureFin) {
+      return response.status(400).send({ message: 'idDoctor, heureDebut et heureFin sont obligatoires.' })
+    }
+
+    const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
+    const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
+
+    if (dateDebut && !dateDebut.isValid) {
+      return response.status(400).send({ message: 'La dateDebut est invalide.' })
+    }
+    if (dateFin && !dateFin.isValid) {
+      return response.status(400).send({ message: 'La dateFin est invalide.' })
+    }
 
     try {
-      const disponibilites = await Disponibilite
-        .query()
-        .where('id_doctor', idDoctor)
-        .where('actif', true)
+      const disponibilite = await Disponibilite.create({
+        idDoctor: data.idDoctor,
+        heureDebut: data.heureDebut,
+        heureFin: data.heureFin,
+        dateDebut,
+        dateFin,
+        actif: data.actif ?? true,
+      })
 
-      const groupedByDay: Record<string, string[]> = {}
-
-      for (const d of disponibilites) {
-        const heure = `${d.heureDebut}-${d.heureFin}`
-        if (!groupedByDay[d.jour]) groupedByDay[d.jour] = []
-        groupedByDay[d.jour].push(heure)
-      }
-
-      const result = Object.entries(groupedByDay).map(([day, slots]) => ({
-        day,
-        slots,
-      }))
-
-      return response.ok(result)
+      return response.created(disponibilite)
     } catch (error) {
-      console.error('Erreur récupération disponibilités:', error)
-      return response.status(500).json({ message: 'Erreur serveur' })
+      console.error(error)
+      return response.status(500).send({
+        message: 'Erreur lors de la création de la disponibilité.',
+        error: error.message,
+      })
     }
   }
 
-  // 📝 POST /disponibilites/:idDoctor
-  public async setDisponibilites({ params, request, response }: HttpContextContract) {
-    const { idDoctor } = params
-    const disponibilites = request.body() // [{ day: string, slots: string[] }]
+  // ➤ Récupérer toutes les disponibilités
+  public async index({ response }: HttpContextContract) {
+    try {
+      const disponibilites = await Disponibilite.query()
+        .preload('doctor')
+        .preload('creneaux')
+        .orderBy('createdAt', 'desc')
 
-    if (!Array.isArray(disponibilites)) {
-      return response.status(400).json({ message: 'Format invalide' })
+      return response.ok(disponibilites)
+    } catch (error) {
+      console.error(error)
+      return response.status(500).send({
+        message: 'Erreur lors de la récupération des disponibilités.',
+        error: error.message,
+      })
     }
+  }
+
+  // ➤ Récupérer une disponibilité par ID
+  public async show({ params, response }: HttpContextContract) {
+    try {
+      const disponibilite = await Disponibilite.findOrFail(params.id)
+      return response.ok(disponibilite)
+    } catch (error) {
+      console.error(error)
+      return response.status(404).send({ message: 'Disponibilité non trouvée.' })
+    }
+  }
+
+  // ➤ Mettre à jour une disponibilité
+  public async update({ params, request, response }: HttpContextContract) {
+    const data = request.only([
+      'idDoctor',
+      'heureDebut',
+      'heureFin',
+      'date_debut',
+      'date_fin',
+      'actif',
+    ])
 
     try {
-      // Supprimer les anciennes disponibilités actives
-      await Disponibilite.query().where('id_doctor', idDoctor).delete()
+      const disponibilite = await Disponibilite.findOrFail(params.id)
 
-      // Créer les nouvelles
-      for (const { day, slots } of disponibilites) {
-        for (const slot of slots) {
-          const [heureDebut, heureFin] = slot.split('-')
+      disponibilite.idDoctor = data.idDoctor ?? disponibilite.idDoctor
+      disponibilite.heureDebut = data.heureDebut ?? disponibilite.heureDebut
+      disponibilite.heureFin = data.heureFin ?? disponibilite.heureFin
 
-          await Disponibilite.create({
-            idDoctor,
-            jour: day,
-            heureDebut,
-            heureFin,
-            actif: true,
-          })
+      if (data.date_debut) {
+        const parsed = DateTime.fromISO(data.date_debut)
+        if (!parsed.isValid) {
+          return response.badRequest({ message: 'dateDebut invalide' })
         }
+        disponibilite.dateDebut = parsed
       }
 
-      return response.ok({ message: 'Disponibilités enregistrées' })
+      if (data.date_fin) {
+        const parsed = DateTime.fromISO(data.date_fin)
+        if (!parsed.isValid) {
+          return response.badRequest({ message: 'dateFin invalide' })
+        }
+        disponibilite.dateFin = parsed
+      }
+
+      disponibilite.actif = data.actif ?? disponibilite.actif
+
+      await disponibilite.save()
+      return response.ok(disponibilite)
     } catch (error) {
-      console.error('Erreur enregistrement disponibilités:', error)
-      return response.status(500).json({ message: 'Erreur serveur' })
+      console.error(error)
+      return response.status(404).send({
+        message: 'Disponibilité non trouvée.',
+        error: error.message,
+      })
+    }
+  }
+
+  // ➤ Supprimer une disponibilité
+  public async destroy({ params, response }: HttpContextContract) {
+    try {
+      const disponibilite = await Disponibilite.findOrFail(params.id)
+      await disponibilite.delete()
+      return response.ok({ message: 'Disponibilité supprimée avec succès.' })
+    } catch (error) {
+      console.error(error)
+      return response.status(404).send({
+        message: 'Disponibilité non trouvée.',
+        error: error.message,
+      })
     }
   }
 }
