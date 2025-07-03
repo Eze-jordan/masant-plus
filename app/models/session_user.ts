@@ -31,7 +31,7 @@ export default class SessionUser extends BaseModel {
   public createdAt!: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updatedAt!: DateTime
+  expiresAt?: DateTime;
 
   @belongsTo(() => User)
   public user!: BelongsTo<typeof User>

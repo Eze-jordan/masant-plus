@@ -38,7 +38,7 @@ export default class AuthController {
     const token = generateJwtToken({ id: user.id, email: user.email })
 
     await SessionUser.create({
-      userId: String(user.id),
+      userId: (user.id),
       token,
       expiresAt: DateTime.now().plus({ days: 7 }),
     })
@@ -61,7 +61,6 @@ export default class AuthController {
         lastName: user.lastName,
         phone: user.phone,
         address: user.address,
-        profileImage: user.profileImage,
         specialty: user.specialty,
       },
       token,
