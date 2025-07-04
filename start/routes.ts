@@ -30,11 +30,13 @@ import PaiementsController from '#controllers/PaiementsController'
 import NotificationController from '#controllers/notifications_controller'
 import UsersController from '#controllers/UsersController'
 import DisponibilitesController from '#controllers/disponibilities_controller'
+import AppointmentController from '#controllers/appointments_controller'
 
 
  const  NotificationControllers  = new  NotificationController()
 const controller = new MessagesController()
 const user  = new  UsersController()
+const appointmentController = new AppointmentController()
 const livesController = new LivesController()
 const doctorsController = new DoctorsController()
 const feedbackController = new FeedbackController()
@@ -302,7 +304,16 @@ router.post('/register', async (ctx) => {
 router.get('/patients/count/:userId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return patientsController.count(ctx)
+      return patientsController.index(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+router.get('/patients', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patientsController.index(ctx)
     })
   })
 }).middleware([throttle])
@@ -738,3 +749,12 @@ router.get('/lives', async (ctx) => {
     });
   });
 });
+
+
+router.get('/appointments/doctor', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentController.getAppointmentsForDoctor(ctx)
+    })
+  })
+})

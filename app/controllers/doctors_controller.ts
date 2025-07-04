@@ -26,6 +26,7 @@ export default class DoctorsController {
       specialisation: doctor.specialisation || 'Spécialité inconnue',
       email: doctor.email,
       phone: doctor.phone,
+      matricule: doctor.licenseNumber || 'Matricule non défini',  // <-- Ajout matricule ici
       experience: doctor.experience,
       address: doctor.address,
     })
@@ -53,6 +54,7 @@ export default class DoctorsController {
     return response.json({
       fullName: doctor.username || 'Dr Inconnu',
       specialisation: doctor.specialisation || 'Spécialité inconnue',
+      matricule: doctor.licenseNumber || 'Matricule non défini',  // <-- Aussi ici si besoin
     })
   }
 }

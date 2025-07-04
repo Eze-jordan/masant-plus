@@ -27,11 +27,11 @@ export default class RegisterController {
       years_experience: raw.experience ? parseInt(raw.experience.split('-')[0]) : 0,
       registration_number: raw.licenseNumber ?? '',
       institution_name: raw.institution ?? '',
-      role: 'DOCTOR',
-      about: 'N/A',
+      role: raw.role,
+      about: raw.about,
       account_status: Status.PENDING,
-      availability: 'N/A',
-      localisation: 'N/A',
+      availability: raw.availability,
+      localisation: raw.localisation,
     }
 
     try {
@@ -40,6 +40,14 @@ export default class RegisterController {
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
         return response.status(400).send({ message: 'Un utilisateur avec cet email existe déjà.' })
+      }
+
+      // Recherche du rôle, création s'il n'existe pas
+      const roleLabel = raw.role.toLowerCase()
+      let selectedRole = await Role.findBy('label', roleLabel)
+      if (!selectedRole) {
+        selectedRole = await Role.create({ label: roleLabel })
+        logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
 
       // Upload de la photo de profil
@@ -53,7 +61,7 @@ export default class RegisterController {
         const fileName = `users/${cuid()}.${imageFile.extname}`
         const buffer = await fs.readFile(imageFile.tmpPath)
         await drive.use('s3').put(fileName, buffer, {
-          visibility: 'public', // ✅ rendre le fichier accessible publiquement
+          visibility: 'public',
         })
 
         const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
@@ -61,15 +69,15 @@ export default class RegisterController {
         profileImageUrl = `${endpoint}/${bucket}/${fileName}`
       }
 
-      const doctorRole = await Role.firstOrCreate({ label: 'DOCTOR' })
       const { role, ...sanitizedData } = validatedData
 
       const user = await User.create({
         ...sanitizedData,
-        roleId: doctorRole.id,
+        roleId: selectedRole.id,
         profileImage: profileImageUrl,
       })
 
+      // Envoi email
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -139,7 +147,7 @@ export default class RegisterController {
         const fileName = `users/${cuid()}.${imageFile.extname}`
         const buffer = await fs.readFile(imageFile.tmpPath)
         await drive.use('s3').put(fileName, buffer, {
-          visibility: 'public', // ✅ rendre l’image modifiée accessible
+          visibility: 'public',
         })
 
         const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
@@ -162,7 +170,7 @@ export default class RegisterController {
         message: 'Utilisateur mis à jour avec succès.',
         user,
       })
-    } catch (error:any) {
+    } catch (error: any) {
       return response.status(400).json({
         message: 'Erreur lors de la mise à jour de l’utilisateur.',
         error: error.messages ?? error.message,
