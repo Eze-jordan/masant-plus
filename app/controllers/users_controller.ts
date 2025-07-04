@@ -1,29 +1,33 @@
-import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import SessionUser from '#models/session_user'
 import User from '#models/user'
 import hash from '@adonisjs/core/services/hash'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { generateJwtToken } from '../Utils/Jwt.js'
-import SessionUser from '#models/session_user'
 import { DateTime } from 'luxon'
 
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
-    
     const { email, password } = request.only(['email', 'password'])
-
 
     if (!email || !password) {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
-    console.log(email , password)
-    const user = await User.findBy('email', email)
-    console.log(user)
+
+    // 🔄 Charger l'utilisateur avec son rôle (belongsTo)
+    const user = await User.query().where('email', email).preload('role').first()
+
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
 
+    // 🔐 Vérifier que l'utilisateur est administrateur
+    if (!user.role || user.role.label !== 'admin') {
+      return response.status(403).send({ error: 'Accès refusé : vous devez être administrateur.' })
+    }
+
+    // 🔒 Vérifier le mot de passe
     const storedHash = user.password?.trim() ?? ''
-    logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)
-    logger.info(`[AuthController] Mot de passe envoyé : ${password}`)
+    logger.info(`[AuthController] Tentative de connexion pour : ${email}`)
 
     try {
       const isPasswordValid = await hash.verify(storedHash, password)
@@ -31,19 +35,21 @@ export default class AuthController {
         logger.warn(`[AuthController] Mot de passe invalide pour : ${email}`)
         return response.status(401).send({ error: 'Mot de passe invalide.' })
       }
-    } catch (error:any) {
-      logger.error(`[AuthController] Erreur lors de la vérification du mot de passe : ${error.message}`)
-      return response.status(500).send({ error: 'Erreur interne lors de la vérification du mot de passe.' })
+    } catch (error: any) {
+      logger.error(`[AuthController] Erreur de vérification du mot de passe : ${error.message}`)
+      return response.status(500).send({ error: 'Erreur serveur lors de la connexion.' })
     }
 
+    // ✅ Générer le token JWT
     const token = generateJwtToken({ id: user.id, email: user.email })
 
     await SessionUser.create({
-      userId: (user.id),
+      userId: String(user.id),
       token,
       expiresAt: DateTime.now().plus({ days: 7 }),
     })
 
+    // 🍪 Définir le cookie
     response.cookie('token', token, {
       httpOnly: true,
       secure: true,
@@ -52,6 +58,7 @@ export default class AuthController {
       path: '/',
     })
 
+    // 📦 Retourner la réponse utilisateur + token
     return response.ok({
       user: {
         id: user.id,
@@ -62,27 +69,10 @@ export default class AuthController {
         lastName: user.lastName,
         phone: user.phone,
         address: user.address,
+        profileImage: user.profileImage,
         specialty: user.specialty,
       },
       token,
     })
   }
-
-  // ...login ici
-
-  public async logout({ response, request }: HttpContextContract) {
-    const token = request.cookies.token
-
-    // Supprimer la session côté base de données
-    if (token) {
-      await SessionUser.query().where('token', token).delete()
-    }
-
-    // Supprimer le cookie JWT
-    response.clearCookie('token')
-
-    // Redirection ou réponse Inertia-friendly
-    return response.redirect('/') // ou response.status(200).send({ message: 'Déconnecté' })
-  }
 }
-
