@@ -1,36 +1,39 @@
-import { DateTime } from 'luxon'
-import Disponibilite from './disponibilite.js'
-import { BaseModel, belongsTo, column, beforeCreate } from '@adonisjs/lucid/orm'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { BaseModel, column, beforeCreate, belongsTo } from '@adonisjs/lucid/orm'
 import { randomUUID } from 'node:crypto'
+import Disponibilite from './disponibilite.js'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 export default class Creneau extends BaseModel {
+  // 🔧 Nom explicite de la table pour éviter "creneaus"
+  public static table = 'creneaux'
+
+  // 🆔 ID primaire UUID
   @column({ isPrimary: true })
   public id!: string
 
+  // 🔄 Génère un UUID avant création
   @beforeCreate()
-  static assignUuid(creneau: Creneau) {
+  public static assignUuid(creneau: Creneau) {
     creneau.id = randomUUID()
   }
 
-  @column()
+  // 🔗 Clé étrangère vers disponibilites (colonne BDD : id_disponibilite)
+  @column({ columnName: 'id_disponibilite' })
   public idDisponibilite!: string
 
-  @column()
+  // 🕒 Heure de début du créneau
+  @column({ columnName: 'heure_debut' })
   public heureDebut!: string
 
-  @column()
+  // 🕒 Heure de fin du créneau
+  @column({ columnName: 'heure_fin' })
   public heureFin!: string
 
+  // ✅ Disponible ou non
   @column()
   public disponible!: boolean
 
-  @column.dateTime({ autoCreate: true })
-  public createdAt!: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updatedAt!: DateTime
-
+  // 🔁 Relation avec la disponibilité
   @belongsTo(() => Disponibilite, {
     foreignKey: 'idDisponibilite',
   })
