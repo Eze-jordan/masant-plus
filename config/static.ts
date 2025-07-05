@@ -14,4 +14,5 @@ const staticServerConfig = defineConfig({
   dotFiles: 'ignore',
 })
 
+
 export default staticServerConfig
