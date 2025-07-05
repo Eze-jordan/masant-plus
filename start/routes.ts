@@ -795,7 +795,7 @@ router.get('/login', async ({ inertia }) => {
 router.get('/forgot-password', async ({ inertia }) => {
   return inertia.render('auth/forgot-password') // le fichier React attendu
 })
-router.on('/welcome').renderInertia('home')
+router.on('/home').renderInertia('home')
 
 
 // routes.ts
