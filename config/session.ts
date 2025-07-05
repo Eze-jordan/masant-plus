@@ -1,47 +1,47 @@
-import env from '#start/env'
-import app from '@adonisjs/core/services/app'
 import { defineConfig, stores } from '@adonisjs/session'
+import app from '@adonisjs/core/services/app'
 
+// Définir la configuration des sessions
 const sessionConfig = defineConfig({
   enabled: true,
   cookieName: 'adonis-session',
 
   /**
-   * When set to true, the session id cookie will be deleted
-   * once the user closes the browser.
+   * Quand activé, le cookie de session sera supprimé dès que l'utilisateur ferme le navigateur.
    */
   clearWithBrowser: false,
 
   /**
-   * Define how long to keep the session data alive without
-   * any activity.
+   * Temps d'expiration de la session sans activité.
    */
   age: '2h',
 
   /**
-   * Configuration for session cookie and the
-   * cookie store
+   * Configuration du cookie de session.
    */
   cookie: {
     path: '/',
     httpOnly: true,
-    secure: app.inProduction,
+    secure: app.inProduction,  // Utilise 'true' si en production, sinon 'false'
     sameSite: 'lax',
   },
 
   /**
-   * The store to use. Make sure to validate the environment
-   * variable in order to infer the store name without any
-   * errors.
-   */
-  store: env.get('SESSION_DRIVER'),
+   /**
+    * Choix du store (base de données, fichier, cookie, etc.)
+    * Seuls 'cookie' et 'memory' sont supportés par défaut.
+    */
+   store: (process.env.SESSION_DRIVER as 'cookie' | 'memory') || 'cookie',
 
-  /**
-   * List of configured stores. Refer documentation to see
-   * list of available stores and their config.
-   */
+   /**
+    * Stores configurés. Actuellement, on a un store pour les cookies.
+    */
   stores: {
     cookie: stores.cookie(),
+    // Si tu souhaites utiliser une base de données ou Redis, tu peux les ajouter ici.
+    // Exemple : 
+    // redis: stores.redis(),
+    // database: stores.database(),
   }
 })
 
