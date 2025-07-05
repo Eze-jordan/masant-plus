@@ -773,7 +773,7 @@ router.post('/appointments', async (ctx) => {
 })
 
 
-router.on('/home').renderInertia('home')
+router.on('/').renderInertia('home')
 
 router.get('/auth', async ({ inertia }) => {
   return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
@@ -795,7 +795,6 @@ router.get('/login', async ({ inertia }) => {
 router.get('/forgot-password', async ({ inertia }) => {
   return inertia.render('auth/forgot-password') // le fichier React attendu
 })
-router.on('/home').renderInertia('home')//home page with inertia
 
 
 // routes.ts
