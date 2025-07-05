@@ -6,7 +6,7 @@ export default class CreateCreneauxTable extends BaseSchema {
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'))
-      table.uuid('idDisponibilite').notNullable()
+      table.uuid('idDisponibilite').notNullable()//33
         .references('id').inTable('disponibilites').onDelete('CASCADE')
       table.string('heureDebut').notNullable()
       table.string('heureFin').notNullable()
