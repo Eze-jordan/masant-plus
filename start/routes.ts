@@ -35,8 +35,9 @@ import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
+import home_controller from '#controllers/home_controller'
 
-
+const home = new home_controller()
  const  NotificationControllers  = new  NotificationController()
 const  loginadmin = new  UsersControllers()
 const controller = new MessagesController()
@@ -773,8 +774,9 @@ router.post('/appointments', async (ctx) => {
 })
 
 
-router.on('/').renderInertia('home')
-
+router.get('/', async ({ inertia }) => {
+  return await home.home({ inertia })
+})
 router.get('/auth', async ({ inertia }) => {
   return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
 })
