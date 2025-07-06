@@ -5,12 +5,18 @@ import react from '@vitejs/plugin-react'
 import adonisjs from '@adonisjs/vite/client'
 
 export default defineConfig({
-  plugins: [inertia({ ssr: { enabled: true, entrypoint: 'inertia/app/ssr.tsx' } }), react(), adonisjs({ entrypoints: ['inertia/app/app.tsx'], reload: ['resources/views/**/*.edge'] })],
+  plugins: [
+    // Désactiver complètement SSR pour Inertia
+    inertia({ ssr: { enabled: false } }),  // Déjà désactivé
+    react(),
+    adonisjs({ 
+      entrypoints: ['inertia/app/app.tsx'],
+      reload: ['resources/views/**/*.edge'],
+      // Si vous avez un autre paramètre SSR, vous pouvez aussi le désactiver ici
+      
+    })
+  ],
 
-  /**
-   * Define aliases for importing modules from
-   * your frontend code
-   */
   resolve: {
     alias: {
       '~/': `${getDirname(import.meta.url)}/inertia/`,
