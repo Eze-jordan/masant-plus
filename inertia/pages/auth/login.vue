@@ -123,7 +123,6 @@
       </div>
     </div>
   </template><script setup lang="ts">
-import { toast } from 'vue-sonner'
 import { ref, onMounted } from 'vue'
 
 const email = ref('')
@@ -168,13 +167,13 @@ const handleLogin = async () => {
       // Si la connexion est réussie, stocke le token et redirige
       localStorage.setItem('authToken', result.token) // ou un cookie selon ton système
       window.location.href = '/dashboard' // Remplace '/dashboard' par l'URL de ton tableau de bord
-      toast.success('Connexion réussie !') // Affichage du toast de succès
+     alert('Connexion réussie !') // Affichage du toast de succès
     } else {
-      toast.error(result.message || 'Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
+     alert(result.message || 'Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
     }
   } catch (error) {
     console.error('Erreur de connexion:', error)
-    toast.error('Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
+   alert('Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
   } finally {
     loading.value = false
   }

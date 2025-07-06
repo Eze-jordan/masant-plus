@@ -5,81 +5,6 @@ import { DateTime } from 'luxon'
 
 export default class AppointmentController {
   /**
-   * Récupérer les rendez-vous d'un médecin
-   */
-  public async getAppointmentsForDoctor({ request, response }: HttpContextContract) {
-    try {
-      const idDoctor = request.input('idDoctor')
-
-      if (!idDoctor) {
-        return response.badRequest({ message: 'idDoctor est requis.' })
-      }
-
-      const filterType = request.input('typeRdv') as keyof typeof TypeRDV | undefined
-      const filterEtat = request.input('etatRdv') as keyof typeof EtatRDV | undefined
-
-      // Filtres optionnels
-
-      // Validation des filtres
-      if (filterType && !Object.keys(TypeRDV).includes(filterType)) {
-        return response.badRequest({ message: `typeRdv invalide : ${filterType}` })
-      }
-
-      if (filterEtat && !Object.keys(EtatRDV).includes(filterEtat)) {
-        return response.badRequest({ message: `etatRdv invalide : ${filterEtat}` })
-      }
-
-      // Construction de la requête
-      const query = Appointment.query().where('idDoctor', idDoctor)
-
-      if (filterType) {
-        query.andWhere('typeRdv', filterType)
-      }
-
-      if (filterEtat) {
-        query.andWhere('etatRdv', filterEtat)
-      }
-
-      // Chargement des relations
-      const appointments = await query
-        .preload('patient') 
-        .preload('paiements')
-        .preload('prescription')
-        .preload('review')
-
-      // Transformation des données
-      const result = appointments.map((appointment) => {
-        const dateIso = appointment.dateRdv.toISODate() // ex: "2025-07-04"
-        const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`, { zone: 'local' })
-        const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`, { zone: 'local' })
-
-        console.log('dateRdv:', appointment.dateRdv.toISO())
-        console.log('heureDebut:', appointment.heureDebut)
-        console.log('dateDebut:', dateDebut.toISO(), 'valid:', dateDebut.isValid)
-
-        return {
-          id: appointment.id,
-          typeRdv: appointment.typeRdv,
-          etatRdv: appointment.etatRdv,
-          
-          nomPatient: appointment.patient?.username ?? null,
-          prenomPatient: appointment.patient?.firstName ?? null,
-          paiements: appointment.paiements,
-          prescription: appointment.prescription,
-          review: appointment.review,
-          dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
-          dateFin: dateFin.isValid ? dateFin.toISO() : null,
-        }
-      })
-
-      return response.ok(result)
-    } catch (error) {
-      console.error('[getAppointmentsForDoctor] Erreur :', error)
-      return response.internalServerError({ message: 'Erreur serveur lors de la récupération des rendez-vous.' })
-    }
-  }
-
-  /**
    * Créer un nouveau rendez-vous
    */
   public async create({ request, response }: HttpContextContract) {
@@ -91,10 +16,11 @@ export default class AppointmentController {
         'typeRdv',
         'etatRdv',
         'description',
+        'heureDebut', // Heure de début personnalisée par l'utilisateur
       ])
 
       // Vérification des champs obligatoires
-      if (!payload.idDoctor || !payload.idPatient || !payload.date || !payload.typeRdv || !payload.etatRdv) {
+      if (!payload.idDoctor || !payload.idPatient || !payload.date || !payload.typeRdv || !payload.etatRdv || !payload.heureDebut) {
         return response.badRequest({ message: 'Champs requis manquants.' })
       }
 
@@ -112,15 +38,33 @@ export default class AppointmentController {
         return response.badRequest({ message: 'Date invalide.' })
       }
 
+      // On commence par vérifier si le créneau demandé est libre
+      let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`)
+      if (!heureDebut.isValid) {
+        return response.badRequest({ message: 'Heure de début invalide.' })
+      }
+
+      // Vérifier si un rendez-vous existe déjà à l'heure de début souhaitée
+      let conflict = await this.checkAppointmentConflict(payload.idDoctor, dateRdv, heureDebut)
+      
+      // Si il y a un conflit (c'est-à-dire que l'heure est déjà occupée), on déplace l'heure de début par incréments de 30 minutes
+      while (conflict) {
+        heureDebut = heureDebut.plus({ minutes: 30 })  // Décalage de 30 minutes
+        conflict = await this.checkAppointmentConflict(payload.idDoctor, dateRdv, heureDebut)
+      }
+
+      // Une fois qu'on a un créneau libre, calculer l'heure de fin
+      const heureFin = heureDebut.plus({ minutes: 30 }) // Heure de fin = Heure de début + 30 minutes
+
+      // Créer le rendez-vous
       const appointment = await Appointment.create({
         idDoctor: payload.idDoctor,
         idUser: payload.idPatient,
         dateRdv: dateRdv,
         typeRdv: payload.typeRdv,
         etatRdv: payload.etatRdv,
-        heureDebut: '09:00', // à personnaliser
-        heureFin: '09:30',   // idem
-      
+        heureDebut: heureDebut.toISO(), // Utilisation de l'heure de début calculée
+        heureFin: heureFin.toISO(), // Utilisation de l'heure de fin calculée
       })
 
       return response.created(appointment)
@@ -128,5 +72,22 @@ export default class AppointmentController {
       console.error('[AppointmentController.create] Erreur :', error)
       return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' })
     }
+  }
+
+  /**
+   * Vérifie si un rendez-vous existe déjà pour un médecin à une certaine date et heure
+   */
+  private async checkAppointmentConflict(idDoctor: string, dateRdv: DateTime, heureDebut: DateTime) {
+    const heureFin = heureDebut.plus({ minutes: 30 }) // 30 minutes après l'heure de début
+
+    const conflict = await Appointment.query()
+      .where('idDoctor', idDoctor)
+      .andWhere('dateRdv', dateRdv.toISODate()) // Vérifier la même date
+      .whereRaw(`
+        (heureDebut < ? AND heureFin > ?) OR
+        (heureDebut < ? AND heureFin > ?)
+      `, [heureFin.toISO(), heureDebut.toISO(), heureDebut.toISO(), heureFin.toISO()])
+
+    return conflict.length > 0
   }
 }
