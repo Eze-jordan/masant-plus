@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title inertia>AdonisJS x Inertia x React</title>
+  <title inertia>AdonisJS x Inertia x VueJS</title>
 
   <link rel="preconnect" href="https://fonts.bunny.net">
   <link href="https://fonts.bunny.net/css?family=instrument-sans:400,400i,500,500i,600,600i,700,700i" rel="stylesheet" />
@@ -49,7 +49,7 @@
               6: 'var(--sand-6)',
               7: 'var(--sand-7)',
               8: 'var(--sand-8)',
-              9: 'v and import it herear(--sand-9)',
+              9: 'var(--sand-9)',
               10: 'var(--sand-10)',
               11: 'var(--sand-11)',
               12: 'var(--sand-12)',
@@ -60,10 +60,9 @@
     }
   </script>
 
-  @stack('dumper')
-  @viteReactRefresh()
+  @vite(['inertia/app/app.ts', `inertia/pages/${page.component}.vue`])
   @inertiaHead()
-  @vite(['inertia/app/app.tsx', `inertia/pages/${page.component}.tsx`])
+  @stack('dumper')
 </head>
 
 <body class="min-h-screen w-screen font-sans">
