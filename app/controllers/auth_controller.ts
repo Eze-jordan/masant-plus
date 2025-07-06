@@ -8,27 +8,27 @@ import { DateTime } from 'luxon'
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
     const { email, password } = request.only(['email', 'password'])
-  
+
     if (!email || !password) {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
-  
+
     const user = await User.findBy('email', email)
-  
+
     // Vérifier si l'utilisateur existe
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
-  
+
     // Vérifier si l'utilisateur est actif
     if (user.accountStatus !== 'ACTIVE') {
       return response.status(403).send({ error: 'Compte désactivé. Veuillez contacter l\'administrateur.' })
     }
-  
+
     const storedHash = user.password?.trim() ?? ''
     logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)
     logger.info(`[AuthController] Mot de passe envoyé : ${password}`)
-  
+
     try {
       const isPasswordValid = await hash.verify(storedHash, password)
       if (!isPasswordValid) {
@@ -39,15 +39,15 @@ export default class AuthController {
       logger.error(`[AuthController] Erreur lors de la vérification du mot de passe : ${error.message}`)
       return response.status(500).send({ error: 'Erreur interne lors de la vérification du mot de passe.' })
     }
-  
+
     const token = generateJwtToken({ id: user.id, email: user.email })
-  
+
     await SessionUser.create({
       userId: String(user.id),
       token,
       expiresAt: DateTime.now().plus({ days: 7 }),
     })
-  
+
     response.cookie('token', token, {
       httpOnly: true,
       secure: true,
@@ -55,7 +55,7 @@ export default class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     })
-  
+
     return response.ok({
       user: {
         id: user.id,
@@ -68,12 +68,11 @@ export default class AuthController {
         address: user.address,
         profileImage: user.profileImage,
         specialty: user.specialty,
+        role: user.role.label,  // <--- Rôle utilisateur retourné ici
       },
       token,
     })
   }
-  
-  
 
   // Déconnexion utilisateur
   public async logout({ response, request, logger }: HttpContextContract) {
