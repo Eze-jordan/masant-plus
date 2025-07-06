@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { error } from 'console';
 
 defineProps<{ error: any }>();
 </script>
@@ -8,6 +7,6 @@ defineProps<{ error: any }>();
   <div class="container">
     <div class="title">Server Error</div>
 
-    <span>{{ error.name }}</span>
+    <span>error</span>
   </div>
 </template>
