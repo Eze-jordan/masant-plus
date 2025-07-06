@@ -3,7 +3,6 @@ import Role from '#models/role'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { createUserValidator } from '#validators/create_user'
 import { Status } from '../enum/enums.js'
-import nodemailer from 'nodemailer'
 import fs from 'fs/promises'
 import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
@@ -77,34 +76,8 @@ export default class RegisterController {
         profileImage: profileImageUrl,
       })
 
-      // Envoi email
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.SMTP_EMAIL,
-          pass: process.env.SMTP_PASSWORD,
-        },
-      })
-
-      await transporter.sendMail({
-        from: `"masanteplus" <${process.env.SMTP_EMAIL}>`,
-        to: validatedData.email,
-        subject: 'Création de votre compte masanteplus',
-        html: `
-          <p>Bonjour ${validatedData.first_name},</p>
-          <p>Votre compte a été créé avec succès.</p>
-          <p>Voici vos identifiants :</p>
-          <ul>
-            <li><strong>Email :</strong> ${validatedData.email}</li>
-            <li><strong>Mot de passe :</strong> ${password}</li>
-          </ul>
-          <p>Merci de changer votre mot de passe à votre première connexion.</p>
-          <p>— L'équipe Clinique</p>
-        `,
-      })
-
       return response.status(201).send({
-        message: 'Utilisateur créé avec succès. Un email a été envoyé.',
+        message: 'Utilisateur créé avec succès.',
         user: user.serialize(),
       })
 

@@ -30,12 +30,13 @@ import PaiementsController from '#controllers/PaiementsController'
 import NotificationController from '#controllers/notifications_controller'
 import UsersController from '#controllers/UsersController'
 import UsersControllers from '#controllers/users_controller'
+import pending_users_controller from '#controllers/pending_users_controller'
 
 import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
-
+const userpending   =  new pending_users_controller()
  const  NotificationControllers  = new  NotificationController()
 const  loginadmin = new  UsersControllers()
 const controller = new MessagesController()
@@ -60,7 +61,16 @@ const passwordResetController = new PasswordResetController()
 
 
 
-
+router.get('/users/pending', async (ctx) => {
+  // Middleware "onlyFrontend" ou autres middlewares que tu veux appliquer
+  await onlyFrontend.handle(ctx, async () => {
+    // Vérifie la clé API avant d'aller plus loin
+    await appKeyGuard.handle(ctx, async () => {
+      // Ici on appelle la méthode du contrôleur qui gère la récupération des utilisateurs avec statut "pending"
+      return userpending.getUsersWithPendingStatus(ctx)
+    })
+  })
+}).middleware([throttle])
 
 
 router.post('/login', async (ctx) => {
@@ -863,3 +873,11 @@ router.get('/logout', async (ctx) => {
   return ctx.response.redirect('/')
 })
 
+router.get('/404', async ({ inertia }) => {
+  return inertia.render('errors/not_found')
+})
+
+// Route fallback - doit être la dernière route
+router.get('*', async ({ inertia }) => {
+  return inertia.render('errors/not_found', { status: 404 })
+})
