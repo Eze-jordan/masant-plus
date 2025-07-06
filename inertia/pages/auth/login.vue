@@ -122,51 +122,61 @@
         </div>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref } from 'vue';
-  
-  const email = ref('');
-  const password = ref('');
-  const rememberMe = ref(false);
-  const showPassword = ref(false);
-  const loading = ref(false);
-  
-  const handleLogin = async () => {
-    loading.value = true;
-  
-    const data = {
-      email: email.value,
-      password: password.value,
-      remember_me: rememberMe.value
-    };
-  
-    try {
-      // Effectuer la requête avec fetch
-      const response = await fetch('/logins', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          "x-app-key":"boulinguiboulingui"
-        },
-        body: JSON.stringify(data), // Envoie des données au serveur
-      });
-  
-      const result = await response.json();
-  
-      if (response.ok) {
-        // Si la connexion est réussie, rediriger vers le tableau de bord
-        window.location.href = '/dashboard'; // Remplacez '/dashboard' par l'URL de ton tableau de bord
-      } else {
-        alert(result.message || 'Erreur de connexion. Veuillez réessayer.');
-      }
-    } catch (error) {
-      console.error('Erreur de connexion:', error);
-      alert('Erreur de connexion. Veuillez réessayer.');
-    } finally {
-      loading.value = false;
+  </template><script setup lang="ts">
+import { toast } from 'vue-sonner'
+import { ref, onMounted } from 'vue'
+
+const email = ref('')
+const password = ref('')
+const rememberMe = ref(false)
+const showPassword = ref(false)
+const loading = ref(false)
+
+// Fonction qui vérifie si l'utilisateur est déjà connecté
+const checkIfLoggedIn = () => {
+
+}
+
+// Appel de la fonction lors du montage du composant
+onMounted(() => {
+  checkIfLoggedIn()
+})
+
+const handleLogin = async () => {
+  loading.value = true
+
+  const data = {
+    email: email.value,
+    password: password.value,
+    remember_me: rememberMe.value,
+  }
+
+  try {
+    // Effectuer la requête avec fetch
+    const response = await fetch('/logins', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-app-key': 'boulinguiboulingui',
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+
+    if (response.ok) {
+      // Si la connexion est réussie, stocke le token et redirige
+      localStorage.setItem('authToken', result.token) // ou un cookie selon ton système
+      window.location.href = '/dashboard' // Remplace '/dashboard' par l'URL de ton tableau de bord
+      toast.success('Connexion réussie !') // Affichage du toast de succès
+    } else {
+      toast.error(result.message || 'Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
     }
-  };
-  </script>
-  
+  } catch (error) {
+    console.error('Erreur de connexion:', error)
+    toast.error('Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
+  } finally {
+    loading.value = false
+  }
+}
+</script>

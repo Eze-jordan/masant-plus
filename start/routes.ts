@@ -36,6 +36,8 @@ import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
+import update_users_controller from '#controllers/update_users_controller'
+const userupdate    =  new   update_users_controller()
 const userpending   =  new pending_users_controller()
  const  NotificationControllers  = new  NotificationController()
 const  loginadmin = new  UsersControllers()
@@ -209,6 +211,22 @@ router.get('/docs/swagger.json', async ({ response }) => {
   return response.send(swaggerSpec)
 })
 // Endpoint racine
+
+// Route PUT pour la mise à jour du statut de l'utilisateur
+router.put('/users/:id/status', async (ctx) => {
+  console.log('[PUT /users/:id/status] Début de traitement')
+  console.log('[PUT /users/:id/status] Params:', JSON.stringify(ctx.request.params(), null, 2))
+
+  // On commence par exécuter un middleware frontend pour vérifier la requête
+  await onlyFrontend.handle(ctx, async () => {
+    // Vérifier l'API key avant de permettre la mise à jour
+    await appKeyGuard.handle(ctx, async () => {
+      // Appel au contrôleur pour mettre à jour le statut
+      console.log('[PUT /users/:id/status] Avant appel controller updateStatus')
+      return userupdate.updateStatus(ctx)  // Méthode dans le contrôleur pour mettre à jour le statut de l'utilisateur
+    })
+  })
+}).middleware([throttle])  // Middleware pour limiter les requêtes (précaution supplémentaire)
 
 
 router.get('/users/:id', async (ctx) => {
