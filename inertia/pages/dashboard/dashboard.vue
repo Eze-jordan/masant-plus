@@ -138,7 +138,6 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { toast } from 'vue-sonner';
 
 const users = ref([]);
 
@@ -153,7 +152,7 @@ const fetchPendingUsers = async () => {
     users.value = data.users; // On stocke les utilisateurs en attente
   } catch (error) {
     console.error('Erreur lors de la récupération des utilisateurs:', error);
-    toast.error('Erreur lors de la récupération des utilisateurs');
+    alert('Erreur lors de la récupération des utilisateurs');
   }
 };
 
@@ -174,7 +173,7 @@ const updateUserStatus = async (userId) => {
   const user = users.value.find((u) => u.id === userId);
 
   if (!user) {
-    toast.error("Utilisateur introuvable");
+    alert("Utilisateur introuvable");
     return;
   }
 
@@ -199,7 +198,7 @@ const updateUserStatus = async (userId) => {
     }
   } catch (error) {
     console.error('Erreur lors de la mise à jour du statut:', error);
-    toast.error('Erreur lors de la mise à jour du statut');
+    alert('Erreur lors de la mise à jour du statut');
   }
 };
 </script>
