@@ -3,17 +3,125 @@
     <!-- Sidebar -->
     <aside class="w-64 bg-blue-600 text-white flex flex-col justify-between p-4">
       <div>
-        <h1 class="text-xl font-bold mb-10">MaSanté<span class="text-red-500">+</span></h1>
+        <h1 class="text-xl font-bold mb-10 flex items-center gap-6">
+          <img src="../../public/logo.png" alt="Logo Mindiva" class="h-30 w-60 object-contain mr-2" />
+        </h1>
         <ul class="space-y-5">
-          <li class="bg-white text-black p-2 rounded flex items-center gap-4 font-bold">
-            <Home class="w-5 h-5 text-black" /> Dashboard
+          <li
+            class="p-2 rounded flex items-center justify-between font-bold cursor-pointer"
+            :class="activeMenu === 'dashboard' ? 'bg-white text-black shadow' : 'text-white'"
+            @click="setActiveMenu('dashboard')"
+          >
+            <div class="flex items-center gap-4">
+              <Home class="w-5 h-5" :class="activeMenu === 'dashboard' ? 'text-black' : 'text-white'" />
+              Dashboard
+            </div>
+            <ChevronRight class="w-4 h-4" :class="activeMenu === 'dashboard' ? 'text-gray-400' : 'text-white'" />
           </li>
-          <li class="flex items-center gap-6"><Stethoscope class="w-5 h-5 text-white" /> Docteurs</li>
-          <li class="flex items-center gap-6"><User class="w-5 h-5 text-white" /> Patients</li>
-          <li class="flex items-center gap-6"><Calendar class="w-5 h-5 text-white" /> Urgent</li>
-          <li class="flex items-center gap-6"><CreditCard class="w-5 h-5 text-white" /> Paiement</li>
-          <li class="flex items-center gap-6"><Settings class="w-5 h-5 text-white" /> Paramètre</li>
+
+          <li class="flex flex-col">
+            <div
+              class="flex items-center justify-between cursor-pointer p-2 rounded"
+              :class="activeMenu === 'docteurs' ? 'bg-white text-black shadow' : 'text-white'"
+              @click="toggleSubMenu('docteurs'); setActiveMenu('docteurs')"
+            >
+              <div class="flex items-center gap-6">
+                <Stethoscope class="w-5 h-5" :class="activeMenu === 'docteurs' ? 'text-black' : 'text-white'" />
+                Docteurs
+              </div>
+              <ChevronRight
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-90' : '', activeMenu === 'docteurs' ? 'text-gray-400' : 'text-white']"
+              />
+            </div>
+            <ul
+              v-if="openSubMenu === 'docteurs'"
+              class="ml-8 mt-2 space-y-2 text-sm"
+            >
+              <li
+                class="cursor-pointer px-2 py-1 rounded"
+                :class="activeSubMenu === 'liste-docteurs' ? 'bg-blue-200 text-blue-900' : 'text-white'"
+                @click.stop="setActiveSubMenu('docteurs', 'liste-docteurs')"
+                style="text-decoration: none;"
+              >Liste des docteurs</li>
+              <li
+                class="cursor-pointer px-2 py-1 rounded"
+                :class="activeSubMenu === 'ajouter-docteur' ? 'bg-blue-200 text-blue-900' : 'text-white'"
+                @click.stop="setActiveSubMenu('docteurs', 'ajouter-docteur')"
+                style="text-decoration: none;"
+              >Ajouter un docteur</li>
+            </ul>
+          </li>
+
+          <li class="flex flex-col">
+            <div
+              class="flex items-center justify-between cursor-pointer p-2 rounded"
+              :class="activeMenu === 'patients' ? 'bg-white text-black shadow' : 'text-white'"
+              @click="toggleSubMenu('patients'); setActiveMenu('patients')"
+            >
+              <div class="flex items-center gap-6">
+                <User class="w-5 h-5" :class="activeMenu === 'patients' ? 'text-black' : 'text-white'" />
+                Patients
+              </div>
+              <ChevronRight
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-90' : '', activeMenu === 'patients' ? 'text-gray-400' : 'text-white']"
+              />
+            </div>
+            <ul
+              v-if="openSubMenu === 'patients'"
+              class="ml-8 mt-2 space-y-2 text-sm"
+            >
+              <li
+                class="cursor-pointer px-2 py-1 rounded"
+                :class="activeSubMenu === 'liste-patients' ? 'bg-blue-200 text-blue-900' : 'text-white'"
+                @click.stop="setActiveSubMenu('patients', 'liste-patients')"
+                style="text-decoration: none;"
+              >Liste des patients</li>
+              <li
+                class="cursor-pointer px-2 py-1 rounded"
+                :class="activeSubMenu === 'ajouter-patient' ? 'bg-blue-200 text-blue-900' : 'text-white'"
+                @click.stop="setActiveSubMenu('patients', 'ajouter-patient')"
+                style="text-decoration: none;"
+              >Ajouter un patient</li>
+            </ul>
+          </li>
+
+          <li
+            class="flex items-center justify-between cursor-pointer p-2 rounded"
+            :class="activeMenu === 'urgent' ? 'bg-white text-black shadow' : 'text-white'"
+            @click="setActiveMenu('urgent')"
+          >
+            <div class="flex items-center gap-6">
+              <Calendar class="w-5 h-5" :class="activeMenu === 'urgent' ? 'text-black' : 'text-white'" />
+              Urgent
+            </div>
+            <ChevronRight class="w-4 h-4" :class="activeMenu === 'urgent' ? 'text-gray-400' : 'text-white'" />
+          </li>
+
+          <li
+            class="flex items-center justify-between cursor-pointer p-2 rounded"
+            :class="activeMenu === 'paiement' ? 'bg-white text-black shadow' : 'text-white'"
+            @click="setActiveMenu('paiement')"
+          >
+            <div class="flex items-center gap-6">
+              <CreditCard class="w-5 h-5" :class="activeMenu === 'paiement' ? 'text-black' : 'text-white'" />
+              Paiement
+            </div>
+            <ChevronRight class="w-4 h-4" :class="activeMenu === 'paiement' ? 'text-gray-400' : 'text-white'" />
+          </li>
+
+          <li
+            class="flex items-center justify-between cursor-pointer p-2 rounded"
+            :class="activeMenu === 'parametre' ? 'bg-white text-black shadow' : 'text-white'"
+            @click="setActiveMenu('parametre')"
+          >
+            <div class="flex items-center gap-6">
+              <Settings class="w-5 h-5" :class="activeMenu === 'parametre' ? 'text-black' : 'text-white'" />
+              Paramètre
+            </div>
+            <ChevronRight class="w-4 h-4" :class="activeMenu === 'parametre' ? 'text-gray-400' : 'text-white'" />
+          </li>
         </ul>
+
       </div>
       <div class="text-sm">
         <p class="font-semibold">        Administrateur</p>
@@ -89,7 +197,7 @@
 </template>
 
 <script setup>
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -162,6 +270,22 @@ const LineChart = defineComponent({
   components: { Line },
   template: `<Line :data="chartData" :options="chartOptions" />`
 })
+
+const openSubMenu = ref(null)
+const activeMenu = ref('dashboard')
+const activeSubMenu = ref('')
+
+function toggleSubMenu(menu) {
+  openSubMenu.value = openSubMenu.value === menu ? null : menu
+}
+function setActiveMenu(menu) {
+  activeMenu.value = menu
+  activeSubMenu.value = ''
+}
+function setActiveSubMenu(parent, submenu) {
+  activeMenu.value = parent
+  activeSubMenu.value = submenu
+}
 </script>
 
 <style scoped></style>
