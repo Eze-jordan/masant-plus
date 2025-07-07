@@ -32,7 +32,7 @@
       <!-- Overlay semi-transparent -->
       <div class="flex-1 bg-black bg-opacity-40" @click="showForm = false"></div>
       <!-- Panneau latéral -->
-      <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right">
+      <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
         <button class="absolute top-2 right-2 text-gray-500" @click="showForm = false">&times;</button>
         <h3 class="text-lg font-bold mb-4">Ajouter un Docteur</h3>
         <form @submit.prevent="ajouterDocteur">
@@ -68,8 +68,11 @@
             </select>
           </div>
           <div class="mb-4">
-            <label class="block mb-1">Photo (URL)</label>
-            <input v-model="form.photo" type="text" class="w-full border rounded px-3 py-2" placeholder="/doctor1.jpg" />
+            <label class="block mb-1">Photo</label>
+            <input type="file" @change="onFileChange" class="w-full border rounded px-3 py-2" accept="image/*" />
+            <div v-if="form.photo" class="mt-2">
+              <img :src="form.photo" alt="Aperçu" class="w-16 h-16 object-cover rounded" />
+            </div>
           </div>
           <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
             Ajouter
@@ -131,6 +134,68 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Panneau latéral de détails/modification -->
+    <div v-if="showDetails" class="fixed inset-0 z-50 flex">
+      <div class="flex-1 bg-black bg-opacity-40" @click="showDetails = false"></div>
+      <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
+        <button class="absolute top-2 right-2 text-gray-500" @click="showDetails = false">&times;</button>
+        <h3 class="text-lg font-bold mb-4">
+          {{ isEditing ? 'Modifier le Docteur' : 'Détails du Docteur' }}
+        </h3>
+        <form v-if="isEditing" @submit.prevent="enregistrerModif">
+          <div class="mb-4">
+            <label class="block mb-1">Nom</label>
+            <input v-model="selectedDocteur.nom" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Prénom</label>
+            <input v-model="selectedDocteur.prenom" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Téléphone</label>
+            <input v-model="selectedDocteur.Telephone" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Email</label>
+            <input v-model="selectedDocteur.email" type="email" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Spécialité</label>
+            <input v-model="selectedDocteur.Spécialité" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Matricule</label>
+            <input v-model="selectedDocteur.Matricule" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Statut</label>
+            <select v-model="selectedDocteur.statut" class="w-full border rounded px-3 py-2" required>
+              <option>Actif</option>
+              <option>Inactif</option>
+            </select>
+          </div>
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
+            Enregistrer
+          </button>
+        </form>
+        <div v-else>
+          <div class="mb-4 flex flex-col items-center">
+            <img :src="selectedDocteur.photo" class="w-24 h-24 rounded-full object-cover mb-2" />
+            <span class="font-bold text-xl">Dr. {{ selectedDocteur.nom }} {{ selectedDocteur.prenom }}</span>
+          </div>
+          <div class="mb-2"><b>Téléphone :</b> {{ selectedDocteur.Telephone }}</div>
+          <div class="mb-2"><b>Email :</b> {{ selectedDocteur.email }}</div>
+          <div class="mb-2"><b>Spécialité :</b> {{ selectedDocteur.Spécialité }}</div>
+          <div class="mb-2"><b>Matricule :</b> {{ selectedDocteur.Matricule }}</div>
+          <div class="mb-2"><b>Statut :</b> {{ selectedDocteur.statut }}</div>
+          <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
+            @click="isEditing = true">
+            Modifier
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -141,6 +206,9 @@ import { Stethoscope } from 'lucide-vue-next'
 const search = ref('')
 const openMenu = ref(null)
 const showForm = ref(false)
+const showDetails = ref(false)
+const selectedDocteur = ref(null)
+const isEditing = ref(false)
 
 const docteurs = ref([
   {
@@ -169,12 +237,14 @@ function toggleMenu(id) {
   openMenu.value = openMenu.value === id ? null : id
 }
 function voirPlus(docteur) {
-  alert('Voir plus sur ' + docteur.nom)
-  openMenu.value = null
+  selectedDocteur.value = { ...docteur }
+  showDetails.value = true
+  isEditing.value = false
 }
 function modifier(docteur) {
-  alert('Modifier ' + docteur.nom)
-  openMenu.value = null
+  selectedDocteur.value = { ...docteur }
+  showDetails.value = true
+  isEditing.value = true
 }
 function supprimer(docteur) {
   if (confirm('Supprimer ' + docteur.nom + ' ?')) {
@@ -197,6 +267,32 @@ function ajouterDocteur() {
   showForm.value = false
   // Réinitialise le formulaire
   form.value = { nom: '', prenom: '',Telephone: '', email: '', statut: 'Actif', Spécialité: '', Matricule: '',photo: '/doctor1.jpg' }
+}
+
+function onFileChange(event) {
+  const file = event.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = e => {
+      form.value.photo = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+async function enregistrerModif() {
+  // Ici tu fais un appel API pour mettre à jour dans la DB
+  // await fetch(`/api/docteurs/${selectedDocteur.value.id}`, {
+  //   method: 'PUT',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify(selectedDocteur.value)
+  // })
+  // Pour la démo, on met à jour localement :
+  const idx = docteurs.value.findIndex(d => d.id === selectedDocteur.value.id)
+  if (idx !== -1) {
+    docteurs.value[idx] = { ...selectedDocteur.value }
+  }
+  showDetails.value = false
 }
 </script>
 
