@@ -131,8 +131,8 @@
 
     <!-- Main -->
     <main class="flex-1 p-6 overflow-auto">
-      <GererDocteur v-if="activeSubMenu === 'liste-docteurs'" />
-      <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" />
+      <GererDocteur v-if="activeSubMenu === 'liste-docteurs'"  :user="user" :users="users"/>
+      <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" :user="user" :users="users" />
       <div v-else>
         <!-- Topbar -->
         <div class="flex justify-between items-center mb-6">
@@ -229,6 +229,10 @@ import GererDocteur from './geredocteur.vue'
 import ListeDemande from './ListeDemande.vue'
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
+const props = defineProps({
+  user: Object,
+  users: Array,
+})
 
 const stats = [
   { label: 'Total Patients', value: '2K+', icon: Users },

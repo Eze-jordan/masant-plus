@@ -29,37 +29,17 @@
 
     <!-- Formulaire d'ajout de docteur -->
     <div v-if="showForm" class="fixed inset-0 z-50 flex">
-      <!-- Overlay semi-transparent -->
       <div class="flex-1 bg-black bg-opacity-40" @click="showForm = false"></div>
-      <!-- Panneau latéral -->
       <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
         <button class="absolute top-2 right-2 text-gray-500" @click="showForm = false">&times;</button>
         <h3 class="text-lg font-bold mb-4">Ajouter un Docteur</h3>
         <form @submit.prevent="ajouterDocteur">
-          <div class="mb-4">
-            <label class="block mb-1">Nom</label>
-            <input v-model="form.nom" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Prénom</label>
-            <input v-model="form.prenom" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Telephone</label>
-            <input v-model="form.Telephone" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Email</label>
-            <input v-model="form.email" type="email" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Spécialité</label>
-            <input v-model="form.Spécialité" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Matricule</label>
-            <input v-model="form.Matricule" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
+          <div class="mb-4"><label class="block mb-1">Nom</label><input v-model="form.nom" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Prénom</label><input v-model="form.prenom" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Téléphone</label><input v-model="form.telephone" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Email</label><input v-model="form.email" type="email" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Spécialité</label><input v-model="form.specialite" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Matricule</label><input v-model="form.matricule" type="text" class="w-full border rounded px-3 py-2" required /></div>
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
             <select v-model="form.statut" class="w-full border rounded px-3 py-2" required>
@@ -89,8 +69,8 @@
           <tr class="border-b">
             <th class="py-2 px-2"><input type="checkbox" /></th>
             <th class="py-2 px-2">Nom</th>
-            <th class="py-2 px-2">Prenom</th>
-            <th class="py-2 px-2">Telephone</th>
+            <th class="py-2 px-2">Prénom</th>
+            <th class="py-2 px-2">Téléphone</th>
             <th class="py-2 px-2">Email</th>
             <th class="py-2 px-2">Spécialité</th>
             <th class="py-2 px-2">Matricule</th>
@@ -106,23 +86,18 @@
           >
             <td class="py-2 px-2"><input type="checkbox" /></td>
             <td class="py-2 px-2 flex items-center gap-2">
-              <img :src="docteur.photo" class="w-8 h-8 rounded-full object-cover" />
-              <span class="font-bold">Dr. {{ docteur.nom }}</span>
+              <img :src="docteur.profileImage || '/doctor1.jpg'" class="w-8 h-8 rounded-full object-cover" />
+              <span class="font-bold">Dr. {{ docteur.firstName }}</span>
             </td>
-            <td class="py-2 px-2">{{ docteur.prenom }}</td>
-            <td class="py-2 px-2">{{ docteur.Telephone }}</td>
+            <td class="py-2 px-2">{{ docteur.lastName }}</td>
+            <td class="py-2 px-2">{{ docteur.phone }}</td>
             <td class="py-2 px-2">{{ docteur.email }}</td>
-            <td class="py-2 px-2">{{ docteur.Spécialité }}</td>
-            <td class="py-2 px-2">{{ docteur.Matricule }}</td>
-            <td class="py-2 px-2">{{ docteur.statut }}</td>
+            <td class="py-2 px-2">{{ docteur.specialty }}</td>
+            <td class="py-2 px-2">{{ docteur.registrationNumber }}</td>
+            <td class="py-2 px-2">{{ docteur.accountStatus }}</td>
             <td class="py-2 px-2 relative">
-              <button @click="toggleMenu(docteur.id)" class="px-2 py-1 rounded hover:bg-gray-200">
-                ...
-              </button>
-              <div
-                v-if="openMenu === docteur.id"
-                class="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10"
-              >
+              <button @click="toggleMenu(docteur.id)" class="px-2 py-1 rounded hover:bg-gray-200">...</button>
+              <div v-if="openMenu === docteur.id" class="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
                 <ul>
                   <li class="px-4 py-2 hover:bg-blue-100 cursor-pointer" @click="voirPlus(docteur)">Voir plus</li>
                   <li class="px-4 py-2 hover:bg-blue-100 cursor-pointer" @click="modifier(docteur)">Modifier</li>
@@ -135,42 +110,21 @@
       </table>
     </div>
 
-    <!-- Panneau latéral de détails/modification -->
+    <!-- Détails / Modifier -->
     <div v-if="showDetails" class="fixed inset-0 z-50 flex">
       <div class="flex-1 bg-black bg-opacity-40" @click="showDetails = false"></div>
       <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
         <button class="absolute top-2 right-2 text-gray-500" @click="showDetails = false">&times;</button>
-        <h3 class="text-lg font-bold mb-4">
-          {{ isEditing ? 'Modifier le Docteur' : 'Détails du Docteur' }}
-        </h3>
+        <h3 class="text-lg font-bold mb-4">{{ isEditing ? 'Modifier le Docteur' : 'Détails du Docteur' }}</h3>
         <form v-if="isEditing" @submit.prevent="enregistrerModif">
-          <div class="mb-4">
-            <label class="block mb-1">Nom</label>
-            <input v-model="selectedDocteur.nom" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Prénom</label>
-            <input v-model="selectedDocteur.prenom" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Téléphone</label>
-            <input v-model="selectedDocteur.Telephone" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Email</label>
-            <input v-model="selectedDocteur.email" type="email" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Spécialité</label>
-            <input v-model="selectedDocteur.Spécialité" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Matricule</label>
-            <input v-model="selectedDocteur.Matricule" type="text" class="w-full border rounded px-3 py-2" required />
-          </div>
-          <div class="mb-4">
-            <label class="block mb-1">Statut</label>
-            <select v-model="selectedDocteur.statut" class="w-full border rounded px-3 py-2" required>
+          <div class="mb-4"><label class="block mb-1">Nom</label><input v-model="selectedDocteur.firstName" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Prénom</label><input v-model="selectedDocteur.lastName" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Téléphone</label><input v-model="selectedDocteur.phone" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Email</label><input v-model="selectedDocteur.email" type="email" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Spécialité</label><input v-model="selectedDocteur.specialty" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Matricule</label><input v-model="selectedDocteur.registrationNumber" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Statut</label>
+            <select v-model="selectedDocteur.statut" class="w-full border rounded px-3 py-2">
               <option>Actif</option>
               <option>Inactif</option>
             </select>
@@ -181,14 +135,14 @@
         </form>
         <div v-else>
           <div class="mb-4 flex flex-col items-center">
-            <img :src="selectedDocteur.photo" class="w-24 h-24 rounded-full object-cover mb-2" />
-            <span class="font-bold text-xl">Dr. {{ selectedDocteur.nom }} {{ selectedDocteur.prenom }}</span>
+            <img :src="selectedDocteur.profileImage" class="w-24 h-24 rounded-full object-cover mb-2" />
+            <span class="font-bold text-xl">Dr. {{ selectedDocteur.firstName }} {{ selectedDocteur.lastName }}</span>
           </div>
-          <div class="mb-2"><b>Téléphone :</b> {{ selectedDocteur.Telephone }}</div>
+          <div class="mb-2"><b>Téléphone :</b> {{ selectedDocteur.phone }}</div>
           <div class="mb-2"><b>Email :</b> {{ selectedDocteur.email }}</div>
-          <div class="mb-2"><b>Spécialité :</b> {{ selectedDocteur.Spécialité }}</div>
-          <div class="mb-2"><b>Matricule :</b> {{ selectedDocteur.Matricule }}</div>
-          <div class="mb-2"><b>Statut :</b> {{ selectedDocteur.statut }}</div>
+          <div class="mb-2"><b>Spécialité :</b> {{ selectedDocteur.specialty }}</div>
+          <div class="mb-2"><b>Matricule :</b> {{ selectedDocteur.registrationNumber }}</div>
+          <div class="mb-2"><b>Statut :</b> {{ selectedDocteur.accountStatus }}</div>
           <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
             @click="isEditing = true">
             Modifier
@@ -210,17 +164,18 @@ const showDetails = ref(false)
 const selectedDocteur = ref(null)
 const isEditing = ref(false)
 
-const docteurs = ref([
-  {
-    id: 1,
-    photo: '/doctor1.jpg',
-    nom: 'IGAMBA',
-    prenom: 'Paul',
-    email: 'paul.igamba@email.com',
-    statut: 'Actif'
-  },
-  // Ajoute d'autres docteurs ici
-])
+const props = defineProps({
+  user: Object,    // pour l’utilisateur connecté (unique)
+  users: {
+    type: Array,   // pour la liste des utilisateurs/docteurs
+    required: true,
+    default: () => []
+  }
+})
+
+
+const docteurs = ref(props.users || [])
+
 
 const totalDocteurs = computed(() => docteurs.value.length)
 
@@ -256,17 +211,28 @@ function supprimer(docteur) {
 const form = ref({
   nom: '',
   prenom: '',
+  telephone: '',
   email: '',
+  specialite: '',
+  matricule: '',
   statut: 'Actif',
-  photo: '/doctor1.jpg'
+  photo: '/doctor1.jpg',
 })
 
 function ajouterDocteur() {
   const nouveau = { ...form.value, id: Date.now() }
   docteurs.value.push(nouveau)
   showForm.value = false
-  // Réinitialise le formulaire
-  form.value = { nom: '', prenom: '',Telephone: '', email: '', statut: 'Actif', Spécialité: '', Matricule: '',photo: '/doctor1.jpg' }
+  form.value = {
+    nom: '',
+    prenom: '',
+    telephone: '',
+    email: '',
+    specialite: '',
+    matricule: '',
+    statut: 'Actif',
+    photo: '/doctor1.jpg',
+  }
 }
 
 function onFileChange(event) {
@@ -280,14 +246,7 @@ function onFileChange(event) {
   }
 }
 
-async function enregistrerModif() {
-  // Ici tu fais un appel API pour mettre à jour dans la DB
-  // await fetch(`/api/docteurs/${selectedDocteur.value.id}`, {
-  //   method: 'PUT',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(selectedDocteur.value)
-  // })
-  // Pour la démo, on met à jour localement :
+function enregistrerModif() {
   const idx = docteurs.value.findIndex(d => d.id === selectedDocteur.value.id)
   if (idx !== -1) {
     docteurs.value[idx] = { ...selectedDocteur.value }

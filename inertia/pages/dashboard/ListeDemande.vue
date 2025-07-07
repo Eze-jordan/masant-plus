@@ -50,7 +50,7 @@
             <td class="py-2 px-2 flex items-center gap-2">
               <span class="font-bold">Dr. {{ demande.nom }}</span>
             </td>
-            <td class="py-2 px-2">{{ demande.prenom }}</td>
+            <td class="py-2 px-2">{{ demande.lastName }}</td>
             <td class="py-2 px-2">{{ demande.telephone }}</td>
             <td class="py-2 px-2">{{ demande.email }}</td>
             <td class="py-2 px-2">{{ demande.specialite }}</td>
@@ -75,9 +75,9 @@
         <h3 class="text-lg font-bold mb-4">Détails de la demande</h3>
         <div v-if="selectedDemande">
           <div class="mb-4 flex flex-col items-center">
-            <span class="font-bold text-xl">Dr. {{ selectedDemande.nom }} {{ selectedDemande.prenom }}</span>
+            <span class="font-bold text-xl">Dr. {{ selectedDemande.firstName }} {{ selectedDemande.lastName }}</span>
           </div>
-          <div class="mb-2"><b>Telephone :</b> {{ selectedDemande.telephone }}</div>
+          <div class="mb-2"><b>Telephone :</b> {{ selectedDemande.phone }}</div>
           <div class="mb-2"><b>Email :</b> {{ selectedDemande.email }}</div>
           <div class="mb-2"><b>Spécialité :</b> {{ selectedDemande.specialite }}</div>
           <div class="mb-2"><b>Matricule :</b> {{ selectedDemande.matricule }}</div>
@@ -103,20 +103,18 @@ import { ref, computed } from 'vue'
 import { Stethoscope } from 'lucide-vue-next'
 
 const search = ref('')
-const demandes = ref([
-  {
-    id: 1,
-    nom: 'IGAMBA',
-    prenom: 'Paul',
-    telephone: '0788888888',
-    email: 'paul.igamba@email.com',
-    specialite: 'Cardiologue',
-    matricule: 'DOC123'
-  },
-  // Ajoute d'autres demandes ici
-])
+const props = defineProps({
+  demandes: {
+    type: Array,
+    default: () => []
+  }
+})
+
+const demandes = ref(props.demandes)
 
 const totalDemandes = computed(() => demandes.value.length)
+
+
 
 const filteredDemandes = computed(() => {
   if (!search.value) return demandes.value

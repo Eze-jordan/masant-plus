@@ -116,7 +116,7 @@
             </div>
   
             <div v-if="error" class="mt-6 grid grid-cols-2 gap-3">
-           <ServerError/>
+              <ServerError :message="error" />
             </div>
           </div>
         </div>
@@ -168,7 +168,7 @@ const handleLogin = async () => {
       // Si la connexion est réussie, stocke le token et redirige
       localStorage.setItem('authToken', result.token) // ou un cookie selon ton système
       window.location.href = '/dashboard' // Remplace '/dashboard' par l'URL de ton tableau de bord
-     alert('Connexion réussie !') // Affichage du toast de succès
+     // Affichage du toast de succès
     } else {
       alert(error.value)  // Affichage du toast d'erreur
     }

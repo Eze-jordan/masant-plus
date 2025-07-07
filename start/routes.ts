@@ -849,15 +849,23 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
       return response.redirect('/login')
     }
 
-    // Récupérer tous les utilisateurs
+    // Charger tout, sauf les champs sensibles
     const users = await User.all()
 
-    // Mapper pour ne pas exposer d’infos sensibles
+    // Retourner tous les champs sauf les sensibles
     const safeUsers = users.map(user => ({
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      phone: user.phone,
+      specialty: user.specialty,
+      registrationNumber: user.registrationNumber,
+      accountStatus: user.accountStatus,
+      profileImage: user.profileImage,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      // ajoute ici d'autres champs que tu veux exposer
     }))
 
     return inertia.render('dashboard/dashboard', {
@@ -866,10 +874,17 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
         firstName: currentUser.firstName,
         lastName: currentUser.lastName,
         email: currentUser.email,
+        phone: currentUser.phone,
+        specialty: currentUser.specialty,
+        registrationNumber: currentUser.registrationNumber,
+        accountStatus: currentUser.accountStatus,
+        profileImage: currentUser.profileImage,
+        createdAt: currentUser.createdAt,
+        updatedAt: currentUser.updatedAt,
       },
       users: safeUsers,
     })
-  } catch (error:any) {
+  } catch (error: any) {
     console.error('[Dashboard] Erreur JWT :', error.message)
     return response.redirect('/login')
   }
@@ -892,4 +907,32 @@ router.get('*', async ({ inertia }) => {
 
 router.get('/doctor', async ({ inertia }) => {
   return inertia.render('/dashboard/docteurs')
+})
+
+
+
+// Route protégée pour afficher les docteurs en attente
+router.get('/ListeDemande', async ({ request, response, auth, inertia }) => {
+  const token = request.cookie('token')
+
+  if (!token) {
+    return response.redirect('/login')
+  }
+
+  try {
+    const payload = verifyJwtToken(token) as { id: string; email: string }
+    const currentUser = await User.find(payload.id)
+
+    if (!currentUser) {
+      return response.redirect('/login')
+    }
+
+    // Appeler la méthode index du controller
+    const controller = new UsersController()
+    return await controller.show({ request, response, auth, inertia })
+
+  } catch (error: any) {
+    console.error('[Demandes] Erreur JWT :', error.message)
+    return response.redirect('/login')
+  }
 })
