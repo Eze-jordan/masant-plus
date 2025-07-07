@@ -13,16 +13,20 @@ export default class AuthController {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
 
-    const user = await User.findBy('email', email)
+    // ⛔ Tu utilisais `User.findBy` sans relation
+    const user = await User.query()
+      .where('email', email)
+      .preload('role') // ✅ important : précharger le rôle
+      .first()
 
-    // Vérifier si l'utilisateur existe
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
 
-    // Vérifier si l'utilisateur est actif
     if (user.accountStatus !== 'ACTIVE') {
-      return response.status(403).send({ error: 'Compte désactivé. Veuillez contacter l\'administrateur.' })
+      return response.status(403).send({
+        error: 'Compte désactivé. Veuillez contacter l\'administrateur.',
+      })
     }
 
     const storedHash = user.password?.trim() ?? ''
@@ -68,18 +72,16 @@ export default class AuthController {
         address: user.address,
         profileImage: user.profileImage,
         specialty: user.specialty,
-        role: user.role.label,  // <--- Rôle utilisateur retourné ici
+        role: user.role?.label ?? 'Non défini', // ✅ sécurisé + propre
       },
       token,
     })
   }
 
-  // Déconnexion utilisateur
   public async logout({ response, request, logger }: HttpContextContract) {
     const token = request.cookie('token')
 
     if (token) {
-      // Supprimer la session dans la base
       await SessionUser.query().where('token', token).delete()
       logger.info('[AuthController] Session utilisateur supprimée lors de la déconnexion.')
     }

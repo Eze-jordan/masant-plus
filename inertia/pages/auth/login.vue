@@ -115,8 +115,8 @@
               
             </div>
   
-            <div class="mt-6 grid grid-cols-2 gap-3">
-              <!-- Boutons Google et Facebook ici -->
+            <div v-if="error" class="mt-6 grid grid-cols-2 gap-3">
+           <ServerError/>
             </div>
           </div>
         </div>
@@ -124,13 +124,14 @@
     </div>
   </template><script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import ServerError from "../errors/ServerError.vue"
 
 const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
 const showPassword = ref(false)
 const loading = ref(false)
-
+const error  = ref(false)
 // Fonction qui vérifie si l'utilisateur est déjà connecté
 const checkIfLoggedIn = () => {
 
@@ -169,7 +170,7 @@ const handleLogin = async () => {
       window.location.href = '/dashboard' // Remplace '/dashboard' par l'URL de ton tableau de bord
      alert('Connexion réussie !') // Affichage du toast de succès
     } else {
-     alert(result.message || 'Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
+      alert(error.value)  // Affichage du toast d'erreur
     }
   } catch (error) {
     console.error('Erreur de connexion:', error)
@@ -178,4 +179,5 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
+
 </script>
