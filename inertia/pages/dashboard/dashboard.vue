@@ -1,204 +1,167 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex">
-            <div class="flex-shrink-0 flex items-center">
-              <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-              </div>
-              <span class="ml-2 text-xl font-semibold text-gray-900">Dashboard</span>
-            </div>
-            <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <a href="#" :class="activeTab === 'overview' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" 
-                 class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                 @click="activeTab = 'overview'">
-                Vue d'ensemble
-              </a>
-              <a href="#" :class="activeTab === 'analytics' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" 
-                 class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                 @click="activeTab = 'analytics'">
-                Analytiques
-              </a>
-              <a href="#" :class="activeTab === 'users' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" 
-                 class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                 @click="activeTab = 'users'">
-                Utilisateurs
-              </a>
-            </div>
-          </div>
-          <div class="hidden sm:ml-6 sm:flex sm:items-center">
-            <button class="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-              </svg>
-            </button>
-
-            <div class="ml-3 relative">
-              <div>
-                <button @click="showUserMenu = !showUserMenu" class="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                </button>
-              </div>
-              <div v-if="showUserMenu" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                <div class="py-1">
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Votre profil</a>
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Paramètres</a>
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="handleLogout">Se déconnecter</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-blue-600 text-white flex flex-col justify-between p-4">
+      <div>
+        <h1 class="text-xl font-bold mb-10">MaSanté<span class="text-red-500">+</span></h1>
+        <ul class="space-y-5">
+          <li class="bg-white text-black p-2 rounded flex items-center gap-4 font-bold">
+            <Home class="w-5 h-5 text-black" /> Dashboard
+          </li>
+          <li class="flex items-center gap-6"><Stethoscope class="w-5 h-5 text-white" /> Docteurs</li>
+          <li class="flex items-center gap-6"><User class="w-5 h-5 text-white" /> Patients</li>
+          <li class="flex items-center gap-6"><Calendar class="w-5 h-5 text-white" /> Urgent</li>
+          <li class="flex items-center gap-6"><CreditCard class="w-5 h-5 text-white" /> Paiement</li>
+          <li class="flex items-center gap-6"><Settings class="w-5 h-5 text-white" /> Paramètre</li>
+        </ul>
       </div>
-    </nav>
+      <div class="text-sm">
+        <p class="font-semibold">        Administrateur</p>
+        <p class="text-gray-200">administrateur@gmail.com</p>
+      </div>
+    </aside>
 
-    <!-- Contenu principal -->
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-            <p class="mt-1 text-sm text-gray-600">Bienvenue dans votre espace de gestion</p>
-          </div>
+    <!-- Main -->
+    <main class="flex-1 p-6 overflow-auto">
+      <!-- Topbar -->
+      <div class="flex justify-between items-center mb-6">
+        <input type="text" placeholder="Rechercher..." class="px-4 py-2 border rounded-md w-1/3" />
+        <div class="flex gap-4 items-center">
+          <MessageCircle class="w-6 h-6 text-gray-600" />
+          <Bell class="w-6 h-6 text-gray-600" />
+          <User class="w-6 h-6 text-gray-600" />
+
         </div>
       </div>
 
-      <!-- Statistiques -->
-      <div class="px-4 sm:px-0">
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9.282-4.944m-3.418-5.353a4 4 0 00-2.016-1.011M5 6v8m5-5h7m4 5v4m0-4H7m0 4v5m5 0v-2"></path>
-                    </svg>
-                  </div>
-                </div>
-                <div class="ml-5 text-gray-900 text-sm font-medium">
-                  Utilisateurs en attente
-                </div>
-              </div>
-              <!-- Affichage dynamique du nombre d'utilisateurs en attente -->
-              <div class="mt-2 text-2xl font-semibold text-gray-900">
-                {{ pendingUsersCount }}
-              </div>
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div v-for="card in stats" :key="card.label" class="bg-white p-4 rounded-lg shadow text-center">
+          <div class="flex justify-center mb-2">
+            <div class="w-10 h-10 rounded-full border-2 border-blue-500 flex items-center justify-center">
+              <component :is="card.icon" class="w-5 h-5 text-blue-500" />
             </div>
           </div>
+          <p class="text-sm text-gray-500">{{ card.label }}</p>
+          <p class="text-2xl font-bold">{{ card.value }}</p>
         </div>
       </div>
 
-      <!-- Tableau des utilisateurs -->
-      <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-        <table class="min-w-full divide-y divide-gray-300">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière connexion</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="user in users" :key="user.id">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ user.firstName }} {{ user.lastName }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="user.accountStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : user.accountStatus === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" 
-                      class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-                  {{ user.accountStatus === 'PENDING' ? 'En attente' : user.accountStatus === 'ACTIVE' ? 'Actif' : 'Inactif' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ new Date(user.createdAt).toLocaleDateString() }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button @click="updateUserStatus(user.id)" class="text-blue-600 hover:text-blue-900">Mettre à jour</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    
+      <!-- Chart Section -->
+      <div class="bg-white p-6 rounded-lg shadow mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center gap-2">
+            <User class="w-6 h-6 text-blue-600" />
+            <div>
+              <p class="font-semibold">12,345</p>
+              <p class="text-sm text-gray-500">65% actif</p>
+            </div>
+          </div>
+          <select class="border rounded px-2 py-1 text-sm">
+            <option>Par mois</option>
+            <option>Par semaine</option>
+          </select>
+        </div>
+        <div class="h-150">
+          <Line :data="chartData" :options="chartOptions" />
+        </div>
+        <div class="flex gap-4 mt-4 text-sm">
+          <span class="flex items-center gap-3">
+            <span class="w-3 h-3 bg-blue-500 rounded-full"></span> Compte actif
+          </span>
+          <span class="flex items-center gap-1">
+            <span class="w-3 h-3 bg-indigo-200 rounded-full"></span> Compte inactif
+          </span>
+        </div>
+      </div>
+
+      <!-- Top Doctors -->
+      <h2 class="text-lg font-semibold mb-4">Top Docteurs</h2>
+      <div class="grid grid-cols-4 gap-4">
+        <div v-for="i in 4" :key="i" class="bg-white p-2 rounded-lg shadow text-center">
+          <img :src="`/doctor${i}.jpg`" class="h-28 w-full object-cover rounded mb-2" />
+          <p class="font-medium">Dr Nom {{ i }}</p>
+        </div>
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { defineComponent } from 'vue'
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement
+} from 'chart.js'
+import {
+  Home,
+  Stethoscope,
+  User,
+  Calendar,
+  CreditCard,
+  Settings,
+  Users,
+  DollarSign,
+  Bell,
+  MessageCircle
+} from 'lucide-vue-next'
 
-const users = ref([]);
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
 
-// Fonction pour récupérer les utilisateurs en attente
-const fetchPendingUsers = async () => {
-  try {
-    const response = await fetch('/users/pending'); // URL de l'API pour les utilisateurs en attente
-    if (!response.ok) {
-      throw new Error('Erreur lors de la récupération des utilisateurs en attente');
+const stats = [
+  { label: 'Total Patients', value: '2K+', icon: Users },
+  { label: 'Total Docteurs', value: '600', icon: Stethoscope },
+  { label: 'Urgent', value: '800', icon: Calendar },
+  { label: 'Revenus', value: 'XAF 60K', icon: DollarSign }
+]
+
+const chartData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  datasets: [
+    {
+      label: 'Compte actif',
+      backgroundColor: '#c7d2fe',
+      borderColor: '#3b82f6',
+      data: [1000, 8000, 6000, 7000, 7500, 6800, 8000, 9000, 12000, 11000, 13000, 15000],
+      fill: true,
+      tension: 0.4
+    },
+    {
+      label: 'Compte inactif',
+      backgroundColor: '#e0e7ff',
+      borderColor: '#6366f1',
+      data: [400, 1600, 2000, 1200, 1400, 1800, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
+      fill: true,
+      tension: 0.4
     }
-    const data = await response.json();
-    users.value = data.users; // On stocke les utilisateurs en attente
-  } catch (error) {
-    console.error('Erreur lors de la récupération des utilisateurs:', error);
-    alert('Erreur lors de la récupération des utilisateurs');
+  ]
+}
+
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: true }
+  },
+  scales: {
+    y: { beginAtZero: true }
   }
-};
+}
 
-// Calculer le nombre d'utilisateurs en attente
-const pendingUsersCount = computed(() => {
-  return users.value.filter(user => user.accountStatus === 'PENDING').length;
-});
-
-onMounted(() => {
-  fetchPendingUsers(); // On appelle l'API pour récupérer les utilisateurs en attente
-});
-
-const activeTab = ref("overview");
-const showUserMenu = ref(false);
-
-// Fonction pour mettre à jour le statut de l'utilisateur
-const updateUserStatus = async (userId) => {
-  const user = users.value.find((u) => u.id === userId);
-
-  if (!user) {
-    alert("Utilisateur introuvable");
-    return;
-  }
-
-  // Logique de changement de statut
-  let newStatus = user.accountStatus === 'PENDING' ? 'ACTIVE' : (user.accountStatus === 'ACTIVE' ? 'INACTIVE' : 'PENDING');
-
-  try {
-    const response = await fetch(`/users/${userId}/status`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        "x-app-key": "boulinguiboulingui",
-      },
-      body: JSON.stringify({ status: newStatus }),
-    });
-
-    if (response.ok) {
-      user.accountStatus = newStatus;
-      toast.success(`Le statut de l'utilisateur a été mis à jour à ${newStatus}`);
-    } else {
-      throw new Error('Erreur lors de la mise à jour du statut');
-    }
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour du statut:', error);
-    alert('Erreur lors de la mise à jour du statut');
-  }
-};
+const LineChart = defineComponent({
+  name: 'LineChart',
+  props: ['chartData', 'chartOptions'],
+  components: { Line },
+  template: `<Line :data="chartData" :options="chartOptions" />`
+})
 </script>
+
+<style scoped></style>
