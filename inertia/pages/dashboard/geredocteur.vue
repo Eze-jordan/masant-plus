@@ -30,11 +30,33 @@
     <!-- Formulaire d'ajout de docteur -->
     <div v-if="showForm" class="fixed inset-0 z-50 flex">
       <div class="flex-1 bg-black bg-opacity-40" @click="showForm = false"></div>
-      <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right">
+      <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
         <button class="absolute top-2 right-2 text-gray-500" @click="showForm = false">&times;</button>
         <h3 class="text-lg font-bold mb-4">Ajouter un Docteur</h3>
         <form @submit.prevent="ajouterDocteur">
-          <!-- Form fields for adding a doctor -->
+          <div class="mb-4"><label class="block mb-1">Nom</label><input v-model="form.nom" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Prénom</label><input v-model="form.prenom" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Téléphone</label><input v-model="form.telephone" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Email</label><input v-model="form.email" type="email" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Spécialité</label><input v-model="form.specialite" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4"><label class="block mb-1">Matricule</label><input v-model="form.matricule" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4">
+            <label class="block mb-1">Statut</label>
+            <select v-model="form.statut" class="w-full border rounded px-3 py-2" required>
+              <option>Actif</option>
+              <option>Inactif</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Photo</label>
+            <input type="file" @change="onFileChange" class="w-full border rounded px-3 py-2" accept="image/*" />
+            <div v-if="form.photo" class="mt-2">
+              <img :src="form.photo" alt="Aperçu" class="w-16 h-16 object-cover rounded" />
+            </div>
+          </div>
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
+            Ajouter
+          </button>
         </form>
       </div>
     </div>
@@ -45,9 +67,10 @@
       <table class="w-full text-left">
         <thead>
           <tr class="border-b">
+            <th class="py-2 px-2"><input type="checkbox" /></th>
             <th class="py-2 px-2">Nom</th>
-            <th class="py-2 px-2">Prenom</th>
-            <th class="py-2 px-2">Telephone</th>
+            <th class="py-2 px-2">Prénom</th>
+            <th class="py-2 px-2">Téléphone</th>
             <th class="py-2 px-2">Email</th>
             <th class="py-2 px-2">Spécialité</th>
             <th class="py-2 px-2">Matricule</th>
@@ -56,20 +79,22 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Loop through docteurs and render each row -->
           <tr
             v-for="docteur in filteredDocteurs"
             :key="docteur.id"
-            v-if="docteur && docteur.id"
             class="border-b hover:bg-gray-100"
           >
-            <td class="py-2 px-2">{{ docteur.nom }}</td> <!-- nom (mapped from firstName) -->
-            <td class="py-2 px-2">{{ docteur.prenom }}</td> <!-- prenom (mapped from lastName) -->
-            <td class="py-2 px-2">{{ docteur.telephone }}</td>
+            <td class="py-2 px-2"><input type="checkbox" /></td>
+            <td class="py-2 px-2 flex items-center gap-2">
+              <img :src="docteur.profileImage || '/doctor1.jpg'" class="w-8 h-8 rounded-full object-cover" />
+              <span class="font-bold">Dr. {{ docteur.firstName }}</span>
+            </td>
+            <td class="py-2 px-2">{{ docteur.lastName }}</td>
+            <td class="py-2 px-2">{{ docteur.phone }}</td>
             <td class="py-2 px-2">{{ docteur.email }}</td>
-            <td class="py-2 px-2">{{ docteur.specialite }}</td>
-            <td class="py-2 px-2">{{ docteur.matricule }}</td>
-            <td class="py-2 px-2">{{ docteur.statut }}</td>
+            <td class="py-2 px-2">{{ docteur.specialty }}</td>
+            <td class="py-2 px-2">{{ docteur.registrationNumber }}</td>
+            <td class="py-2 px-2">{{ docteur.accountStatus }}</td>
             <td class="py-2 px-2 relative">
               <button @click="toggleMenu(docteur.id)" class="px-2 py-1 rounded hover:bg-gray-200">...</button>
               <div v-if="openMenu === docteur.id" class="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
@@ -84,6 +109,47 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Détails / Modifier -->
+    <div v-if="showDetails" class="fixed inset-0 z-50 flex">
+      <div class="flex-1 bg-black bg-opacity-40" @click="showDetails = false"></div>
+      <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
+        <button class="absolute top-2 right-2 text-gray-500" @click="showDetails = false">&times;</button>
+        <h3 class="text-lg font-bold mb-4">{{ isEditing ? 'Modifier le Docteur' : 'Détails du Docteur' }}</h3>
+        <form v-if="isEditing" @submit.prevent="enregistrerModif">
+          <div class="mb-4"><label class="block mb-1">Nom</label><input v-model="selectedDocteur.firstName" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Prénom</label><input v-model="selectedDocteur.lastName" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Téléphone</label><input v-model="selectedDocteur.phone" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Email</label><input v-model="selectedDocteur.email" type="email" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Spécialité</label><input v-model="selectedDocteur.specialty" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Matricule</label><input v-model="selectedDocteur.registrationNumber" type="text" class="w-full border rounded px-3 py-2" /></div>
+          <div class="mb-4"><label class="block mb-1">Statut</label>
+            <select v-model="selectedDocteur.statut" class="w-full border rounded px-3 py-2">
+              <option>Actif</option>
+              <option>Inactif</option>
+            </select>
+          </div>
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
+            Enregistrer
+          </button>
+        </form>
+        <div v-else>
+          <div class="mb-4 flex flex-col items-center">
+            <img :src="selectedDocteur.profileImage" class="w-24 h-24 rounded-full object-cover mb-2" />
+            <span class="font-bold text-xl">Dr. {{ selectedDocteur.firstName }} {{ selectedDocteur.lastName }}</span>
+          </div>
+          <div class="mb-2"><b>Téléphone :</b> {{ selectedDocteur.phone }}</div>
+          <div class="mb-2"><b>Email :</b> {{ selectedDocteur.email }}</div>
+          <div class="mb-2"><b>Spécialité :</b> {{ selectedDocteur.specialty }}</div>
+          <div class="mb-2"><b>Matricule :</b> {{ selectedDocteur.registrationNumber }}</div>
+          <div class="mb-2"><b>Statut :</b> {{ selectedDocteur.accountStatus }}</div>
+          <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
+            @click="isEditing = true">
+            Modifier
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -91,56 +157,53 @@
 import { ref, computed } from 'vue'
 import { Stethoscope } from 'lucide-vue-next'
 
-const props = defineProps({
-  users: {
-    type: Array,
-    default: () => []  // Default to an empty array if no value is passed
-  }
-})
-
 const search = ref('')
 const openMenu = ref(null)
 const showForm = ref(false)
+const showDetails = ref(false)
+const selectedDocteur = ref(null)
+const isEditing = ref(false)
 
-// Total count of doctors
-const totalDocteurs = computed(() => props.users ? props.users.length : 0)
+const props = defineProps({
+  user: Object,    // pour l’utilisateur connecté (unique)
+  users: {
+    type: Array,   // pour la liste des utilisateurs/docteurs
+    required: true,
+    default: () => []
+  }
+})
 
-// Filtered doctors based on search input
+
+const docteurs = ref(props.users || [])
+
+
+const totalDocteurs = computed(() => docteurs.value.length)
+
 const filteredDocteurs = computed(() => {
-  if (!search.value) return mappedUsers.value  // use mapped users for consistency
-  return mappedUsers.value.filter(d =>
+  if (!search.value) return docteurs.value
+  return docteurs.value.filter(d =>
     d.nom.toLowerCase().includes(search.value.toLowerCase()) ||
     d.prenom.toLowerCase().includes(search.value.toLowerCase()) ||
     d.email.toLowerCase().includes(search.value.toLowerCase())
   )
 })
 
-// Mapping the user data to match the expected table fields
-const mappedUsers = computed(() => {
-  return props.users.map(user => ({
-    ...user,
-    nom: user.firstName,   // Mapping firstName to nom
-    prenom: user.lastName, // Mapping lastName to prenom
-  }))
-})
-console.log("nklendzejndzejnd",mappedUsers,"dd")
 function toggleMenu(id) {
   openMenu.value = openMenu.value === id ? null : id
 }
-
 function voirPlus(docteur) {
-  alert('Voir plus sur ' + docteur.nom)
-  openMenu.value = null
+  selectedDocteur.value = { ...docteur }
+  showDetails.value = true
+  isEditing.value = false
 }
-
 function modifier(docteur) {
-  alert('Modifier ' + docteur.nom)
-  openMenu.value = null
+  selectedDocteur.value = { ...docteur }
+  showDetails.value = true
+  isEditing.value = true
 }
-
 function supprimer(docteur) {
   if (confirm('Supprimer ' + docteur.nom + ' ?')) {
-    props.users = props.users.filter(d => d.id !== docteur.id)
+    docteurs.value = docteurs.value.filter(d => d.id !== docteur.id)
   }
   openMenu.value = null
 }
@@ -148,15 +211,56 @@ function supprimer(docteur) {
 const form = ref({
   nom: '',
   prenom: '',
+  telephone: '',
   email: '',
+  specialite: '',
+  matricule: '',
   statut: 'Actif',
-  photo: '/doctor1.jpg'
+  photo: '/doctor1.jpg',
 })
 
 function ajouterDocteur() {
   const nouveau = { ...form.value, id: Date.now() }
-  props.users.push(nouveau)
+  docteurs.value.push(nouveau)
   showForm.value = false
-  form.value = { nom: '', prenom: '', telephone: '', email: '', statut: 'Actif', specialite: '', matricule: '', photo: '/doctor1.jpg' }
+  form.value = {
+    nom: '',
+    prenom: '',
+    telephone: '',
+    email: '',
+    specialite: '',
+    matricule: '',
+    statut: 'Actif',
+    photo: '/doctor1.jpg',
+  }
+}
+
+function onFileChange(event) {
+  const file = event.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = e => {
+      form.value.photo = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+function enregistrerModif() {
+  const idx = docteurs.value.findIndex(d => d.id === selectedDocteur.value.id)
+  if (idx !== -1) {
+    docteurs.value[idx] = { ...selectedDocteur.value }
+  }
+  showDetails.value = false
 }
 </script>
+
+<style scoped>
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+</style>

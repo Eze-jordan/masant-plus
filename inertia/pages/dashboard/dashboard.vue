@@ -45,10 +45,10 @@
               >Gérer les docteurs</li>
               <li
                 class="cursor-pointer px-2 py-1 rounded"
-                :class="activeSubMenu === 'ajouter-docteur' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
-                @click.stop="setActiveSubMenu('docteurs', 'ajouter-docteur')"
+                :class="activeSubMenu === 'Liste-demande' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
+                @click.stop="setActiveSubMenu('docteurs', 'Liste-demande')"
                 style="text-decoration: none;"
-              >Ajouter un docteur</li>
+              >Liste des demandes</li>
             </ul>
           </li>
 
@@ -131,7 +131,8 @@
 
     <!-- Main -->
     <main class="flex-1 p-6 overflow-auto">
-      <GererDocteur v-if="activeSubMenu === 'liste-docteurs'" />
+      <GererDocteur v-if="activeSubMenu === 'liste-docteurs'"  :user="user" :users="users"/>
+      <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" :user="user" :users="users" />
       <div v-else>
         <!-- Topbar -->
         <div class="flex justify-between items-center mb-6">
@@ -225,8 +226,13 @@ import {
   MessageCircle
 } from 'lucide-vue-next'
 import GererDocteur from './geredocteur.vue'
+import ListeDemande from './ListeDemande.vue'
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
+const props = defineProps({
+  user: Object,
+  users: Array,
+})
 
 const stats = [
   { label: 'Total Patients', value: '2K+', icon: Users },
