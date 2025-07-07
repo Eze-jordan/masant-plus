@@ -10,7 +10,8 @@ export default function render(page:any) {
       const pages = import.meta.glob<DefineComponent>('../pages/**/*.vue')
       return pages[`../pages/${name}.vue`]()
     },
-    setup({ App, props, plugin }) {
+    setup({ App, props, plugin }) { 
+        
       return createSSRApp({ render: () => h(App, props) }).use(plugin)
     },
   })
