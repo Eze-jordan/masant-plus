@@ -888,3 +888,8 @@ router.get('/404', async ({ inertia }) => {
 router.get('*', async ({ inertia }) => {
   return inertia.render('errors/not_found', { status: 404 })
 })
+
+
+router.get('/doctor', async ({ inertia }) => {
+  return inertia.render('/dashboard/docteurs')
+})
