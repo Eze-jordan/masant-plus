@@ -11,49 +11,26 @@ import tailwindcss from '@tailwindcss/postcss'
 
 export default defineConfig({
   plugins: [
-    // Configuration d'Inertia pour SSR
-    inertia({
-      ssr: {
-        enabled: true,  // Activation de SSR
-        entrypoint: 'inertia/app/ssr.ts', // Fichier d'entrée SSR
-      },
-    }),
-
-    // Plugin Vue pour Vite
+    inertia({ ssr: { enabled: false ,
+      } }),
     vue(),
-
-    // Plugin AdonisJS pour Vite
     adonisjs({
-      entrypoints: ['inertia/app/app.ts'],  // Fichier d'entrée pour le client
-      reload: ['resources/views/**/*.edge'],  // Déclenche un rechargement lors de modifications d'Edge views
+      entrypoints: ['inertia/app/app.ts'],
+      reload: ['resources/views/**/*.edge'],
     }),
   ],
-
-  // Configuration CSS avec Tailwind et autoprefixer
   css: {
     postcss: {
       plugins: [
-        tailwindcss,  // Plugin pour Tailwind CSS
-        autoprefixer,  // Plugin pour autoprefixer
+        tailwindcss,  // Use the correct Tailwind PostCSS plugin
+        autoprefixer,
       ],
     },
   },
-
-  // Résolution des alias pour faciliter l'importation
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '~/': `${getDirname(import.meta.url)}/inertia/`,  // Alias pour les pages Inertia
+      '~/': `${getDirname(import.meta.url)}/inertia/`,
     },
   },
-
-  // Options de construction (build)
-  build: {
-    ssr: true, // Active SSR lors de la construction du projet
-    outDir: 'public/assets', // Répertoire de sortie pour les fichiers construits
-    rollupOptions: {
-      input: '/src/entry-server.ts', // Entrée SSR pour la construction
-    },
-  },
-
 })
