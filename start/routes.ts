@@ -1892,7 +1892,7 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
       lastName: user.lastName,
       email: user.email,
       phone: user.phone,
-      specialty: user.specialty,
+      specialty: user.specialisation,
       registrationNumber: user.registrationNumber,
       accountStatus: user.accountStatus,
       profileImage: user.profileImage,
