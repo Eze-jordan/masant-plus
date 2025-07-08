@@ -72,16 +72,10 @@
             >
               <li
                 class="cursor-pointer px-2 py-1 rounded"
-                :class="activeSubMenu === 'liste-patients' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
-                @click.stop="setActiveSubMenu('patients', 'liste-patients')"
+                :class="activeSubMenu === 'gerer-patients' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
+                @click.stop="setActiveSubMenu('patients', 'gerer-patients')"
                 style="text-decoration: none;"
-              >Liste des patients</li>
-              <li
-                class="cursor-pointer px-2 py-1 rounded"
-                :class="activeSubMenu === 'ajouter-patient' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
-                @click.stop="setActiveSubMenu('patients', 'ajouter-patient')"
-                style="text-decoration: none;"
-              >Ajouter un patient</li>
+              >Gérer les patients</li>
             </ul>
           </li>
 
@@ -133,6 +127,7 @@
     <main class="flex-1 p-6 overflow-auto">
       <GererDocteur v-if="activeSubMenu === 'liste-docteurs'"  :user="user" :users="users"/>
       <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" :user="user" :users="users" />
+      <GererPatients v-else-if="activeSubMenu === 'gerer-patients'" />
       <div v-else>
         <!-- Topbar -->
         <div class="flex justify-between items-center mb-6">
@@ -227,6 +222,7 @@ import {
 } from 'lucide-vue-next'
 import GererDocteur from './geredocteur.vue'
 import ListeDemande from './ListeDemande.vue'
+import GererPatients from './GererPatients.vue'
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
 const props = defineProps({
