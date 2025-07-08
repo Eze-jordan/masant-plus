@@ -191,7 +191,7 @@ router.get('/get-url', async (ctx) => {
 
 
 router.get('/docs', async ({ response }) => {
-  const htmlPath = join(app.makePath('resources'), 'swagger.html')
+  const htmlPath = join(app.makePath('resources'), 'swagger.edge')
   const html = await readFile(htmlPath, 'utf-8')
   response.type('text/html')
   return response.send(html)
