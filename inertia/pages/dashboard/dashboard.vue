@@ -79,16 +79,31 @@
             </ul>
           </li>
 
-          <li
-            class="flex items-center justify-between cursor-pointer p-2 rounded"
-            :class="activeMenu === 'urgent' ? 'bg-white text-black shadow font-bold' : 'text-white'"
-            @click="setActiveMenu('urgent')"
-          >
-            <div class="flex items-center gap-6">
-              <Calendar class="w-5 h-5" :class="activeMenu === 'urgent' ? 'text-black' : 'text-white'" />
-              Urgent
+          <li class="flex flex-col">
+            <div
+              class="flex items-center justify-between cursor-pointer p-2 rounded"
+              :class="activeMenu === 'urgent' ? 'bg-white text-black shadow font-bold' : 'text-white'"
+              @click="toggleSubMenu('urgent'); setActiveMenu('urgent')"
+            >
+              <div class="flex items-center gap-6">
+                <Calendar class="w-5 h-5" :class="activeMenu === 'urgent' ? 'text-black' : 'text-white'" />
+                Urgent
+              </div>
+              <ChevronRight
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-90' : '', activeMenu === 'urgent' ? 'text-gray-400' : 'text-white']"
+              />
             </div>
-            <ChevronRight class="w-4 h-4" :class="activeMenu === 'urgent' ? 'text-gray-400' : 'text-white'" />
+            <ul
+              v-if="openSubMenu === 'urgent'"
+              class="ml-8 mt-2 space-y-2 text-sm"
+            >
+              <li
+                class="cursor-pointer px-2 py-1 rounded"
+                :class="activeSubMenu === 'gerer-urgences' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
+                @click.stop="setActiveSubMenu('urgent', 'gerer-urgences')"
+                style="text-decoration: none;"
+              >Gérer les urgences</li>
+            </ul>
           </li>
 
           <li
@@ -128,6 +143,7 @@
       <GererDocteur v-if="activeSubMenu === 'liste-docteurs'"  :user="user" :users="users"/>
       <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" :user="user" :users="users" />
       <GererPatients v-else-if="activeSubMenu === 'gerer-patients'" />
+      <GererUrgences v-else-if="activeSubMenu === 'gerer-urgences'" />
       <div v-else>
         <!-- Topbar -->
         <div class="flex justify-between items-center mb-6">
@@ -223,6 +239,7 @@ import {
 import GererDocteur from './geredocteur.vue'
 import ListeDemande from './ListeDemande.vue'
 import GererPatients from './GererPatients.vue'
+import GererUrgences from './GererUrgences.vue'
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
 const props = defineProps({

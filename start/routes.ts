@@ -1113,51 +1113,6 @@ const passwordResetController = new PasswordResetController()
 
 /**
  * @swagger
- * tags:
- *   - name: Authentification
- *     description: Gestion de l'authentification
- *   - name: Utilisateurs
- *     description: Gestion des utilisateurs
- *   - name: Patients
- *     description: Gestion des patients
- *   - name: Médecins
- *     description: Gestion des médecins
- *   - name: Consultations
- *     description: Gestion des consultations
- *   - name: Paiements
- *     description: Gestion des paiements
- *   - name: Fichiers
- *     description: Gestion des fichiers
- *   - name: Administration
- *     description: Fonctionnalités administratives
- *   - name: Feedbacks
- *     description: Gestion des feedbacks
- *   - name: Likes
- *     description: Gestion des likes
- *   - name: Lives
- *     description: Gestion des lives
- *   - name: Suggestions
- *     description: Gestion des suggestions
- *   - name: Messages
- *     description: Gestion des messages
- *   - name: Notifications
- *     description: Gestion des notifications
- *   - name: Rendez-vous
- *     description: Gestion des rendez-vous
- *   - name: Disponibilités
- *     description: Gestion des disponibilités
- *   - name: Dashboard
- *     description: Tableau de bord
- *   - name: Pages
- *     description: Pages de l'application
- *   - name: Documentation
- *     description: Documentation de l'API
- *   - name: Sécurité
- *     description: Endpoints de sécurité
- */
-
-/**
- * @swagger
  * /upload/{filePath}:
  *   get:
  *     tags: [Fichiers]

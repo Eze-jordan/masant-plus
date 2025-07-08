@@ -52,7 +52,16 @@
             <td class="py-2 px-2">{{ patient.telephone }}</td>
             <td class="py-2 px-2">{{ patient.email }}</td>
             <td class="py-2 PX-2">{{ patient.adresse }}</td>
-            <td class="py-2 px-2">{{ patient.statut }}</td>
+            <td class="py-2 px-2">
+              <span
+                :class="[
+                  'px-3 py-1 rounded-full text-xs font-semibold',
+                  patient.statut === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'
+                ]"
+              >
+                {{ patient.statut }}
+              </span>
+            </td>
             <td class="py-2 px-2 relative">
               <button @click="toggleMenu(patient.id)" class="px-2 py-1 rounded hover:bg-gray-200">
                 ...
