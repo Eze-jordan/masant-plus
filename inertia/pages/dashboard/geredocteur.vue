@@ -114,12 +114,15 @@
             <td class="py-2 px-2">{{ docteur.specialty }}</td>
             <td class="py-2 px-2">{{ docteur.registrationNumber }}</td>
             <td class="py-2 px-2">
-              <span :class="{
-                'bg-green-100 text-green-800': docteur.accountStatus === 'Actif',
-                'bg-red-100 text-red-800': docteur.accountStatus === 'Inactif',
-                'bg-yellow-100 text-yellow-800': docteur.accountStatus === 'pending'
-              }" class="px-2 py-1 rounded-full text-xs">
-                {{ docteur.accountStatus }}
+              <span
+                :class="{
+                  'bg-green-100 text-green-800': ['Actif', 'ACTIVE'].includes(docteur.accountStatus),
+                  'bg-red-100 text-red-800': ['Inactif', 'INACTIVE'].includes(docteur.accountStatus),
+                  'bg-yellow-100 text-yellow-800': ['pending', 'PENDING', 'En attente'].includes(docteur.accountStatus)
+                }"
+                class="px-2 py-1 rounded-full text-xs"
+              >
+                {{ statutLabel(docteur.accountStatus) }}
               </span>
             </td>
             <td class="py-2 px-2 relative">
@@ -197,13 +200,16 @@
           <div class="mb-2"><b>Spécialité :</b> {{ selectedDocteur.specialty }}</div>
           <div class="mb-2"><b>Matricule :</b> {{ selectedDocteur.registrationNumber }}</div>
           <div class="mb-2">
-            <b>Statut :</b> 
-            <span :class="{
-              'bg-green-100 text-green-800': selectedDocteur.accountStatus === 'Actif',
-              'bg-red-100 text-red-800': selectedDocteur.accountStatus === 'Inactif',
-              'bg-yellow-100 text-yellow-800': selectedDocteur.accountStatus === 'pending'
-            }" class="px-2 py-1 rounded-full text-xs ml-2">
-              {{ selectedDocteur.accountStatus }}
+            <b>Statut :</b>
+            <span
+              :class="{
+                'bg-green-100 text-green-800': ['Actif', 'ACTIVE'].includes(selectedDocteur.accountStatus),
+                'bg-red-100 text-red-800': ['Inactif', 'INACTIVE'].includes(selectedDocteur.accountStatus),
+                'bg-yellow-100 text-yellow-800': ['pending', 'PENDING', 'En attente'].includes(selectedDocteur.accountStatus)
+              }"
+              class="px-2 py-1 rounded-full text-xs ml-2"
+            >
+              {{ statutLabel(selectedDocteur.accountStatus) }}
             </span>
           </div>
           <button 
@@ -405,6 +411,13 @@ function resetForm() {
     profileImage: ''
   }
   photoFile.value = null
+}
+
+function statutLabel(status) {
+  if (['Actif', 'ACTIVE'].includes(status)) return 'Actif'
+  if (['Inactif', 'INACTIVE'].includes(status)) return 'Inactif'
+  if (['pending', 'PENDING', 'En attente'].includes(status)) return 'En attente'
+  return status
 }
 </script>
 
