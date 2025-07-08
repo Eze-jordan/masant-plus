@@ -2,15 +2,12 @@ import router from '@adonisjs/core/services/router'
 import { promises as fs } from 'fs'
 import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
-import { readFile } from 'node:fs/promises'
 import {ListObjectsV2Command } from "@aws-sdk/client-s3";
-import { join } from 'node:path'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
 import { throttle } from '#start/limiter'
-import app from '@adonisjs/core/services/app'
 import RegisterController from '#controllers/RegisterController'
 import AuthController from '#controllers/auth_controller'
 import PatientsController from '#controllers/patients_controller'
@@ -63,6 +60,33 @@ const passwordResetController = new PasswordResetController()
 
 
 
+/**
+ * @swagger
+ * /upload/{filePath}:
+ *   get:
+ *     tags:
+ *       - Fichiers
+ *     summary: Télécharger un fichier PDF sécurisé
+ *     parameters:
+ *       - in: path
+ *         name: filePath
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Chemin du fichier à lire (PDF uniquement)
+ *     responses:
+ *       200:
+ *         description: Le fichier PDF
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       403:
+ *         description: Format non autorisé
+ *       404:
+ *         description: Fichier introuvable
+ */
 
 
 
@@ -73,6 +97,7 @@ router.post('/login', async (ctx) => {
       return authController.login(ctx)
     })
   })
+  
 }).middleware([throttle])
 
 router.get('/paiements/solde/:userId', async (ctx) => {
@@ -190,12 +215,10 @@ router.get('/get-url', async (ctx) => {
 
 
 
-router.get('/docs', async ({ response }) => {
-  const htmlPath = join(app.makePath('resources'), 'swagger.edge')
-  const html = await readFile(htmlPath, 'utf-8')
-  response.type('text/html')
-  return response.send(html)
+router.get('/docs', async ({ view }) => {
+  return view.render('welcome')
 })
+
 
 // Swagger JSON (servi dynamiquement)
 router.get('/docs/swagger.json', async ({ response }) => {
