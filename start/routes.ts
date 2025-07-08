@@ -233,6 +233,31 @@ router.get('/users/:id', async (ctx) => {
   })
 }).middleware([throttle])
 
+
+router.delete('/users/:id', async (ctx) => {
+  console.log('[GET /users/:id] Début de traitement')
+  console.log('[GET /users/:id] Params:', JSON.stringify(ctx.request.params(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /users/:id] Avant appel controller show')
+      return user.destroy(ctx)  // Méthode pour récupérer l'utilisateur
+    })
+  })
+}).middleware([throttle])
+
+router.put('/user/:id', async (ctx) => {
+  console.log('[GET /users/:id] Début de traitement')
+  console.log('[GET /users/:id] Params:', JSON.stringify(ctx.request.params(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /users/:id] Avant appel controller show')
+      return user.destroy(ctx)  // Méthode pour récupérer l'utilisateur
+    })
+  })
+}).middleware([throttle])
+
 // Register route
 router.put('/users/:id', async (ctx) => {
   console.log('[PUT /users/:id] Début de traitement')
