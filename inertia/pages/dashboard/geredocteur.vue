@@ -61,8 +61,8 @@
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
             <select v-model="form.accountStatus" class="w-full border rounded px-3 py-2" required>
-              <option value="Actif">Actif</option>
-              <option value="Inactif">Inactif</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
               <option value="pending">En attente</option>
             </select>
           </div>
@@ -115,8 +115,8 @@
             <td class="py-2 px-2">{{ docteur.registrationNumber }}</td>
             <td class="py-2 px-2">
               <span :class="{
-                'bg-green-100 text-green-800': docteur.accountStatus === 'Actif',
-                'bg-red-100 text-red-800': docteur.accountStatus === 'Inactif',
+                'bg-green-100 text-green-800': docteur.accountStatus === 'ACTIVE',
+                'bg-red-100 text-red-800': docteur.accountStatus === 'INACTIVE',
                 'bg-yellow-100 text-yellow-800': docteur.accountStatus === 'pending'
               }" class="px-2 py-1 rounded-full text-xs">
                 {{ docteur.accountStatus }}
@@ -171,8 +171,8 @@
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
             <select v-model="selectedDocteur.accountStatus" class="w-full border rounded px-3 py-2">
-              <option value="Actif">Actif</option>
-              <option value="Inactif">Inactif</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
               <option value="pending">En attente</option>
             </select>
           </div>
@@ -199,8 +199,8 @@
           <div class="mb-2">
             <b>Statut :</b> 
             <span :class="{
-              'bg-green-100 text-green-800': selectedDocteur.accountStatus === 'Actif',
-              'bg-red-100 text-red-800': selectedDocteur.accountStatus === 'Inactif',
+              'bg-green-100 text-green-800': selectedDocteur.accountStatus === 'ACTIVE',
+              'bg-red-100 text-red-800': selectedDocteur.accountStatus === 'INACTIVE',
               'bg-yellow-100 text-yellow-800': selectedDocteur.accountStatus === 'pending'
             }" class="px-2 py-1 rounded-full text-xs ml-2">
               {{ selectedDocteur.accountStatus }}
