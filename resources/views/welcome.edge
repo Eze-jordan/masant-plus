@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Swagger UI Plus Ultra</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
+  <style>
+    body {
+      margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+      display: flex; flex-direction: column; min-height: 100vh;
+    }
+    :root {
+      --bg-color: #fff;
+      --text-color: #333;
+      --primary-color: #007acc;
+    }
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --text-color: #eee;
+      --primary-color: #4dabf7;
+    }
+    #topbar {
+      background: var(--primary-color);
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #topbar > * {
+      margin-left: 10px;
+    }
+    #swagger-ui {
+      flex: 1 1 auto;
+      max-width: 1000px;
+      margin: 20px auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+    button, select, input {
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 1rem;
+    }
+    button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    #token-info {
+      font-size: 0.85rem;
+      color: #eee;
+      margin-left: 10px;
+      white-space: nowrap;
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #filter-endpoints {
+      margin-left: 20px;
+      padding: 5px 8px;
+      width: 200px;
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <div id="topbar">
+    <div>
+      <label for="spec-selector">Choose API spec:</label>
+      <select id="spec-selector" aria-label="Select API Spec">
+        <option value="/docs/swagger.json">Main API</option>
+        <option value="/docs/extra-spec.json">Extra API</option>
+      </select>
+
+      <input id="filter-endpoints" placeholder="Filter endpoints..." aria-label="Filter endpoints" />
+    </div>
+
+    <div>
+      <input type="text" id="auth-token" placeholder="Bearer Token (JWT)" aria-label="Bearer Token" style="width:250px" />
+      <button id="btn-save-token">Save Token</button>
+      <button id="btn-clear-token">Clear Token</button>
+      <span id="token-info" title="Decoded token info"></span>
+      <button id="btn-theme-toggle">Dark Mode</button>
+      <button id="btn-fullscreen">Fullscreen</button>
+    </div>
+  </div>
+
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
+
+  <script>
+    (function() {
+      const root = document.documentElement;
+      const storageTokenKey = 'swagger_auth_token';
+      const storageThemeKey = 'swagger_ui_theme';
+      let currentToken = null;
+      let swaggerUiInstance = null;
+
+      // Elements
+      const tokenInput = document.getElementById('auth-token');
+      const btnSaveToken = document.getElementById('btn-save-token');
+      const btnClearToken = document.getElementById('btn-clear-token');
+      const tokenInfo = document.getElementById('token-info');
+      const themeToggle = document.getElementById('btn-theme-toggle');
+      const specSelector = document.getElementById('spec-selector');
+      const filterInput = document.getElementById('filter-endpoints');
+      const fullscreenBtn = document.getElementById('btn-fullscreen');
+
+      // Load saved token from localStorage
+      function loadToken() {
+        const saved = localStorage.getItem(storageTokenKey);
+        if (saved) {
+          currentToken = saved;
+          tokenInput.value = saved;
+          decodeAndDisplayToken(saved);
+        }
+      }
+      loadToken();
+
+      // Save token and update UI
+      btnSaveToken.onclick = () => {
+        const val = tokenInput.value.trim();
+        currentToken = val || null;
+        if(val) {
+          localStorage.setItem(storageTokenKey, val);
+          alert("Token saved and will be added to requests.");
+          decodeAndDisplayToken(val);
+        } else {
+          alert("Token is empty!");
+        }
+      };
+
+      // Clear token
+      btnClearToken.onclick = () => {
+        currentToken = null;
+        tokenInput.value = "";
+        tokenInfo.textContent = "";
+        localStorage.removeItem(storageTokenKey);
+        alert("Token cleared.");
+      };
+
+      // Decode JWT (simple, just base64 payload)
+      function decodeAndDisplayToken(token) {
+        try {
+          const payload = token.split('.')[1];
+          if (!payload) throw new Error("Invalid token format");
+          const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+          tokenInfo.textContent = `User: ${decoded.username || decoded.sub || 'Unknown'}`;
+          tokenInfo.title = JSON.stringify(decoded, null, 2);
+        } catch (e) {
+          tokenInfo.textContent = "Invalid JWT";
+          tokenInfo.title = "";
+        }
+      }
+
+      // Theme toggle logic
+      function applyTheme(theme) {
+        if(theme === 'dark') {
+          root.setAttribute('data-theme', 'dark');
+          themeToggle.textContent = 'Light Mode';
+        } else {
+          root.setAttribute('data-theme', 'light');
+          themeToggle.textContent = 'Dark Mode';
+        }
+        localStorage.setItem(storageThemeKey, theme);
+      }
+      function loadTheme() {
+        const saved = localStorage.getItem(storageThemeKey) || 'light';
+        applyTheme(saved);
+      }
+      themeToggle.onclick = () => {
+        const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+      }
+      loadTheme();
+
+      // Fullscreen toggle
+      fullscreenBtn.onclick = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      };
+
+      // Initialize Swagger UI with selected spec
+      function initSwaggerUI(specUrl) {
+        if(swaggerUiInstance) {
+          // Destroy or reset? Swagger UI doesn't offer an official destroy method.
+          // We'll just replace the DOM content for demo purposes:
+          document.getElementById('swagger-ui').innerHTML = "";
+        }
+        swaggerUiInstance = SwaggerUIBundle({
+          url: specUrl,
+          dom_id: '#swagger-ui',
+          presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIStandalonePreset
+          ],
+          layout: "StandaloneLayout",
+          deepLinking: true,
+          docExpansion: 'list',
+          operationsSorter: 'alpha',
+          defaultModelsExpandDepth: 1,
+          showExtensions: true,
+          showCommonExtensions: true,
+          validatorUrl: null,
+          supportedSubmitMethods: ['get','post','put','delete','patch','head','options'],
+          displayRequestDuration: true,
+          requestInterceptor: (req) => {
+            if(currentToken) {
+              req.headers['Authorization'] = `Bearer ${currentToken}`;
+            }
+            // Filter endpoints dynamically based on filter input:
+            // Note: This is a quick hack and won't filter actual UI endpoints but requests only.
+            // Real filtering requires custom UI plugin (non-trivial).
+            return req;
+          },
+          responseInterceptor: (res) => {
+            if(res.status === 401) {
+              alert("Unauthorized! Please check your token.");
+            }
+            return res;
+          }
+        });
+      }
+
+      // Load initial spec
+      initSwaggerUI(specSelector.value);
+
+      // Change spec dynamically on select change
+      specSelector.onchange = () => {
+        initSwaggerUI(specSelector.value);
+      };
+
+      // Filter endpoints (UI filtering is complex and needs a custom plugin in React)
+      // Here we just log filter value, but you could extend Swagger UI with a custom plugin
+      filterInput.oninput = () => {
+        console.log("Filter endpoints by:", filterInput.value);
+        // TODO: Implement custom plugin to actually filter displayed endpoints live
+      };
+
+    })();
+  </script>
+</body>
+</html>
