@@ -1,27 +1,27 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
-import type { HasMany } from '@adonisjs/lucid/types/relations'
 import { randomUUID } from 'node:crypto'
-
-import LiveUser from './live.js' // Ou ./LiveUser si c’est le vrai nom du fichier
-
+import LiveUser from './liveUser.js' // ou ./LiveUser si c’est le vrai nom du fichier
+import type { HasMany } from '@adonisjs/lucid/types/relations'
 
 export default class Live extends BaseModel {
   @column({ isPrimary: true })
-  declare id: string
-  static assignUuid(live: Live) {
-    live.id = randomUUID()
-  }
+  public id!: string
+
   @column()
-  declare name: string
+  public name!: string
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  public createdAt!: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  public updatedAt!: DateTime
 
-  // Relation avec LiveUser (pivot)
   @hasMany(() => LiveUser)
-  declare liveUsers: HasMany<typeof LiveUser>
+  public liveUsers!: HasMany<typeof LiveUser>
+  static assignUuid: (live: Live) => void
+}
+
+Live.assignUuid = function (live: Live) {
+  live.id = randomUUID()
 }

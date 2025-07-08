@@ -35,12 +35,15 @@ import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
+
 import update_users_controller from '#controllers/update_users_controller'
+import live_for_users_controller from '#controllers/live_for_users_controller'
 const userupdate    =  new   update_users_controller()
  const  NotificationControllers  = new  NotificationController()
 const  loginadmin = new  UsersControllers()
 const controller = new MessagesController()
 const user  = new  UsersController()
+const livecontroller    = new  live_for_users_controller()
 const appointmentController = new AppointmentController()
 const livesController = new LivesController()
 const doctorsController = new DoctorsController()
@@ -935,4 +938,29 @@ router.get('/ListeDemande', async ({ request, response, auth, inertia }) => {
     console.error('[Demandes] Erreur JWT :', error.message)
     return response.redirect('/login')
   }
+})
+
+
+
+router.group(() => {
+  // Route pour créer un live
+  router.post('/lives/create/:idDiscussion', async (ctx) => {
+    await appKeyGuard.handle(ctx, async () => {
+      return livecontroller.createLive(ctx)
+    })
+  })
+
+  // Route pour récupérer les lives d'un utilisateur
+  router.get('/lives/user/:userId', async (ctx) => {
+    await appKeyGuard.handle(ctx, async () => {
+      return livecontroller.getLivesByUser(ctx)
+    })
+  })
+
+  // Route pour récupérer les utilisateurs d'un live
+  router.get('/lives/:liveId/users', async (ctx) => {
+    await appKeyGuard.handle(ctx, async () => {
+      return livecontroller.getUsersByLive(ctx)
+    })
+  })
 })
