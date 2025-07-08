@@ -74,6 +74,8 @@ export default defineConfig({
         name: 'functional',
         timeout: 30000,
       },
+      
+     
     ],
     forceExit: false,
   },
