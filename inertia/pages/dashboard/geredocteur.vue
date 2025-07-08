@@ -350,7 +350,7 @@ function enregistrerModif() {
     formData.append('profileImage', editPhotoFile.value)
   }
 
-  router.post(`/doctors/${selectedDocteur.value.id}`, formData, {
+  router.put(`/user/${selectedDocteur.value.id}`, formData, {
     forceFormData: true,
     headers: {
       'x-app-key': 'boulinguiboulingui',
