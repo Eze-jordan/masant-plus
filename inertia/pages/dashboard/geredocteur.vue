@@ -34,24 +34,43 @@
         <button class="absolute top-2 right-2 text-gray-500" @click="showForm = false">&times;</button>
         <h3 class="text-lg font-bold mb-4">Ajouter un Docteur</h3>
         <form @submit.prevent="ajouterDocteur">
-          <div class="mb-4"><label class="block mb-1">Nom</label><input v-model="form.nom" type="text" class="w-full border rounded px-3 py-2" required /></div>
-          <div class="mb-4"><label class="block mb-1">Prénom</label><input v-model="form.prenom" type="text" class="w-full border rounded px-3 py-2" required /></div>
-          <div class="mb-4"><label class="block mb-1">Téléphone</label><input v-model="form.telephone" type="text" class="w-full border rounded px-3 py-2" required /></div>
-          <div class="mb-4"><label class="block mb-1">Email</label><input v-model="form.email" type="email" class="w-full border rounded px-3 py-2" required /></div>
-          <div class="mb-4"><label class="block mb-1">Spécialité</label><input v-model="form.specialite" type="text" class="w-full border rounded px-3 py-2" required /></div>
-          <div class="mb-4"><label class="block mb-1">Matricule</label><input v-model="form.matricule" type="text" class="w-full border rounded px-3 py-2" required /></div>
+          <div class="mb-4">
+            <label class="block mb-1">Nom</label>
+            <input v-model="form.lastName" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Prénom</label>
+            <input v-model="form.firstName" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Téléphone</label>
+            <input v-model="form.phone" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Email</label>
+            <input v-model="form.email" type="email" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Spécialité</label>
+            <input v-model="form.specialty" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Matricule</label>
+            <input v-model="form.registrationNumber" type="text" class="w-full border rounded px-3 py-2" required />
+          </div>
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
-            <select v-model="form.statut" class="w-full border rounded px-3 py-2" required>
-              <option>Actif</option>
-              <option>Inactif</option>
+            <select v-model="form.accountStatus" class="w-full border rounded px-3 py-2" required>
+              <option value="Actif">Actif</option>
+              <option value="Inactif">Inactif</option>
+              <option value="pending">En attente</option>
             </select>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Photo</label>
             <input type="file" @change="onFileChange" class="w-full border rounded px-3 py-2" accept="image/*" />
-            <div v-if="form.photo" class="mt-2">
-              <img :src="form.photo" alt="Aperçu" class="w-16 h-16 object-cover rounded" />
+            <div v-if="form.profileImage" class="mt-2">
+              <img :src="form.profileImage" alt="Aperçu" class="w-16 h-16 object-cover rounded" />
             </div>
           </div>
           <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
@@ -87,14 +106,22 @@
             <td class="py-2 px-2"><input type="checkbox" /></td>
             <td class="py-2 px-2 flex items-center gap-2">
               <img :src="docteur.profileImage || '/doctor1.jpg'" class="w-8 h-8 rounded-full object-cover" />
-              <span class="font-bold">Dr. {{ docteur.firstName }}</span>
+              <span class="font-bold">Dr. {{ docteur.lastName }}</span>
             </td>
-            <td class="py-2 px-2">{{ docteur.lastName }}</td>
+            <td class="py-2 px-2">{{ docteur.firstName }}</td>
             <td class="py-2 px-2">{{ docteur.phone }}</td>
             <td class="py-2 px-2">{{ docteur.email }}</td>
             <td class="py-2 px-2">{{ docteur.specialty }}</td>
             <td class="py-2 px-2">{{ docteur.registrationNumber }}</td>
-            <td class="py-2 px-2">{{ docteur.accountStatus }}</td>
+            <td class="py-2 px-2">
+              <span :class="{
+                'bg-green-100 text-green-800': docteur.accountStatus === 'Actif',
+                'bg-red-100 text-red-800': docteur.accountStatus === 'Inactif',
+                'bg-yellow-100 text-yellow-800': docteur.accountStatus === 'pending'
+              }" class="px-2 py-1 rounded-full text-xs">
+                {{ docteur.accountStatus }}
+              </span>
+            </td>
             <td class="py-2 px-2 relative">
               <button @click="toggleMenu(docteur.id)" class="px-2 py-1 rounded hover:bg-gray-200">...</button>
               <div v-if="openMenu === docteur.id" class="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
@@ -117,17 +144,44 @@
         <button class="absolute top-2 right-2 text-gray-500" @click="showDetails = false">&times;</button>
         <h3 class="text-lg font-bold mb-4">{{ isEditing ? 'Modifier le Docteur' : 'Détails du Docteur' }}</h3>
         <form v-if="isEditing" @submit.prevent="enregistrerModif">
-          <div class="mb-4"><label class="block mb-1">Nom</label><input v-model="selectedDocteur.firstName" type="text" class="w-full border rounded px-3 py-2" /></div>
-          <div class="mb-4"><label class="block mb-1">Prénom</label><input v-model="selectedDocteur.lastName" type="text" class="w-full border rounded px-3 py-2" /></div>
-          <div class="mb-4"><label class="block mb-1">Téléphone</label><input v-model="selectedDocteur.phone" type="text" class="w-full border rounded px-3 py-2" /></div>
-          <div class="mb-4"><label class="block mb-1">Email</label><input v-model="selectedDocteur.email" type="email" class="w-full border rounded px-3 py-2" /></div>
-          <div class="mb-4"><label class="block mb-1">Spécialité</label><input v-model="selectedDocteur.specialty" type="text" class="w-full border rounded px-3 py-2" /></div>
-          <div class="mb-4"><label class="block mb-1">Matricule</label><input v-model="selectedDocteur.registrationNumber" type="text" class="w-full border rounded px-3 py-2" /></div>
-          <div class="mb-4"><label class="block mb-1">Statut</label>
-            <select v-model="selectedDocteur.statut" class="w-full border rounded px-3 py-2">
-              <option>Actif</option>
-              <option>Inactif</option>
+          <div class="mb-4">
+            <label class="block mb-1">Nom</label>
+            <input v-model="selectedDocteur.lastName" type="text" class="w-full border rounded px-3 py-2" />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Prénom</label>
+            <input v-model="selectedDocteur.firstName" type="text" class="w-full border rounded px-3 py-2" />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Téléphone</label>
+            <input v-model="selectedDocteur.phone" type="text" class="w-full border rounded px-3 py-2" />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Email</label>
+            <input v-model="selectedDocteur.email" type="email" class="w-full border rounded px-3 py-2" />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Spécialité</label>
+            <input v-model="selectedDocteur.specialty" type="text" class="w-full border rounded px-3 py-2" />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Matricule</label>
+            <input v-model="selectedDocteur.registrationNumber" type="text" class="w-full border rounded px-3 py-2" />
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Statut</label>
+            <select v-model="selectedDocteur.accountStatus" class="w-full border rounded px-3 py-2">
+              <option value="Actif">Actif</option>
+              <option value="Inactif">Inactif</option>
+              <option value="pending">En attente</option>
             </select>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">Photo</label>
+            <input type="file" @change="onEditFileChange" class="w-full border rounded px-3 py-2" accept="image/*" />
+            <div v-if="selectedDocteur.profileImage" class="mt-2">
+              <img :src="selectedDocteur.profileImage" alt="Aperçu" class="w-16 h-16 object-cover rounded" />
+            </div>
           </div>
           <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
             Enregistrer
@@ -135,16 +189,27 @@
         </form>
         <div v-else>
           <div class="mb-4 flex flex-col items-center">
-            <img :src="selectedDocteur.profileImage" class="w-24 h-24 rounded-full object-cover mb-2" />
-            <span class="font-bold text-xl">Dr. {{ selectedDocteur.firstName }} {{ selectedDocteur.lastName }}</span>
+            <img :src="selectedDocteur.profileImage || '/doctor1.jpg'" class="w-24 h-24 rounded-full object-cover mb-2" />
+            <span class="font-bold text-xl">Dr. {{ selectedDocteur.lastName }} {{ selectedDocteur.firstName }}</span>
           </div>
           <div class="mb-2"><b>Téléphone :</b> {{ selectedDocteur.phone }}</div>
           <div class="mb-2"><b>Email :</b> {{ selectedDocteur.email }}</div>
           <div class="mb-2"><b>Spécialité :</b> {{ selectedDocteur.specialty }}</div>
           <div class="mb-2"><b>Matricule :</b> {{ selectedDocteur.registrationNumber }}</div>
-          <div class="mb-2"><b>Statut :</b> {{ selectedDocteur.accountStatus }}</div>
-          <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
-            @click="isEditing = true">
+          <div class="mb-2">
+            <b>Statut :</b> 
+            <span :class="{
+              'bg-green-100 text-green-800': selectedDocteur.accountStatus === 'Actif',
+              'bg-red-100 text-red-800': selectedDocteur.accountStatus === 'Inactif',
+              'bg-yellow-100 text-yellow-800': selectedDocteur.accountStatus === 'pending'
+            }" class="px-2 py-1 rounded-full text-xs ml-2">
+              {{ selectedDocteur.accountStatus }}
+            </span>
+          </div>
+          <button 
+            class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
+            @click="isEditing = true"
+          >
             Modifier
           </button>
         </div>
@@ -155,112 +220,205 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { router } from '@inertiajs/vue3'
 import { Stethoscope } from 'lucide-vue-next'
 
-const search = ref('')
-const openMenu = ref(null)
-const showForm = ref(false)
-const showDetails = ref(false)
-const selectedDocteur = ref(null)
-const isEditing = ref(false)
-
+// Props
 const props = defineProps({
-  user: Object,    // pour l’utilisateur connecté (unique)
+  user: Object,
   users: {
-    type: Array,   // pour la liste des utilisateurs/docteurs
+    type: Array,
     required: true,
     default: () => []
   }
 })
 
+// Refs
+const search = ref('')
+const openMenu = ref(null)
+const showForm = ref(false)
+const showDetails = ref(false)
+const isEditing = ref(false)
+const selectedDocteur = ref(null)
+const photoFile = ref(null)
+const editPhotoFile = ref(null)
 
-const docteurs = ref(props.users || [])
+const docteurs = ref([...props.users])
 
+const form = ref({
+  firstName: '',
+  lastName: '',
+  phone: '',
+  email: '',
+  specialty: '',
+  registrationNumber: '',
+  accountStatus: 'pending',
+  role: 'doctor',
+  profileImage: ''
+})
 
+// Computed
 const totalDocteurs = computed(() => docteurs.value.length)
 
 const filteredDocteurs = computed(() => {
-  if (!search.value) return docteurs.value
+  const q = search.value.toLowerCase()
   return docteurs.value.filter(d =>
-    d.nom.toLowerCase().includes(search.value.toLowerCase()) ||
-    d.prenom.toLowerCase().includes(search.value.toLowerCase()) ||
-    d.email.toLowerCase().includes(search.value.toLowerCase())
-  )
-})
+    (d.lastName?.toLowerCase().includes(q) ||
+    (d.firstName?.toLowerCase().includes(q)) ||
+    (d.email?.toLowerCase().includes(q)) ||
+    (d.registrationNumber?.toLowerCase().includes(q)) ||
+    (d.phone?.toLowerCase().includes(q)) ||
+    (d.specialty?.toLowerCase().includes(q))
+    )) })
+
+// Méthodes
+function ajouterDocteur() {
+  const formData = new FormData()
+  formData.append('firstName', form.value.firstName)
+  formData.append('lastName', form.value.lastName)
+  formData.append('phone', form.value.phone)
+  formData.append('email', form.value.email)
+  formData.append('specialty', form.value.specialty)
+  formData.append('registrationNumber', form.value.registrationNumber)
+  formData.append('accountStatus', form.value.accountStatus)
+  formData.append('role', 'doctor')
+
+  if (photoFile.value) {
+    formData.append('profileImage', photoFile.value)
+  }
+
+  router.post('/register', formData, {
+    forceFormData: true,
+    headers: {
+      'x-app-key': 'boulinguiboulingui',
+    },
+    onSuccess: () => {
+      resetForm()
+      showForm.value = false
+      // Recharger les données si nécessaire
+    },
+    onError: (errors) => {
+      console.error('Erreur:', errors)
+    }
+  })
+}
+
+function supprimer(docteur) {
+  if (confirm(`Supprimer Dr. ${docteur.lastName} ${docteur.firstName} ?`)) {
+    router.delete(`/users/${docteur.id}`, {
+      onSuccess: () => {
+        docteurs.value = docteurs.value.filter(d => d.id !== docteur.id)
+        openMenu.value = null
+      },
+      headers: {
+      'x-app-key': 'boulinguiboulingui',
+    },
+      onError: (errors) => {
+        console.error('Erreur lors de la suppression:', errors)
+      }
+    })
+  }
+}
 
 function toggleMenu(id) {
   openMenu.value = openMenu.value === id ? null : id
 }
+
 function voirPlus(docteur) {
   selectedDocteur.value = { ...docteur }
   showDetails.value = true
   isEditing.value = false
 }
+
 function modifier(docteur) {
   selectedDocteur.value = { ...docteur }
   showDetails.value = true
   isEditing.value = true
 }
-function supprimer(docteur) {
-  if (confirm('Supprimer ' + docteur.nom + ' ?')) {
-    docteurs.value = docteurs.value.filter(d => d.id !== docteur.id)
-  }
-  openMenu.value = null
-}
 
-const form = ref({
-  nom: '',
-  prenom: '',
-  telephone: '',
-  email: '',
-  specialite: '',
-  matricule: '',
-  statut: 'Actif',
-  photo: '/doctor1.jpg',
-})
+function enregistrerModif() {
+  const formData = new FormData()
+  formData.append('firstName', selectedDocteur.value.firstName)
+  formData.append('lastName', selectedDocteur.value.lastName)
+  formData.append('phone', selectedDocteur.value.phone)
+  formData.append('email', selectedDocteur.value.email)
+  formData.append('specialty', selectedDocteur.value.specialty)
+  formData.append('registrationNumber', selectedDocteur.value.registrationNumber)
+  formData.append('accountStatus', selectedDocteur.value.accountStatus)
 
-function ajouterDocteur() {
-  const nouveau = { ...form.value, id: Date.now() }
-  docteurs.value.push(nouveau)
-  showForm.value = false
-  form.value = {
-    nom: '',
-    prenom: '',
-    telephone: '',
-    email: '',
-    specialite: '',
-    matricule: '',
-    statut: 'Actif',
-    photo: '/doctor1.jpg',
+  if (editPhotoFile.value) {
+    formData.append('profileImage', editPhotoFile.value)
   }
+
+  router.post(`/doctors/${selectedDocteur.value.id}`, formData, {
+    forceFormData: true,
+    headers: {
+      'x-app-key': 'boulinguiboulingui',
+    },
+    onSuccess: () => {
+      const index = docteurs.value.findIndex(d => d.id === selectedDocteur.value.id)
+      if (index !== -1) {
+        docteurs.value[index] = { ...selectedDocteur.value }
+      }
+      showDetails.value = false
+    },
+    onError: (errors) => {
+      console.error('Erreur lors de la modification:', errors)
+    }
+  })
 }
 
 function onFileChange(event) {
   const file = event.target.files[0]
   if (file) {
+    photoFile.value = file
     const reader = new FileReader()
     reader.onload = e => {
-      form.value.photo = e.target.result
+      form.value.profileImage = e.target.result
     }
     reader.readAsDataURL(file)
   }
 }
 
-function enregistrerModif() {
-  const idx = docteurs.value.findIndex(d => d.id === selectedDocteur.value.id)
-  if (idx !== -1) {
-    docteurs.value[idx] = { ...selectedDocteur.value }
+function onEditFileChange(event) {
+  const file = event.target.files[0]
+  if (file) {
+    editPhotoFile.value = file
+    const reader = new FileReader()
+    reader.onload = e => {
+      selectedDocteur.value.profileImage = e.target.result
+    }
+    reader.readAsDataURL(file)
   }
-  showDetails.value = false
+}
+
+function resetForm() {
+  form.value = {
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    specialty: '',
+    registrationNumber: '',
+    accountStatus: 'pending',
+    role: 'doctor',
+    profileImage: ''
+  }
+  photoFile.value = null
 }
 </script>
 
-<style scoped>
-@keyframes slide-in-right {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
-}
+<style>
 .animate-slide-in-right {
-  animation: slide-in-right 0.3s cubic-bezier(0.4,0,0.2,1);
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 </style>

@@ -124,6 +124,8 @@
     </div>
   </template><script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { router } from '@inertiajs/vue3'
+
 import ServerError from "../errors/ServerError.vue"
 
 const email = ref('')
@@ -167,7 +169,8 @@ const handleLogin = async () => {
     if (response.ok) {
       // Si la connexion est réussie, stocke le token et redirige
       localStorage.setItem('authToken', result.token) // ou un cookie selon ton système
-      window.location.href = '/dashboard' // Remplace '/dashboard' par l'URL de ton tableau de bord
+       const url = '/dashboard'
+      router.visit(url, { preserveScroll: false })
      // Affichage du toast de succès
     } else {
       alert(error.value)  // Affichage du toast d'erreur
