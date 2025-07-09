@@ -105,15 +105,31 @@
             </ul>
           </li>
 
-          <li
-            class="flex items-center justify-between cursor-pointer p-2 rounded"
-            :class="activeMenu === 'paiement' ? 'bg-white text-black shadow font-bold' : 'text-white'"
-            @click="setActiveMenu('paiement')"
-          >
-            <div class="flex items-center gap-6">
-              <CreditCard class="w-5 h-5" :class="activeMenu === 'paiement' ? 'text-black' : 'text-white'" />
-              Paiement
+          <li class="flex flex-col">
+            <div
+              class="flex items-center justify-between cursor-pointer p-2 rounded"
+              :class="activeMenu === 'paiement' ? 'bg-white text-black shadow font-bold' : 'text-white'"
+              @click="toggleSubMenu('paiement'); setActiveMenu('paiement')"
+            >
+              <div class="flex items-center gap-6">
+                <CreditCard class="w-5 h-5" :class="activeMenu === 'paiement' ? 'text-black' : 'text-white'" />
+                Paiement
+              </div>
+              <ChevronRight
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-45' : '', activeMenu === 'paiement' ? 'text-gray-400' : 'text-white']"
+              />
             </div>
+            <ul
+              v-if="openSubMenu === 'paiement'"
+              class="ml-8 mt-2 space-y-2 text-sm"
+            >
+              <li
+                class="cursor-pointer px-2 py-1 rounded"
+                :class="activeSubMenu === 'historique' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
+                @click.stop="setActiveSubMenu('paiement', 'historique')"
+                style="text-decoration: none;"
+              >Historique</li>
+            </ul>
           </li>
 
           <li
@@ -141,6 +157,7 @@
       <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" :user="user" :users="users" />
       <GererPatients v-else-if="activeSubMenu === 'gerer-patients'" />
       <GererUrgences v-else-if="activeSubMenu === 'gerer-urgences'" />
+      <HistoriquePaiement v-else-if="activeSubMenu === 'historique'" />
       <div v-else>
         <!-- Topbar -->
         <div class="flex justify-between items-center mb-6">
@@ -184,7 +201,6 @@
               </div>
               <select class="border rounded px-2 py-1 text-sm">
                 <option>Par mois</option>
-                <option>Par semaine</option>
               </select>
             </div>
             <div class="h-72">
@@ -214,7 +230,6 @@
               </div>
               <select class="border rounded px-2 py-1 text-sm">
                 <option>Par mois</option>
-                <option>Par semaine</option>
               </select>
             </div>
             <div class="h-72">
@@ -274,6 +289,7 @@ import GererDocteur from './geredocteur.vue'
 import ListeDemande from './ListeDemande.vue'
 import GererPatients from './GererPatients.vue'
 import GererUrgences from './GererUrgences.vue'
+import HistoriquePaiement from './HistoriquePaiement.vue'
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
 const props = defineProps({
