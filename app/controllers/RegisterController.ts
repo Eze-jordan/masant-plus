@@ -4,12 +4,10 @@ import vine from '@vinejs/vine'
 import { promises as fs } from 'fs'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { cuid } from '@adonisjs/core/helpers'
 import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { createUserValidator } from '#validators/create_user'
-import fs from 'fs/promises'
 import { cuid } from '@adonisjs/core/helpers'
 
 export default class RegisterController {
