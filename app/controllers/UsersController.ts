@@ -1,13 +1,14 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from '#models/user'
 import vine from '@vinejs/vine'
+import { promises as fs } from 'fs'
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { cuid } from '@adonisjs/core/helpers'
+import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 
 export default class UsersController {
-  /**
-   * GET /users/:id
-   * Récupère les infos principales du profil utilisateur
-   */
   public async show({ params, response }: HttpContextContract) {
     try {
       const user = await User.query()
@@ -38,11 +39,9 @@ export default class UsersController {
     }
   }
 
-  /**
-   * PUT /users/:id
-   * Met à jour les informations d'un utilisateur
-   */
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update(ctx: HttpContextContract) {
+    const { request, response, params, inertia } = ctx
+
     const updateUserSchema = vine.object({
       firstName: vine.string().trim().maxLength(50).optional(),
       lastName: vine.string().trim().maxLength(50).optional(),
@@ -52,71 +51,118 @@ export default class UsersController {
         .email()
         .maxLength(255)
         .unique(async (db, value) => {
-          const user = await db.from('users')
+          const existingUser = await db
+            .from('users')
             .where('email', value)
             .whereNot('id', params.id)
             .first()
-          return !user
+          return !existingUser
         })
         .optional(),
       phone: vine.string().trim().mobile().maxLength(20).optional(),
       address: vine.string().trim().maxLength(255).optional(),
       specialisation: vine.string().trim().maxLength(100).optional(),
-      profileImage: vine.string().trim().maxLength(255).optional(),
       about: vine.string().trim().optional(),
-      accountStatus: vine.enum(Object.values(Status)).optional(),
+      accountStatus: vine.enum(Object.values(Status) as [Status, ...Status[]]).optional(),
       yearsExperience: vine.string().trim().optional(),
       availability: vine.string().trim().optional(),
       specialty: vine.string().trim().optional(),
+      profileImage: vine.file({
+        size: '2mb',
+        extnames: ['jpg', 'jpeg', 'png', 'webp'],
+      }).optional(),
     })
 
     try {
       const payload = await vine.validate({
         schema: updateUserSchema,
-        data: request.all(),
+        data: {
+          ...request.all(),
+          profileImage: request.file('profileImage'),
+        },
       })
 
       const user = await User.findOrFail(params.id)
 
-      // Cast explicite pour éviter l'erreur TypeScript
-      if (payload.accountStatus) {
-        payload.accountStatus = payload.accountStatus as Status
+      const uploadedProfileImage = request.file('profileImage')
+      if (uploadedProfileImage?.tmpPath) {
+        const fileName = `uploads/profile/${cuid()}.${uploadedProfileImage.extname}`
+        const fileBuffer = await fs.readFile(uploadedProfileImage.tmpPath)
+
+        await drive.use('s3').put(fileName, fileBuffer)
+
+        // Génération URL signée
+        const {
+          AWS_ACCESS_KEY_ID,
+          AWS_SECRET_ACCESS_KEY,
+          AWS_REGION,
+          S3_ENDPOINT,
+          S3_BUCKET,
+          S3_FORCE_PATH_STYLE,
+        } = process.env
+
+        if (
+          AWS_ACCESS_KEY_ID &&
+          AWS_SECRET_ACCESS_KEY &&
+          AWS_REGION &&
+          S3_ENDPOINT &&
+          S3_BUCKET
+        ) {
+          const s3 = new S3Client({
+            region: AWS_REGION,
+            credentials: {
+              accessKeyId: AWS_ACCESS_KEY_ID,
+              secretAccessKey: AWS_SECRET_ACCESS_KEY,
+            },
+            endpoint: S3_ENDPOINT,
+            forcePathStyle: S3_FORCE_PATH_STYLE === 'true',
+          })
+
+          const command = new GetObjectCommand({
+            Bucket: S3_BUCKET,
+            Key: fileName,
+          })
+
+          const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 }) // 7 jours
+          console.log('URL signée générée :', signedUrl)
+
+          user.profileImage = signedUrl // <- Stocke l’URL signée directement
+        } else {
+          // Si config S3 absente, stocke juste la clé
+          user.profileImage = fileName
+        }
       }
 
-      user.merge(payload)
+      const { profileImage, ...restPayload } = payload
+      user.merge(restPayload)
       await user.save()
+
+      if (request.header('X-Inertia')) {
+        inertia.share({ success: 'Profil mis à jour avec succès' })
+        return response.redirect().back()
+      }
 
       return response.ok({
         message: 'Profil mis à jour avec succès',
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          phone: user.phone,
-          specialisation: user.specialisation,
-          address: user.address,
-          profileImage: user.profileImage,
-          about: user.about,
-          Status: user.accountStatus,
-          yearsExperience: user.yearsExperience,
-          availability: user.availability,
-          specialty: user.specialty,
-        },
+        user: user.serialize(),
       })
     } catch (error: any) {
       console.error(error)
+
+      if (request.header('X-Inertia')) {
+        inertia.share({
+          errors: error.messages || { error: error.message },
+        })
+        return response.redirect().back()
+      }
+
       return response.status(error.status || 500).json({
-        message: "Erreur lors de la mise à jour du profil",
+        message: 'Erreur lors de la mise à jour du profil',
         error: error.messages || error.message,
       })
     }
   }
 
-  /**
-   * DELETE /users/:id
-   * Supprime un utilisateur
-   */
   public async destroy({ params, response }: HttpContextContract) {
     try {
       const user = await User.findOrFail(params.id)
