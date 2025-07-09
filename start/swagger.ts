@@ -9,7 +9,7 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: 'http://localhost:3333',
+      url: 'https://backend.sammomed.online',
       description: 'Serveur local',
     },
   ],

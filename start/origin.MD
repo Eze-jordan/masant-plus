@@ -3276,7 +3276,7 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
 
     // Charger tout, sauf les champs sensibles
     const users = await User.all()
-   console.log(users)
+
     // Retourner tous les champs sauf les sensibles
     const safeUsers = users.map(user => ({
       id: user.id,
@@ -3385,4 +3385,4 @@ router.group(() => {
       return livecontroller.getUsersByLive(ctx)
     })
   })
-})
+}) decompose moi ca en plusiuers fichier appel ici
