@@ -2636,6 +2636,7 @@ router.delete('/users/:id', async (ctx) => {
   console.log('[GET /users/:id] Params:', JSON.stringify(ctx.request.params(), null, 2))
 
   await onlyFrontend.handle(ctx, async () => {
+    
     await appKeyGuard.handle(ctx, async () => {
       console.log('[GET /users/:id] Avant appel controller show')
       return user.destroy(ctx)  // Méthode pour récupérer l'utilisateur
