@@ -44,7 +44,7 @@
         <div
           v-for="paiement in filteredPaiements"
           :key="paiement.id"
-          class="flex items-center px-6 py-4 border-b hover:bg-gray-50 transition relative text-sm"
+          class="flex items-center px-6 py-3 border-b bg-white hover:bg-blue-50 relative"
         >
           <input type="checkbox" class="mr-4 cursor-pointer" />
   
@@ -53,27 +53,27 @@
             <User class="w-5 h-5 text-blue-500" /> Dr. {{ paiement.nom }}
           </div>
           <div class="w-32 text-gray-600">{{ paiement.prenom }}</div>
-          <div class="w-56 text-gray-600 truncate">{{ paiement.email }}</div>
-          <div class="w-32 text-green-600 font-medium">{{ paiement.montant }}</div>
-          <div class="w-32 capitalize text-gray-700">{{ paiement.type }}</div>
-          <div class="w-48 text-gray-500">{{ paiement.date }}</div>
+          <div class="w-56 text-gray-600">{{ paiement.email }}</div>
+          <div class="w-32 text-gray-600">{{ paiement.montant }}</div>
+          <div class="w-32 text-gray-600">{{ paiement.type }}</div>
+          <div class="w-48 text-gray-600">{{ paiement.date }}</div>
   
           <!-- Menu contextuel -->
           <div class="w-10 text-right relative">
             <button
               @click="toggleMenu(paiement.id)"
-              class="px-2 py-1 rounded hover:bg-gray-200 text-gray-500"
+              class="px-2 py-1 rounded hover:bg-gray-200"
               title="Options"
             >
               ⋮
             </button>
             <div
               v-if="openMenu === paiement.id"
-              class="absolute right-0 z-10 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg"
+              class="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10"
             >
               <ul>
                 <li
-                  class="px-4 py-2 hover:bg-blue-100 text-gray-700 cursor-pointer"
+                  class="px-4 py-2 hover:bg-blue-100 cursor-pointer"
                   @click="voirPlus(paiement)"
                 >
                   Voir plus
@@ -89,6 +89,26 @@
           </div>
         </div>
       </div>
+  
+      <!-- Panneau latéral Détails paiement -->
+      <div v-if="showDetails" class="fixed inset-0 z-50 flex">
+        <div class="flex-1 bg-black bg-opacity-40" @click="showDetails = false"></div>
+        <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
+          <button class="absolute top-2 right-2 text-gray-500" @click="showDetails = false">&times;</button>
+          <h3 class="text-lg font-bold mb-4 text-blue-700">Détails du paiement</h3>
+          <div v-if="selectedPaiement">
+            <div class="mb-4 flex flex-col items-center">
+              <img :src="selectedPaiement.profileImage || '/doctor1.jpg'" class="w-24 h-24 rounded-full object-cover mb-2" />
+              <span class="font-bold text-xl">Dr. {{ selectedPaiement.nom }} {{ selectedPaiement.prenom }}</span>
+            </div>
+            <div class="mb-2"><b>Email :</b> {{ selectedPaiement.email }}</div>
+            <div class="mb-2"><b>Montant :</b> {{ selectedPaiement.montant }}</div>
+            <div class="mb-2"><b>Type :</b> {{ selectedPaiement.type }}</div>
+            <div class="mb-2"><b>Date transaction :</b> {{ selectedPaiement.date }}</div>
+            <!-- Ajoute d'autres infos si besoin -->
+          </div>
+        </div>
+      </div>
     </div>
   </template>
   
@@ -98,6 +118,8 @@
   
   const search = ref('')
   const openMenu = ref(null)
+  const showDetails = ref(false)
+  const selectedPaiement = ref(null)
   
   const paiements = ref([
     {
@@ -136,7 +158,8 @@
     openMenu.value = openMenu.value === id ? null : id
   }
   function voirPlus(paiement) {
-    alert('Voir plus sur le paiement de ' + paiement.nom)
+    selectedPaiement.value = { ...paiement }
+    showDetails.value = true
     openMenu.value = null
   }
   function supprimer(paiement) {
