@@ -2626,7 +2626,7 @@ router.get('/users/:id', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       console.log('[GET /users/:id] Avant appel controller show')
       return user.show(ctx)  // Méthode pour récupérer l'utilisateur
-    })/user/
+    })
   })
 }).middleware([throttle])
 
