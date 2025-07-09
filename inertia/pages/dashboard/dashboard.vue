@@ -4,7 +4,7 @@
     <aside class="w-64 bg-blue-600 text-white flex flex-col justify-between p-4">
       <div>
         <h1 class="text-xl font-bold mb-10 flex items-center gap-6">
-          <img src="../../public/logo.png" alt="Logo Mindiva" class="h-30 w-60 object-contain mr-2" />
+          <img src="/public/logo.png" alt="Logo Mindiva" class="h-30 w-60 object-contain mr-2" />
         </h1>
         <ul class="space-y-5">
           <li
@@ -16,7 +16,6 @@
               <Home class="w-5 h-5" :class="activeMenu === 'dashboard' ? 'text-black' : 'text-white'" />
               Dashboard
             </div>
-            <ChevronRight class="w-4 h-4" :class="activeMenu === 'dashboard' ? 'text-gray-400' : 'text-white'" />
           </li>
 
           <li class="flex flex-col">
@@ -30,7 +29,7 @@
                 Docteurs
               </div>
               <ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-150' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-45' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
               />
             </div>
             <ul
@@ -63,7 +62,7 @@
                 Patients
               </div>
               <ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-90' : '', activeMenu === 'patients' ? 'text-gray-400' : 'text-white']"
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-45' : '', activeMenu === 'patients' ? 'text-gray-400' : 'text-white']"
               />
             </div>
             <ul
@@ -90,7 +89,7 @@
                 Urgent
               </div>
               <ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-90' : '', activeMenu === 'urgent' ? 'text-gray-400' : 'text-white']"
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-45' : '', activeMenu === 'urgent' ? 'text-gray-400' : 'text-white']"
               />
             </div>
             <ul
@@ -115,7 +114,6 @@
               <CreditCard class="w-5 h-5" :class="activeMenu === 'paiement' ? 'text-black' : 'text-white'" />
               Paiement
             </div>
-            <ChevronRight class="w-4 h-4" :class="activeMenu === 'paiement' ? 'text-gray-400' : 'text-white'" />
           </li>
 
           <li
@@ -127,7 +125,6 @@
               <Settings class="w-5 h-5" :class="activeMenu === 'parametre' ? 'text-black' : 'text-white'" />
               Paramètre
             </div>
-            <ChevronRight class="w-4 h-4" :class="activeMenu === 'parametre' ? 'text-gray-400' : 'text-white'" />
           </li>
         </ul>
 
@@ -171,30 +168,66 @@
 
       
         <!-- Chart Section -->
-        <div class="bg-white p-6 rounded-lg shadow mb-6">
-          <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center gap-2">
-              <User class="w-6 h-6 text-blue-600" />
-              <div>
-                <p class="font-semibold">12,345</p>
-                <p class="text-sm text-gray-500">65% actif</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <!-- Chart Patients -->
+          <div class="bg-white p-6 rounded-lg shadow border border-blue-100">
+            <h3 class="text-lg font-bold mb-4 text-blue-700 flex items-center gap-2">
+              <User class="w-6 h-6 text-blue-400" /> Statistiques Patients
+            </h3>
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-2">
+                <User class="w-6 h-6 text-blue-600" />
+                <div>
+                  <p class="font-semibold">12,345</p>
+                  <p class="text-sm text-gray-500">65% actif</p>
+                </div>
               </div>
+              <select class="border rounded px-2 py-1 text-sm">
+                <option>Par mois</option>
+                <option>Par semaine</option>
+              </select>
             </div>
-            <select class="border rounded px-2 py-1 text-sm">
-              <option>Par mois</option>
-              <option>Par semaine</option>
-            </select>
+            <div class="h-72">
+              <Line :data="chartData" :options="chartOptions" />
+            </div>
+            <div class="flex gap-4 mt-4 text-sm">
+              <span class="flex items-center gap-3">
+                <span class="w-3 h-3 bg-blue-500 rounded-full"></span> Compte actif
+              </span>
+              <span class="flex items-center gap-1">
+                <span class="w-3 h-3 bg-indigo-200 rounded-full"></span> Compte inactif
+              </span>
+            </div>
           </div>
-          <div class="h-150">
-            <Line :data="chartData" :options="chartOptions" />
-          </div>
-          <div class="flex gap-4 mt-4 text-sm">
-            <span class="flex items-center gap-3">
-              <span class="w-3 h-3 bg-blue-500 rounded-full"></span> Compte actif
-            </span>
-            <span class="flex items-center gap-1">
-              <span class="w-3 h-3 bg-indigo-200 rounded-full"></span> Compte inactif
-            </span>
+          <!-- Chart Médecins -->
+          <div class="bg-white p-6 rounded-lg shadow border border-green-100">
+            <h3 class="text-lg font-bold mb-4 text-green-700 flex items-center gap-2">
+              <Stethoscope class="w-6 h-6 text-green-400" /> Statistiques Médecins
+            </h3>
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-2">
+                <Stethoscope class="w-6 h-6 text-green-500" />
+                <div>
+                  <p class="font-semibold">600</p>
+                  <p class="text-sm text-gray-500">80% actif</p>
+                </div>
+              </div>
+              <select class="border rounded px-2 py-1 text-sm">
+                <option>Par mois</option>
+                <option>Par semaine</option>
+              </select>
+            </div>
+            <div class="h-72">
+              <Line :data="chartDataMedecins" :options="chartOptions" />
+            </div>
+            <div class="flex gap-4 mt-4 text-sm">
+              <span class="flex items-center gap-3">
+                <span class="w-3 h-3 bg-green-500 rounded-full"></span> Compte actif
+              </span>
+              <span class="flex items-center gap-1">
+                <span class="w-3 h-3 bg-green-200 rounded-full"></span> Compte inactif
+              </span>
+            </div>
           </div>
         </div>
 
@@ -234,7 +267,8 @@ import {
   Users,
   DollarSign,
   Bell,
-  MessageCircle
+  MessageCircle,
+  ChevronRight
 } from 'lucide-vue-next'
 import GererDocteur from './geredocteur.vue'
 import ListeDemande from './ListeDemande.vue'
@@ -293,6 +327,28 @@ const LineChart = defineComponent({
   components: { Line },
   template: `<Line :data="chartData" :options="chartOptions" />`
 })
+
+const chartDataMedecins = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  datasets: [
+    {
+      label: 'Compte actif',
+      backgroundColor: '#bbf7d0',
+      borderColor: '#22c55e',
+      data: [200, 800, 1200, 1500, 1700, 1800, 2000, 2200, 2500, 2700, 3000, 3200],
+      fill: true,
+      tension: 0.4
+    },
+    {
+      label: 'Compte inactif',
+      backgroundColor: '#dcfce7',
+      borderColor: '#4ade80',
+      data: [50, 100, 200, 150, 180, 200, 250, 300, 350, 400, 450, 500],
+      fill: true,
+      tension: 0.4
+    }
+  ]
+}
 
 const openSubMenu = ref(null)
 const activeMenu = ref('dashboard')
