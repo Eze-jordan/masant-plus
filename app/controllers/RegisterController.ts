@@ -1,10 +1,15 @@
 import User from '#models/user'
 import Role from '#models/role'
+import vine from '@vinejs/vine'
+import { promises as fs } from 'fs'
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { cuid } from '@adonisjs/core/helpers'
+import drive from '@adonisjs/drive/services/main'
+import { Status } from '../enum/enums.js'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { createUserValidator } from '#validators/create_user'
-import { Status } from '../enum/enums.js'
 import fs from 'fs/promises'
-import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
 
 export default class RegisterController {
@@ -96,57 +101,126 @@ export default class RegisterController {
     }
   }
 
-  public async update({ request, response, params }: HttpContextContract) {
-    try {
-      const userId = params.id
-      const user = await User.find(userId)
-      if (!user) {
-        return response.status(404).json({ message: 'Utilisateur non trouvé.' })
-      }
+  public async update(ctx: HttpContextContract) {
+    const { request, response, params, inertia } = ctx
 
-      const firstName = request.input('firstName')
-      const lastName = request.input('lastName')
-      const email = request.input('email')
-      const phone = request.input('phone')
-      const address = request.input('address')
-      const specialisation = request.input('specialisation')
-
-      const imageFile = request.file('profile_image', {
+    const updateUserSchema = vine.object({
+      firstName: vine.string().trim().maxLength(50).optional(),
+      lastName: vine.string().trim().maxLength(50).optional(),
+      email: vine
+        .string()
+        .trim()
+        .email()
+        .maxLength(255)
+        .unique(async (db, value) => {
+          const existingUser = await db
+            .from('users')
+            .where('email', value)
+            .whereNot('id', params.id)
+            .first()
+          return !existingUser
+        })
+        .optional(),
+      phone: vine.string().trim().mobile().maxLength(20).optional(),
+      address: vine.string().trim().maxLength(255).optional(),
+      specialisation: vine.string().trim().maxLength(100).optional(),
+      about: vine.string().trim().optional(),
+      accountStatus: vine.enum(Object.values(Status) as [Status, ...Status[]]).optional(),
+      yearsExperience: vine.string().trim().optional(),
+      availability: vine.string().trim().optional(),
+      specialty: vine.string().trim().optional(),
+      profileImage: vine.file({
         size: '2mb',
         extnames: ['jpg', 'jpeg', 'png', 'webp'],
+      }).optional(),
+    })
+
+    try {
+      const payload = await vine.validate({
+        schema: updateUserSchema,
+        data: {
+          ...request.all(),
+          profileImage: request.file('profileImage'),
+        },
       })
 
-      if (imageFile && imageFile.tmpPath) {
-        const fileName = `users/${cuid()}.${imageFile.extname}`
-        const buffer = await fs.readFile(imageFile.tmpPath)
-        await drive.use('s3').put(fileName, buffer, {
-          visibility: 'public',
-        })
+      const user = await User.findOrFail(params.id)
 
-        const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
-        const bucket = process.env.S3_BUCKET
-        user.profileImage = `${endpoint}/${bucket}/${fileName}`
+      const uploadedProfileImage = request.file('profileImage')
+      if (uploadedProfileImage?.tmpPath) {
+        const fileName = `uploads/profile/${cuid()}.${uploadedProfileImage.extname}`
+        const fileBuffer = await fs.readFile(uploadedProfileImage.tmpPath)
+
+        await drive.use('s3').put(fileName, fileBuffer)
+
+        // Génération URL signée
+        const {
+          AWS_ACCESS_KEY_ID,
+          AWS_SECRET_ACCESS_KEY,
+          AWS_REGION,
+          S3_ENDPOINT,
+          S3_BUCKET,
+          S3_FORCE_PATH_STYLE,
+        } = process.env
+
+        if (
+          AWS_ACCESS_KEY_ID &&
+          AWS_SECRET_ACCESS_KEY &&
+          AWS_REGION &&
+          S3_ENDPOINT &&
+          S3_BUCKET
+        ) {
+          const s3 = new S3Client({
+            region: AWS_REGION,
+            credentials: {
+              accessKeyId: AWS_ACCESS_KEY_ID,
+              secretAccessKey: AWS_SECRET_ACCESS_KEY,
+            },
+            endpoint: S3_ENDPOINT,
+            forcePathStyle: S3_FORCE_PATH_STYLE === 'true',
+          })
+
+          const command = new GetObjectCommand({
+            Bucket: S3_BUCKET,
+            Key: fileName,
+          })
+
+          const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 }) // 7 jours
+          console.log('URL signée générée :', signedUrl)
+
+          user.profileImage = signedUrl // <- Stocke l’URL signée directement
+        } else {
+          // Si config S3 absente, stocke juste la clé
+          user.profileImage = fileName
+        }
       }
 
-      user.merge({
-        firstName,
-        lastName,
-        email,
-        phone,
-        address,
-        specialisation,
-      })
-
+      const { profileImage, ...restPayload } = payload
+      user.merge(restPayload)
       await user.save()
 
+      if (request.header('X-Inertia')) {
+        inertia.share({ success: 'Profil mis à jour avec succès' })
+        return response.redirect().back()
+      }
+
       return response.ok({
-        message: 'Utilisateur mis à jour avec succès.',
-        user,
+        message: 'Profil mis à jour avec succès',
+        user: user.serialize(),
       })
     } catch (error: any) {
-      return response.status(400).json({
-        message: 'Erreur lors de la mise à jour de l’utilisateur.',
-        error: error.messages ?? error.message,
+      console.error(error)
+
+      if (request.header('X-Inertia')) {
+        inertia.share({
+          errors: error.messages || { error: error.message },
+        })
+        return response.redirect().back()
+      }
+
+      return response.status(error.status || 500).json({
+        message: 'Erreur lors de la mise à jour du profil',
+        error: error.messages || error.message,
       })
     }
   }

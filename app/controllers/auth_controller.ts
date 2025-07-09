@@ -72,6 +72,7 @@ export default class AuthController {
         address: user.address,
         profileImage: user.profileImage,
         specialty: user.specialty,
+        matricule : user.registrationNumber,
         role: user.role?.label ?? 'Non défini', // ✅ sécurisé + propre
       },
       token,
