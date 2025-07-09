@@ -1,14 +1,14 @@
 import { test } from '@japa/runner'
 import supertest from 'supertest'
 
-const baseURL = 'http://localhost:3333'
+const baseURL = 'https://backend.sammomed.online'
 
 test.group('User Creation API', () => {
   test('creates a new user successfully', async ({ assert }) => {
     const userPayload = {
       firstName: 'John',
       lastName: 'Doe',
-      email: 'johndoe@example.com',
+      email: 'johnd@example.com',
       password: 'secret',
       phone: '123456789',
       address: '123 Test St',

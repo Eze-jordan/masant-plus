@@ -278,7 +278,7 @@ const form = ref({
   email: '',
   specialty: '',
   registrationNumber: '',
-  accountStatus: 'pending',
+  accountStatus: '',
   role: 'doctor',
   profileImage: ''
 })

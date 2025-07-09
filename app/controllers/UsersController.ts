@@ -1,11 +1,12 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from '#models/user'
 import vine from '@vinejs/vine'
+import { Status } from '../enum/enums.js'
 
 export default class UsersController {
   /**
    * GET /users/:id
-   * Récupère les infos principales du profil pour le front (profil utilisateur).
+   * Récupère les infos principales du profil utilisateur
    */
   public async show({ params, response }: HttpContextContract) {
     try {
@@ -20,6 +21,7 @@ export default class UsersController {
           'specialisation',
           'address',
           'profileImage',
+          'accountStatus',
         ])
         .firstOrFail()
 
@@ -62,6 +64,7 @@ export default class UsersController {
       specialisation: vine.string().trim().maxLength(100).optional(),
       profileImage: vine.string().trim().maxLength(255).optional(),
       about: vine.string().trim().optional(),
+      accountStatus: vine.enum(Object.values(Status)).optional(),
       yearsExperience: vine.string().trim().optional(),
       availability: vine.string().trim().optional(),
       specialty: vine.string().trim().optional(),
@@ -74,6 +77,12 @@ export default class UsersController {
       })
 
       const user = await User.findOrFail(params.id)
+
+      // Cast explicite pour éviter l'erreur TypeScript
+      if (payload.accountStatus) {
+        payload.accountStatus = payload.accountStatus as Status
+      }
+
       user.merge(payload)
       await user.save()
 
@@ -89,6 +98,7 @@ export default class UsersController {
           address: user.address,
           profileImage: user.profileImage,
           about: user.about,
+          Status: user.accountStatus,
           yearsExperience: user.yearsExperience,
           availability: user.availability,
           specialty: user.specialty,
