@@ -33,7 +33,7 @@
         class="relative bg-white border-l-8 border-red-500 rounded-lg shadow-lg p-6 flex flex-col transition hover:shadow-2xl"
       >
         <!-- Menu d'actions -->
-        <div class="absolute top-4 right-4 z-20">
+        <div class="absolute top-4 right-1 z-20">
           <button @click="toggleMenu(urgence.id)" class="text-gray-500 hover:text-red-500 text-xl font-bold px-2 py-1 rounded-full focus:outline-none">
             ⋮
           </button>

@@ -61,9 +61,9 @@
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
             <select v-model="form.accountStatus" class="w-full border rounded px-3 py-2" required>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="pending">En attente</option>
+              <option value="Actif">Actif</option>
+              <option value="Inactif">Inactif</option>
+              <option value="Pending">En attente</option>
             </select>
           </div>
           <div class="mb-4">
@@ -114,24 +114,15 @@
             <td class="py-2 px-2">{{ docteur.specialty }}</td>
             <td class="py-2 px-2">{{ docteur.registrationNumber }}</td>
             <td class="py-2 px-2">
-
-              <span :class="{
-                'bg-green-100 text-green-800': docteur.accountStatus === 'ACTIVE',
-                'bg-red-100 text-red-800': docteur.accountStatus === 'INACTIVE',
-                'bg-yellow-100 text-yellow-800': docteur.accountStatus === 'pending'
-              }" class="px-2 py-1 rounded-full text-xs">
-                {{ docteur.accountStatus }}
-</span>
               <span
                 :class="{
                   'bg-green-100 text-green-800': ['Actif', 'ACTIVE'].includes(docteur.accountStatus),
                   'bg-red-100 text-red-800': ['Inactif', 'INACTIVE'].includes(docteur.accountStatus),
-                  'bg-yellow-100 text-yellow-800': ['pending', 'PENDING', 'En attente'].includes(docteur.accountStatus)
+                  'bg-yellow-100 text-yellow-800': ['pending', 'PENDING', 'En attente', 'Pending'].includes(docteur.accountStatus)
                 }"
-                class="px-2 py-1 rounded-full text-xs"
+                class="px-3 py-1 rounded-full text-xs font-semibold"
               >
                 {{ statutLabel(docteur.accountStatus) }}
- 
               </span>
             </td>
             <td class="py-2 px-2 relative">
@@ -183,9 +174,9 @@
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
             <select v-model="selectedDocteur.accountStatus" class="w-full border rounded px-3 py-2">
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="pending">En attente</option>
+              <option value="Actif">Actif</option>
+              <option value="Inactif">Inactif</option>
+              <option value="Pending">En attente</option>
             </select>
           </div>
           <div class="mb-4">
@@ -209,30 +200,19 @@
           <div class="mb-2"><b>Spécialité :</b> {{ selectedDocteur.specialty }}</div>
           <div class="mb-2"><b>Matricule :</b> {{ selectedDocteur.registrationNumber }}</div>
           <div class="mb-2">
-
-            <b>Statut :</b> 
-            <span :class="{
-              'bg-green-100 text-green-800': selectedDocteur.accountStatus === 'ACTIVE',
-              'bg-red-100 text-red-800': selectedDocteur.accountStatus === 'INACTIVE',
-              'bg-yellow-100 text-yellow-800': selectedDocteur.accountStatus === 'pending'
-            }" class="px-2 py-1 rounded-full text-xs ml-2">
-              {{ selectedDocteur.accountStatus }}
-
             <b>Statut :</b>
-            </span>
             <span
               :class="{
                 'bg-green-100 text-green-800': ['Actif', 'ACTIVE'].includes(selectedDocteur.accountStatus),
                 'bg-red-100 text-red-800': ['Inactif', 'INACTIVE'].includes(selectedDocteur.accountStatus),
-                'bg-yellow-100 text-yellow-800': ['pending', 'PENDING', 'En attente'].includes(selectedDocteur.accountStatus)
+                'bg-yellow-100 text-yellow-800': ['pending', 'PENDING', 'En attente', 'Pending'].includes(selectedDocteur.accountStatus)
               }"
-              class="px-2 py-1 rounded-full text-xs ml-2"
+              class="px-3 py-1 rounded-full text-xs font-semibold ml-2"
             >
               {{ statutLabel(selectedDocteur.accountStatus) }}
- 
             </span>
           </div>
-          <button 
+          <button
             class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
             @click="isEditing = true"
           >
@@ -434,9 +414,9 @@ function resetForm() {
 }
 
 function statutLabel(status) {
-  if (['Actif', 'ACTIVE'].includes(status)) return 'Actif'
-  if (['Inactif', 'INACTIVE'].includes(status)) return 'Inactif'
-  if (['pending', 'PENDING', 'En attente'].includes(status)) return 'En attente'
+  if (["Actif", "ACTIVE"].includes(status)) return "Actif"
+  if (["Inactif", "INACTIVE"].includes(status)) return "Inactif"
+  if (["pending", "PENDING", "En attente", "Pending"].includes(status)) return "En attente"
   return status
 }
 </script>
