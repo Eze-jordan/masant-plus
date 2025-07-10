@@ -164,10 +164,9 @@
       </div>
       
       <div class="text-sm">
-        <span v-if="sidebarOpen"><p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
-        <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
-</span>
-        
+        <p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
+<p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
+
 
         <div class="text-sm"> <span v-if="sidebarOpen"> <p class="font-semibold">        Administrateur</p>
      </span>
@@ -350,18 +349,14 @@ const props = defineProps<{
     activePatients: number
     inactivePatients: number
     percentActive: number
+    montantTotalPlateforme: number // ✅ AJOUT
+
   },
   user: any,
   users: any[]
 }>()
 
-function logout() {
-  router.visit('/logout', {
-    method: 'get',
-    preserveState: false,
-    preserveScroll: false
-  })
-}
+
  
 const topDoctors = computed(() => {
   return props.users
@@ -375,8 +370,8 @@ const stats = [
   { label: 'Total Patients', value: props.stats.totalPatients, icon: Users },
   { label: 'Total Docteurs', value: props.users.length, icon: Stethoscope },
   { label: 'Urgent', value: '0', icon: Calendar },
-  { label: 'Revenus', value: 'XAF 60K', icon: DollarSign }
-]
+  { label: 'Revenus', value: `XAF ${props.stats.montantTotalPlateforme.toLocaleString()}`, icon: DollarSign }
+  ]
 
 // Docteurs actifs/inactifs estimés
 const activeDoctors = computed(() => Math.round(props.users.length * 0.8))

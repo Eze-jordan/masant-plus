@@ -37,6 +37,7 @@ import User from '#models/user'
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
+import Paiement from '#models/paiement';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
  const  NotificationControllers  = new  NotificationController()
@@ -3281,57 +3282,58 @@ router.get('/csrf-check', async ({ response }) => {
 
 
 router.get('/dashboard', async ({ request, response, inertia }) => {
-  const token = request.cookie('token')
+  const token = request.cookie('token');
 
   if (!token) {
-    return response.redirect('/login')
+    return response.redirect('/login');
   }
 
   try {
-    // Vérifier le token JWT
-    const payload = verifyJwtToken(token) as { id: string; email: string }
-    const currentUser = await User.query().where('id', payload.id).preload('role').first()
+    // ✅ Vérification du JWT
+    const payload = verifyJwtToken(token) as { id: string; email: string };
+    const currentUser = await User.query().where('id', payload.id).preload('role').first();
 
     if (!currentUser) {
-      return response.redirect('/login')
+      return response.redirect('/login');
     }
 
-    // Charger tous les utilisateurs avec leur rôle
-    const users = await User.query().preload('role')
+    // ✅ Charger tous les utilisateurs avec leur rôle
+    const users = await User.query().preload('role');
 
-    // Filtrer les patients (role.name === 'patient')
-    const patients = users.filter(
-      (u) => u.role && u.role.label.toLowerCase() === 'patient'
-    )
-
-    // Filtrer les docteurs (role.name === 'doctor' ou 'medecin')
+    // ✅ Filtrage des patients et docteurs
+    const patients = users.filter((u) => u.role && u.role.label.toLowerCase() === 'patient');
     const doctors = users.filter(
-      (u) =>
-        u.role &&
-        ['doctor', 'medecin'].includes(u.role.label.toLowerCase())
-    )
+      (u) => u.role && ['doctor', 'medecin'].includes(u.role.label.toLowerCase())
+    );
 
-    // Calcul stats docteurs
-    const totalDoctors = doctors.length
+    // ✅ Statistiques docteurs
+    const totalDoctors = doctors.length;
     const activeDoctors = doctors.filter(
-      (u) => u.accountStatus && u.accountStatus.toLowerCase() === 'active'
-    ).length
-    const inactiveDoctors = totalDoctors - activeDoctors
+      (u) => u.accountStatus?.toLowerCase() === 'active'
+    ).length;
+    const inactiveDoctors = totalDoctors - activeDoctors;
     const doctorPercentActive = totalDoctors
       ? Math.round((activeDoctors / totalDoctors) * 100)
-      : 0
+      : 0;
 
-    // Calcul stats patients
-    const totalPatients = patients.length
+    // ✅ Statistiques patients
+    const totalPatients = patients.length;
     const activePatients = patients.filter(
-      (p) => p.accountStatus && p.accountStatus.toLowerCase() === 'active'
-    ).length
-    const inactivePatients = totalPatients - activePatients
+      (p) => p.accountStatus?.toLowerCase() === 'active'
+    ).length;
+    const inactivePatients = totalPatients - activePatients;
     const patientPercentActive = totalPatients
       ? Math.round((activePatients / totalPatients) * 100)
-      : 0
+      : 0;
 
-    // Préparer users safe (sans données sensibles)
+    // ✅ Récupérer tous les paiements validés et calculer la somme
+    const totalPaiements = await Paiement.query()
+      .where('statut', 'valide') // tu peux enlever ce filtre si tu veux TOUT
+      .sum('montant as total');
+
+    const montantTotalPlateforme = totalPaiements[0].$extras.total || 0;
+
+    // ✅ Version "safe" des utilisateurs (sans mot de passe ou infos sensibles)
     const safeUsers = users.map((user) => ({
       id: user.id,
       firstName: user.firstName,
@@ -3345,9 +3347,9 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       role: user.role ? user.role.label : null,
-    }))
+    }));
 
-    // Renvoyer les données à Inertia
+    // ✅ Rendu Inertia
     return inertia.render('dashboard/dashboard', {
       user: {
         id: currentUser.id,
@@ -3364,7 +3366,6 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
         role: currentUser.role ? currentUser.role.label : null,
       },
       users: safeUsers,
-
       stats: {
         totalPatients,
         activePatients,
@@ -3374,13 +3375,14 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
         activeDoctors,
         inactiveDoctors,
         percentDoctorsActive: doctorPercentActive,
+        montantTotalPlateforme, // 💰 Montant total envoyé au frontend
       },
-    })
+    });
   } catch (error: any) {
-    console.error('[Dashboard] Erreur JWT :', error.message)
-    return response.redirect('/login')
+    console.error('[Dashboard] Erreur JWT :', error.message);
+    return response.redirect('/login');
   }
-})
+});
 
 
 
