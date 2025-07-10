@@ -18,9 +18,13 @@ export default class MessagesController {
       'message',
     ])
 
+    console.log('Create message request received:', { idDiscussion, idUserSender, idUserReceiver, roleReceiver, message })
+
     try {
       const sender = await User.find(idUserSender)
+      console.log('Sender found:', sender)
       if (!sender) {
+        console.log('Expéditeur non trouvé')
         return response.status(404).send({ message: 'Expéditeur non trouvé.' })
       }
 
@@ -28,12 +32,16 @@ export default class MessagesController {
 
       if (idDiscussion) {
         discussion = await Discussion.find(idDiscussion)
+        console.log('Discussion trouvée par idDiscussion:', discussion)
         if (!discussion) {
+          console.log('Discussion non trouvée')
           return response.status(404).send({ message: 'Discussion non trouvée.' })
         }
       } else {
         const receiver = await User.find(idUserReceiver)
+        console.log('Receiver found:', receiver)
         if (!receiver) {
+          console.log('Destinataire non trouvé')
           return response.status(404).send({ message: 'Destinataire non trouvé.' })
         }
 
@@ -53,12 +61,15 @@ export default class MessagesController {
           .andWhere('idPatient', idPatient)
           .first()
 
+        console.log('Discussion trouvée par doctor/patient:', discussion)
+
         if (!discussion) {
           discussion = await Discussion.create({
             idDoctor,
             idPatient,
             dateChat: DateTime.now(),
           })
+          console.log('Nouvelle discussion créée:', discussion)
         }
       }
 
@@ -73,13 +84,17 @@ export default class MessagesController {
       await newMessage.load('sender')
       await newMessage.load('receiver')
 
+      console.log('Nouveau message créé:', newMessage)
+
       // Créer la notification pour le destinataire
-      await Notification.create({
+      const notification = await Notification.create({
         idUser: idUserReceiver,
         titre: 'Nouveau message reçu',
         description: `Vous avez reçu un nouveau message de ${sender.email || 'un utilisateur'}.`,
         isRead: false,
       })
+
+      console.log('Notification créée:', notification)
 
       return response.created({
         message: 'Message envoyé avec succès.',
@@ -93,6 +108,7 @@ export default class MessagesController {
         },
       })
     } catch (error: any) {
+      console.error('Erreur lors de la création du message:', error)
       return response.status(500).send({
         message: 'Erreur lors de l’envoi du message.',
         error: error.message,
@@ -102,6 +118,7 @@ export default class MessagesController {
 
   public async getByUser({ params, response }: HttpContextContract) {
     const userId = params.userId
+    console.log('getByUser called with userId:', userId)
 
     try {
       const discussions = await Discussion.query()
@@ -110,7 +127,10 @@ export default class MessagesController {
         .preload('doctor')
         .preload('patient')
 
+      console.log('Discussions trouvées:', discussions)
+
       if (discussions.length === 0) {
+        console.log('Aucune discussion trouvée pour cet utilisateur')
         return response.ok({
           message: 'Aucune discussion trouvée pour cet utilisateur.',
           data: [],
@@ -124,6 +144,8 @@ export default class MessagesController {
           .where('idDiscussion', discussion.id)
           .orderBy('createdAt', 'desc')
           .first()
+
+        console.log('Dernier message pour discussion', discussion.id, ':', lastMessage)
 
         if (!lastMessage) continue
 
@@ -140,11 +162,14 @@ export default class MessagesController {
         })
       }
 
+      console.log('Résultats formatés:', results)
+
       return response.ok({
         message: 'Discussions récupérées avec succès.',
         data: results,
       })
     } catch (error: any) {
+      console.error('Erreur getByUser:', error)
       return response.status(500).send({
         message: 'Erreur lors de la récupération des messages.',
         error: error.message,
@@ -156,47 +181,63 @@ export default class MessagesController {
    * Récupérer les messages d'une discussion
    */
   public async getByDiscussion({ params, response }: HttpContextContract) {
+    console.log('getByDiscussion called with params:', params);
+  
     try {
-      const discussionId = params.discussionId
-
+      const discussionId = params.discussionId;
+      console.log('Recherche messages pour discussionId:', discussionId);
+  
       const messages = await Message.query()
         .where('idDiscussion', discussionId)
-        .preload('sender')
-        .preload('receiver')
-        .orderBy('createdAt', 'asc')
-
+        .preload('sender')   // Assure que `sender` contient `id` et `username`
+        .preload('receiver') // Idem pour `receiver`
+        .orderBy('createdAt', 'asc');
+  
+      console.log(`Messages RAW pour discussionId=${discussionId}:`, JSON.stringify(messages, null, 2));
+  
       const formatted = messages.map((m) => ({
         id: m.id,
         message: m.message,
         createdAt: m.createdAt,
+        senderId: m.sender?.id ?? null,
+        receiverId: m.receiver?.id ?? null,
         senderUsername: m.sender?.username ?? 'Inconnu',
         receiverUsername: m.receiver?.username ?? 'Inconnu',
-      }))
-
+      }));
+  
+      console.log(`Messages formatés pour discussionId=${discussionId}:`, formatted);
+  
       return response.ok({
         message: 'Messages récupérés avec succès.',
         data: formatted,
-      })
+      });
     } catch (error: any) {
+      console.error('Erreur getByDiscussion:', error);
       return response.status(500).send({
         message: 'Erreur lors de la récupération des messages.',
         error: error.message,
-      })
+      });
     }
   }
+  
 
   public async update({ params, request, response }: HttpContextContract) {
     const messageId = params.id
     const { message } = request.only(['message'])
 
+    console.log('Update message called with id:', messageId, 'and new message:', message)
+
     try {
       const existingMessage = await Message.find(messageId)
+      console.log('Message existant:', existingMessage)
       if (!existingMessage) {
+        console.log('Message non trouvé')
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
 
       if (message !== undefined) {
         existingMessage.message = message
+        console.log('Message mis à jour:', existingMessage)
       }
 
       await existingMessage.save()
@@ -206,6 +247,7 @@ export default class MessagesController {
         data: existingMessage,
       })
     } catch (error: any) {
+      console.error('Erreur update message:', error)
       return response.status(500).send({
         message: 'Erreur lors de la mise à jour du message.',
         error: error.message,
@@ -214,18 +256,25 @@ export default class MessagesController {
   }
 
   public async delete({ params, response }: HttpContextContract) {
+    console.log('Delete message called with id:', params.id)
+
     try {
       const message = await Message.find(params.id)
+      console.log('Message à supprimer:', message)
       if (!message) {
+        console.log('Message non trouvé')
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
 
       await message.delete()
 
+      console.log('Message supprimé avec succès')
+
       return response.ok({
         message: 'Message supprimé avec succès.',
       })
     } catch (error: any) {
+      console.error('Erreur delete message:', error)
       return response.status(500).send({
         message: 'Erreur lors de la suppression du message.',
         error: error.message,
@@ -234,21 +283,28 @@ export default class MessagesController {
   }
 
   public async deleteAllByDiscussion({ params, response }: HttpContextContract) {
+    console.log('Delete all messages by discussion called with discussionId:', params.discussionId)
+
     try {
       const discussionId = params.discussionId
 
       const messages = await Message.query().where('idDiscussion', discussionId)
+      console.log('Messages à supprimer:', messages)
 
       if (messages.length === 0) {
+        console.log('Aucun message trouvé pour cette discussion')
         return response.status(404).send({ message: 'Aucun message trouvé pour cette discussion.' })
       }
 
       await Message.query().where('idDiscussion', discussionId).delete()
 
+      console.log(`Tous les messages de la discussion ${discussionId} ont été supprimés.`)
+
       return response.ok({
         message: `Tous les messages de la discussion ${discussionId} ont été supprimés.`,
       })
     } catch (error: any) {
+      console.error('Erreur deleteAllByDiscussion:', error)
       return response.status(500).send({
         message: 'Erreur lors de la suppression des messages.',
         error: error.message,
