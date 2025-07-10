@@ -1,3 +1,90 @@
+<script setup>
+import { ref, computed } from 'vue'
+import { User } from 'lucide-vue-next'
+
+const props = defineProps({
+  user: Object,
+  users: {
+    type: Array,
+    required: true,
+    default: () => [],
+  },
+})
+
+const search = ref('')
+const openMenu = ref(null)
+const showDetails = ref(false)
+const selectedPatient = ref(null)
+const isEditing = ref(false)
+const showAddForm = ref(false)
+
+const addForm = ref({
+  firstName: '',
+  lastName: '',
+  phone: '',
+  email: '',
+  adresse: '',
+  accountStatus: 'active'
+})
+
+const patients = ref([...props.users])
+
+const totalPatients = computed(() => patients.value.length)
+
+const filteredPatients = computed(() => {
+  if (!search.value) return patients.value
+  return patients.value.filter(p =>
+    p.lastName?.toLowerCase().includes(search.value.toLowerCase()) ||
+    p.firstName?.toLowerCase().includes(search.value.toLowerCase()) ||
+    p.phone?.toLowerCase().includes(search.value.toLowerCase()) ||
+    p.email?.toLowerCase().includes(search.value.toLowerCase()) ||
+    p.adresse?.toLowerCase().includes(search.value.toLowerCase())
+  )
+})
+
+function toggleMenu(id) {
+  openMenu.value = openMenu.value === id ? null : id
+}
+function voirPlus(patient) {
+  selectedPatient.value = { ...patient }
+  showDetails.value = true
+  isEditing.value = false
+  openMenu.value = null
+}
+function modifier(patient) {
+  selectedPatient.value = { ...patient }
+  showDetails.value = true
+  isEditing.value = true
+  openMenu.value = null
+}
+function supprimer(patient) {
+  if (confirm('Supprimer ' + patient.lastName + ' ?')) {
+    patients.value = patients.value.filter(p => p.id !== patient.id)
+  }
+  openMenu.value = null
+}
+function enregistrerModif() {
+  const idx = patients.value.findIndex(p => p.id === selectedPatient.value.id)
+  if (idx !== -1) {
+    patients.value[idx] = { ...selectedPatient.value }
+  }
+  showDetails.value = false
+}
+function ajouterPatient() {
+  const nouveau = { ...addForm.value, id: Date.now() }
+  patients.value.push(nouveau)
+  showAddForm.value = false
+  addForm.value = {
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    adresse: '',
+    accountStatus: 'active'
+  }
+}
+</script>
+
 <template>
   <div>
     <!-- En-tête -->
@@ -32,8 +119,8 @@
           <tr class="border-b">
             <th class="py-2 px-2"><input type="checkbox" /></th>
             <th class="py-2 px-2">Nom</th>
-            <th class="py-2 px-2">Prenom</th>
-            <th class="py-2 px-2">Telephone</th>
+            <th class="py-2 px-2">Prénom</th>
+            <th class="py-2 px-2">Téléphone</th>
             <th class="py-2 px-2">Email</th>
             <th class="py-2 px-2">Adresse</th>
             <th class="py-2 px-2">Statut</th>
@@ -47,25 +134,24 @@
             class="border-b hover:bg-gray-100"
           >
             <td class="py-2 px-2"><input type="checkbox" /></td>
-            <td class="py-2 px-2 font-bold">{{ patient.nom }}</td>
-            <td class="py-2 px-2">{{ patient.prenom }}</td>
-            <td class="py-2 px-2">{{ patient.telephone }}</td>
+            <td class="py-2 px-2 font-bold">{{ patient.lastName }}</td>
+            <td class="py-2 px-2">{{ patient.firstName }}</td>
+            <td class="py-2 px-2">{{ patient.phone }}</td>
             <td class="py-2 px-2">{{ patient.email }}</td>
-            <td class="py-2 PX-2">{{ patient.adresse }}</td>
+            <td class="py-2 px-2">{{ patient.adresse }}</td>
             <td class="py-2 px-2">
               <span
-                :class="[
-                  'px-3 py-1 rounded-full text-xs font-semibold',
-                  patient.statut === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'
+                :class="[ 'px-3 py-1 rounded-full text-xs font-semibold',
+                  patient.accountStatus?.toLowerCase() === 'active'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-200 text-gray-700'
                 ]"
               >
-                {{ patient.statut }}
+                {{ patient.accountStatus }}
               </span>
             </td>
             <td class="py-2 px-2 relative">
-              <button @click="toggleMenu(patient.id)" class="px-2 py-1 rounded hover:bg-gray-200">
-                ...
-              </button>
+              <button @click="toggleMenu(patient.id)" class="px-2 py-1 rounded hover:bg-gray-200">...</button>
               <div
                 v-if="openMenu === patient.id"
                 class="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10"
@@ -82,7 +168,7 @@
       </table>
     </div>
 
-    <!-- Panneau latéral de détails/modification -->
+    <!-- Panneau latéral détails/modif -->
     <div v-if="showDetails" class="fixed inset-0 z-50 flex">
       <div class="flex-1 bg-black bg-opacity-40" @click="showDetails = false"></div>
       <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
@@ -93,15 +179,15 @@
         <form v-if="isEditing" @submit.prevent="enregistrerModif">
           <div class="mb-4">
             <label class="block mb-1">Nom</label>
-            <input v-model="selectedPatient.nom" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="selectedPatient.lastName" type="text" class="w-full border rounded px-3 py-2" required />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Prénom</label>
-            <input v-model="selectedPatient.prenom" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="selectedPatient.firstName" type="text" class="w-full border rounded px-3 py-2" required />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Téléphone</label>
-            <input v-model="selectedPatient.telephone" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="selectedPatient.phone" type="text" class="w-full border rounded px-3 py-2" required />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Email</label>
@@ -109,13 +195,13 @@
           </div>
           <div class="mb-4">
             <label class="block mb-1">Adresse</label>
-            <input v-model="selectedPatient.adresse" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="selectedPatient.adresse" type="text" class="w-full border rounded px-3 py-2" />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
-            <select v-model="selectedPatient.statut" class="w-full border rounded px-3 py-2" required>
-              <option>Actif</option>
-              <option>Inactif</option>
+            <select v-model="selectedPatient.accountStatus" class="w-full border rounded px-3 py-2" required>
+              <option value="active">Actif</option>
+              <option value="inactive">Inactif</option>
             </select>
           </div>
           <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
@@ -124,12 +210,12 @@
         </form>
         <div v-else>
           <div class="mb-4 flex flex-col items-center">
-            <span class="font-bold text-xl">{{ selectedPatient.nom }} {{ selectedPatient.prenom }}</span>
+            <span class="font-bold text-xl">{{ selectedPatient.lastName }} {{ selectedPatient.firstName }}</span>
           </div>
-          <div class="mb-2"><b>Téléphone :</b> {{ selectedPatient.telephone }}</div>
+          <div class="mb-2"><b>Téléphone :</b> {{ selectedPatient.phone }}</div>
           <div class="mb-2"><b>Email :</b> {{ selectedPatient.email }}</div>
           <div class="mb-2"><b>Adresse :</b> {{ selectedPatient.adresse }}</div>
-          <div class="mb-2"><b>Statut :</b> {{ selectedPatient.statut }}</div>
+          <div class="mb-2"><b>Statut :</b> {{ selectedPatient.accountStatus }}</div>
           <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
             @click="isEditing = true">
             Modifier
@@ -138,7 +224,7 @@
       </div>
     </div>
 
-    <!-- Formulaire d'ajout de patient -->
+    <!-- Formulaire ajout -->
     <div v-if="showAddForm" class="fixed inset-0 z-50 flex">
       <div class="flex-1 bg-black bg-opacity-40" @click="showAddForm = false"></div>
       <div class="w-full max-w-md h-full bg-white shadow-lg p-8 relative animate-slide-in-right overflow-y-auto">
@@ -147,15 +233,15 @@
         <form @submit.prevent="ajouterPatient">
           <div class="mb-4">
             <label class="block mb-1">Nom</label>
-            <input v-model="addForm.nom" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="addForm.lastName" type="text" class="w-full border rounded px-3 py-2" required />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Prénom</label>
-            <input v-model="addForm.prenom" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="addForm.firstName" type="text" class="w-full border rounded px-3 py-2" required />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Téléphone</label>
-            <input v-model="addForm.telephone" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="addForm.phone" type="text" class="w-full border rounded px-3 py-2" required />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Email</label>
@@ -163,13 +249,13 @@
           </div>
           <div class="mb-4">
             <label class="block mb-1">Adresse</label>
-            <input v-model="addForm.adresse" type="text" class="w-full border rounded px-3 py-2" required />
+            <input v-model="addForm.adresse" type="text" class="w-full border rounded px-3 py-2" />
           </div>
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
-            <select v-model="addForm.statut" class="w-full border rounded px-3 py-2" required>
-              <option>Actif</option>
-              <option>Inactif</option>
+            <select v-model="addForm.accountStatus" class="w-full border rounded px-3 py-2" required>
+              <option value="active">Actif</option>
+              <option value="inactive">Inactif</option>
             </select>
           </div>
           <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full">
@@ -181,93 +267,16 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
-import { User } from 'lucide-vue-next'
-
-const search = ref('')
-const openMenu = ref(null)
-const showDetails = ref(false)
-const selectedPatient = ref(null)
-const isEditing = ref(false)
-const showAddForm = ref(false)
-const addForm = ref({
-  nom: '',
-  prenom: '',
-  telephone: '',
-  email: '',
-  adresse: '',
-  statut: 'Actif'
-})
-
-const patients = ref([
-  {
-    id: 1,
-    nom: 'OLLI',
-    prenom: 'Arnaud',
-    telephone: '0788888888',
-    email: 'arnaud.olli@email.com',
-    adresse: 'Charbonnage',
-    statut: 'Actif'
-  },
-  // Ajoute d'autres patients ici
-])
-
-const totalPatients = computed(() => patients.value.length)
-
-const filteredPatients = computed(() => {
-  if (!search.value) return patients.value
-  return patients.value.filter(p =>
-    p.nom.toLowerCase().includes(search.value.toLowerCase()) ||
-    p.prenom.toLowerCase().includes(search.value.toLowerCase()) ||
-    p.telephone.toLowerCase().includes(search.value.toLowerCase()) ||
-    p.email.toLowerCase().includes(search.value.toLowerCase()) ||
-    p.adresse.toLowerCase().includes(search.value.toLowerCase())
-  )
-})
-
-function toggleMenu(id) {
-  openMenu.value = openMenu.value === id ? null : id
-}
-function voirPlus(patient) {
-  selectedPatient.value = { ...patient }
-  showDetails.value = true
-  isEditing.value = false
-  openMenu.value = null
-}
-function modifier(patient) {
-  selectedPatient.value = { ...patient }
-  showDetails.value = true
-  isEditing.value = true
-  openMenu.value = null
-}
-function supprimer(patient) {
-  if (confirm('Supprimer ' + patient.nom + ' ?')) {
-    patients.value = patients.value.filter(p => p.id !== patient.id)
-  }
-  openMenu.value = null
-}
-function enregistrerModif() {
-  const idx = patients.value.findIndex(p => p.id === selectedPatient.value.id)
-  if (idx !== -1) {
-    patients.value[idx] = { ...selectedPatient.value }
-  }
-  showDetails.value = false
-}
-function ajouterPatient() {
-  const nouveau = { ...addForm.value, id: Date.now() }
-  patients.value.push(nouveau)
-  showAddForm.value = false
-  addForm.value = { nom: '', prenom: '', telephone: '', email: '', adresse: '', statut: 'Actif' }
-}
-</script>
-
 <style scoped>
 @keyframes slide-in-right {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 .animate-slide-in-right {
-  animation: slide-in-right 0.3s cubic-bezier(0.4,0,0.2,1);
+  animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-</style> 
+</style>
