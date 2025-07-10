@@ -90,7 +90,6 @@
             <th class="py-2 px-2">Nom</th>
             <th class="py-2 px-2">Prénom</th>
             <th class="py-2 px-2">Téléphone</th>
-            <th class="py-2 px-2">Email</th>
             <th class="py-2 px-2">Spécialité</th>
             <th class="py-2 px-2">Matricule</th>
             <th class="py-2 px-2">Statut</th>
@@ -110,7 +109,6 @@
             </td>
             <td class="py-2 px-2">{{ docteur.firstName }}</td>
             <td class="py-2 px-2">{{ docteur.phone }}</td>
-            <td class="py-2 px-2">{{ docteur.email }}</td>
             <td class="py-2 px-2">{{ docteur.specialty }}</td>
             <td class="py-2 px-2">{{ docteur.registrationNumber }}</td>
             <td class="py-2 px-2">
