@@ -1,11 +1,22 @@
 <template>
   <div class="flex h-screen bg-gray-100">
     <!-- Sidebar -->
-    <aside class="w-64 bg-blue-600 text-white flex flex-col justify-between p-4">
+    <aside
+  :class="[sidebarOpen ? 'w-64' : 'w-20', 'bg-blue-600 text-white flex flex-col justify-between p-4 transition-all duration-300']"
+>
       <div>
-        <h1 class="text-xl font-bold mb-10 flex items-center gap-6">
-          <img src="/public/logo.png" alt="Logo Mindiva" class="h-30 w-60 object-contain mr-2" />
-        </h1>
+        
+        <div class="flex justify-between items-center mb-10">
+  <img src="/public/logo.png" alt="Logo Mindiva" class="h-30 w-50 object-contain" v-if="sidebarOpen" />
+  <button @click="toggleSidebar" class="text-white">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+</div>
+
         <ul class="space-y-5">
           <li
             class="p-2 rounded flex items-center justify-between font-bold cursor-pointer"
@@ -14,7 +25,7 @@
           >
             <div class="flex items-center gap-4">
               <Home class="w-5 h-5" :class="activeMenu === 'dashboard' ? 'text-black' : 'text-white'" />
-              Dashboard
+              <span v-if="sidebarOpen">Dashboard</span>
             </div>
           </li>
 
@@ -26,11 +37,12 @@
             >
               <div class="flex items-center gap-6">
                 <Stethoscope class="w-5 h-5" :class="activeMenu === 'docteurs' ? 'text-black' : 'text-white'" />
-                Docteurs
+                <span v-if="sidebarOpen">Docteurs</span>
               </div>
-              <ChevronRight
+              <span v-if="sidebarOpen"><ChevronRight
                 :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-45' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
-              />
+              /></span>
+              
             </div>
             <ul
               v-if="openSubMenu === 'docteurs'"
@@ -41,13 +53,14 @@
                 :class="activeSubMenu === 'liste-docteurs' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('docteurs', 'liste-docteurs')"
                 style="text-decoration: none;"
-              >Gérer les docteurs</li>
+              ><span v-if="sidebarOpen">Gérer les docteurs</span>
+              </li>
               <li
                 class="cursor-pointer px-2 py-1 rounded"
                 :class="activeSubMenu === 'Liste-demande' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('docteurs', 'Liste-demande')"
                 style="text-decoration: none;"
-              >Liste des demandes</li>
+              ><span v-if="sidebarOpen">Liste des demandes</span></li>
             </ul>
           </li>
 
@@ -59,11 +72,12 @@
             >
               <div class="flex items-center gap-6">
                 <User class="w-5 h-5" :class="activeMenu === 'patients' ? 'text-black' : 'text-white'" />
-                Patients
+                <span v-if="sidebarOpen">Patients</span> 
               </div>
-              <ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-45' : '', activeMenu === 'patients' ? 'text-gray-400' : 'text-white']"
-              />
+              <span v-if="sidebarOpen"><ChevronRight
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-45' : '', activeMenu === 'patients' ? 'text-black' : 'text-white']"
+              /></span>
+              
             </div>
             <ul
               v-if="openSubMenu === 'patients'"
@@ -74,7 +88,8 @@
                 :class="activeSubMenu === 'gerer-patients' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('patients', 'gerer-patients')"
                 style="text-decoration: none;"
-              >Gérer les patients</li>
+              >                <span v-if="sidebarOpen">Gérer les patients</span> 
+              </li>
             </ul>
           </li>
 
@@ -86,11 +101,12 @@
             >
               <div class="flex items-center gap-6">
                 <Calendar class="w-5 h-5" :class="activeMenu === 'urgent' ? 'text-black' : 'text-white'" />
-                Urgent
+                <span v-if="sidebarOpen">Urgent</span> 
               </div>
-              <ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-45' : '', activeMenu === 'urgent' ? 'text-gray-400' : 'text-white']"
-              />
+              <span v-if="sidebarOpen"><ChevronRight
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-45' : '', activeMenu === 'urgent' ? 'text-black' : 'text-white']"
+              /></span>
+              
             </div>
             <ul
               v-if="openSubMenu === 'urgent'"
@@ -101,7 +117,7 @@
                 :class="activeSubMenu === 'gerer-urgences' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('urgent', 'gerer-urgences')"
                 style="text-decoration: none;"
-              >Gérer les urgences</li>
+              ><span v-if="sidebarOpen">Gérer les urgences</span> </li>
             </ul>
           </li>
 
@@ -113,11 +129,12 @@
             >
               <div class="flex items-center gap-6">
                 <CreditCard class="w-5 h-5" :class="activeMenu === 'paiement' ? 'text-black' : 'text-white'" />
-                Paiement
+                <span v-if="sidebarOpen">Paiement</span>
               </div>
-              <ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-45' : '', activeMenu === 'paiement' ? 'text-gray-400' : 'text-white']"
-              />
+              <span v-if="sidebarOpen"><ChevronRight
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-45' : '', activeMenu === 'paiement' ? 'text-black' : 'text-white']"
+              /></span>
+              
             </div>
             <ul
               v-if="openSubMenu === 'paiement'"
@@ -128,7 +145,7 @@
                 :class="activeSubMenu === 'historique' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('paiement', 'historique')"
                 style="text-decoration: none;"
-              >Historique</li>
+              ><span v-if="sidebarOpen">Historique</span></li>
             </ul>
           </li>
 
@@ -139,7 +156,7 @@
           >
             <div class="flex items-center gap-6">
               <Settings class="w-5 h-5" :class="activeMenu === 'parametre' ? 'text-black' : 'text-white'" />
-              Paramètre
+              <span v-if="sidebarOpen">Paramètre</span>
             </div>
           </li>
         </ul>
@@ -149,7 +166,12 @@
         <p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
 <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
 
+
+      <div class="text-sm"> <span v-if="sidebarOpen"> <p class="font-semibold">        Administrateur</p>
+     </span>
+       
       </div>
+    </div>
     </aside>
 
     <!-- Main -->
@@ -166,7 +188,10 @@
           <div class="flex gap-4 items-center">
             <MessageCircle class="w-6 h-6 text-gray-600" />
             <Bell class="w-6 h-6 text-gray-600" />
-            <User class="w-6 h-6 text-gray-600" />
+            <button @click="logout" class="focus:outline-none">
+  <User class="w-6 h-6 text-gray-600" />
+</button>
+
 
           </div>
         </div>
@@ -251,12 +276,27 @@
 
         <!-- Top Doctors -->
         <h2 class="text-lg font-semibold mb-4">Top Docteurs</h2>
-        <div class="grid grid-cols-4 gap-4">
-          <div v-for="i in 4" :key="i" class="bg-white p-2 rounded-lg shadow text-center">
-            <img :src="`/doctor${i}.jpg`" class="h-28 w-full object-cover rounded mb-2" />
-            <p class="font-medium">Dr Nom {{ i }}</p>
-          </div>
-        </div>
+        <h2 class="text-lg font-semibold mb-4">Top Docteurs</h2>
+<div class="grid grid-cols-4 gap-4">
+  <div
+    v-for="doctor in topDoctors"
+    :key="doctor.id"
+    class="bg-white p-2 rounded-lg shadow text-center"
+  >
+    <img
+      :src="doctor.profileImage || '/default-doctor.jpg'"
+      class="h-28 w-full object-cover rounded mb-2"
+      alt="Photo du docteur"
+    />
+    <p class="font-medium">
+      Dr {{ doctor.firstName }} {{ doctor.lastName }}
+    </p>
+    <p class="text-sm text-gray-500">
+      {{ doctor.specialty || 'Spécialité inconnue' }}
+    </p>
+  </div>
+</div>
+
       </div>
     </main>
   </div>
@@ -264,6 +304,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+
+const sidebarOpen = ref(true)
+
+function toggleSidebar() {
+  sidebarOpen.value = !sidebarOpen.value
+}
+
+import { defineComponent, ref } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -306,6 +354,21 @@ const props = defineProps<{
   user: any,
   users: any[]
 }>()
+
+function logout() {
+  router.visit('/logout', {
+    method: 'get',
+    preserveState: false,
+    preserveScroll: false
+  })
+}
+ 
+const topDoctors = computed(() => {
+  return props.users
+    .filter(user => ['doctor', 'medecin'].includes((user.role || '').toLowerCase()))
+    .slice(0, 4) // Les 4 premiers
+})
+
 
 // Stat cards dynamiques
 const stats = [
