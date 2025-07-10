@@ -145,26 +145,17 @@
                 :class="activeSubMenu === 'historique' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('paiement', 'historique')"
                 style="text-decoration: none;"
-              ><span v-if="sidebarOpen">Historique</span></li>
+              ><span v-if="sidebarOpen">Historique</span>
+            </li>
             </ul>
           </li>
 
-          <li
-            class="flex items-center justify-between cursor-pointer p-2 rounded"
-            :class="activeMenu === 'parametre' ? 'bg-white text-black shadow font-bold' : 'text-white'"
-            @click="setActiveMenu('parametre')"
-          >
-            <div class="flex items-center gap-6">
-              <Settings class="w-5 h-5" :class="activeMenu === 'parametre' ? 'text-black' : 'text-white'" />
-              <span v-if="sidebarOpen">Paramètre</span>
-            </div>
-          </li>
         </ul>
 
       </div>
       
       <div class="text-sm">
-        <span v-if="sidebarOpen"><p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
+        <span v-if="sidebarOpen"><p class="font-semibold">{{ user?.name || '' }}</p>
         <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
 </span>
         
@@ -188,8 +179,8 @@
         <div class="flex justify-between items-center mb-6">
           <input type="text" placeholder="Rechercher..." class="px-4 py-2 border rounded-md w-1/3" />
           <div class="flex gap-4 items-center">
-            <MessageCircle class="w-6 h-6 text-gray-600" />
-            <Bell class="w-6 h-6 text-gray-600" />
+            <MessageCircle class="w-6 h-6 text-gray-600 cursor-pointer" @click="showMessagesModal = true" />
+            <Bell class="w-6 h-6 text-gray-600 cursor-pointer" @click="showNotificationsModal = true" />
             <button @click="logout" class="focus:outline-none">
   <User class="w-6 h-6 text-gray-600" />
 </button>
@@ -224,7 +215,7 @@
                 <User class="w-6 h-6 text-blue-600" />
                 <div>
                   <p class="font-semibold">{{ props.stats.totalPatients }}</p>
-<p class="text-sm text-gray-500">{{ props.stats.percentActive }}% actif</p>
+                    <p class="text-sm text-gray-500">{{ props.stats.percentActive }}% actif</p>
 
                 </div>
               </div>
@@ -237,10 +228,10 @@
             </div>
             <div class="flex gap-4 mt-4 text-sm">
               <span class="flex items-center gap-3">
-                <span class="w-3 h-3 bg-blue-500 rounded-full"></span> Compte actif
+                <span class="w-3 h-3 bg-blue-600 rounded-full"></span> Compte actif
               </span>
               <span class="flex items-center gap-1">
-                <span class="w-3 h-3 bg-indigo-200 rounded-full"></span> Compte inactif
+                <span class="w-3 h-3 bg-blue-300 rounded-full"></span> Compte inactif
               </span>
             </div>
           </div>
@@ -267,10 +258,10 @@
             </div>
             <div class="flex gap-4 mt-4 text-sm">
               <span class="flex items-center gap-3">
-                <span class="w-3 h-3 bg-green-500 rounded-full"></span> Compte actif
+                <span class="w-3 h-3 bg-green-600 rounded-full"></span> Compte actif
               </span>
               <span class="flex items-center gap-1">
-                <span class="w-3 h-3 bg-green-200 rounded-full"></span> Compte inactif
+                <span class="w-3 h-3 bg-green-300 rounded-full"></span> Compte inactif
               </span>
             </div>
           </div>
@@ -300,11 +291,54 @@
 
       </div>
     </main>
+
+    <!-- Modal Messages -->
+    <div
+      v-if="showMessagesModal"
+      class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+        <button
+          class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+          @click="showMessagesModal = false"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+               viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="text-lg font-bold mb-4">Messages</h2>
+        <p>Contenu de la messagerie ici…</p>
+      </div>
+    </div>
+
+    <!-- Modal Notifications -->
+    <div
+      v-if="showNotificationsModal"
+      class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+        <button
+          class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+          @click="showNotificationsModal = false"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+               viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <h2 class="text-lg font-bold mb-4">Notifications</h2>
+        <p>Contenu des notifications ici…</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { router } from '@inertiajs/vue3'
 
 const sidebarOpen = ref(true)
 
@@ -400,16 +434,16 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Compte actif',
-        backgroundColor: '#c7d2fe',
-        borderColor: '#3b82f6',
+        backgroundColor: '#2563eb',
+        borderColor: '#2563eb',
         data: Array(months.length - 1).fill(0).concat(props.stats.activePatients),
         fill: true,
         tension: 0.4
       },
       {
         label: 'Compte inactif',
-        backgroundColor: '#e0e7ff',
-        borderColor: '#6366f1',
+        backgroundColor: '#93c5fd',
+        borderColor: '#93c5fd',
         data: Array(months.length - 1).fill(0).concat(props.stats.inactivePatients),
         fill: true,
         tension: 0.4
@@ -426,16 +460,16 @@ const chartDataMedecins = computed(() => {
     datasets: [
       {
         label: 'Compte actif',
-        backgroundColor: '#bbf7d0',
-        borderColor: '#22c55e',
+        backgroundColor: '#16a34a',
+        borderColor: '#16a34a',
         data: Array(months.length - 1).fill(0).concat(activeDoctors.value),
         fill: true,
         tension: 0.4
       },
       {
         label: 'Compte inactif',
-        backgroundColor: '#dcfce7',
-        borderColor: '#4ade80',
+        backgroundColor: '#86efac',
+        borderColor: '#86efac',
         data: Array(months.length - 1).fill(0).concat(inactiveDoctors.value),
         fill: true,
         tension: 0.4
@@ -479,6 +513,9 @@ function setActiveSubMenu(parent: string, submenu: string) {
   activeMenu.value = parent
   activeSubMenu.value = submenu
 }
+
+const showMessagesModal = ref(false)
+const showNotificationsModal = ref(false)
 </script>
 
 
