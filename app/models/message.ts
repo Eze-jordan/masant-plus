@@ -21,6 +21,9 @@ export default class Message extends BaseModel {
   public idUserSender!: string
 
   @column()
+  public idUserReceiver!: string
+
+  @column()
   public message!: string
 
   @column.dateTime({ autoCreate: true })
@@ -38,4 +41,9 @@ export default class Message extends BaseModel {
     foreignKey: 'idUserSender',
   })
   public sender!: BelongsTo<typeof User>
+
+  @belongsTo(() => User, {
+    foreignKey: 'idUserReceiver',
+  })
+  public receiver!: BelongsTo<typeof User>
 }
