@@ -163,7 +163,7 @@
 
       </div>
       <div class="text-sm">
-        <p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
+        <p class="font-semibold">{{ user?.username || 'Utilisateur' }}</p>
 <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
 
 
