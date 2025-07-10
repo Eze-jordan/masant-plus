@@ -11,8 +11,8 @@
   <button @click="toggleSidebar" class="text-white">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
          viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"/>
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+      <line x1="9" y1="4" x2="9" y2="20" stroke="currentColor" stroke-width="2"/>
     </svg>
   </button>
 </div>
@@ -162,12 +162,14 @@
         </ul>
 
       </div>
+      
       <div class="text-sm">
-        <p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
-<p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
+        <span v-if="sidebarOpen"><p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
+        <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
+</span>
+        
 
-
-      <div class="text-sm"> <span v-if="sidebarOpen"> <p class="font-semibold">        Administrateur</p>
+        <div class="text-sm"> <span v-if="sidebarOpen"> <p class="font-semibold">        Administrateur</p>
      </span>
        
       </div>
@@ -276,7 +278,6 @@
 
         <!-- Top Doctors -->
         <h2 class="text-lg font-semibold mb-4">Top Docteurs</h2>
-        <h2 class="text-lg font-semibold mb-4">Top Docteurs</h2>
 <div class="grid grid-cols-4 gap-4">
   <div
     v-for="doctor in topDoctors"
@@ -311,7 +312,6 @@ function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value
 }
 
-import { defineComponent, ref } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -467,8 +467,13 @@ function toggleSubMenu(menu: string) {
 
 function setActiveMenu(menu: string) {
   activeMenu.value = menu
-  activeSubMenu.value = ''
+
+  // Si on clique sur Dashboard, on vide le sous-menu
+  if (menu === 'dashboard') {
+    activeSubMenu.value = ''
+  }
 }
+
 
 function setActiveSubMenu(parent: string, submenu: string) {
   activeMenu.value = parent
