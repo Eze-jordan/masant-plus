@@ -5,6 +5,26 @@ import { DateTime } from 'luxon'
 
 export default class DisponibiliteController {
   // ➤ Créer une disponibilité avec créneaux générés automatiquement
+
+  // ➤ Retourne toutes les disponibilités pour tous les médecins
+public async index({ response }: HttpContextContract) {
+  try {
+    const disponibilites = await Disponibilite.query()
+      .preload('creneaux')
+      .preload('doctor')
+      .orderBy('dateDebut', 'desc')
+
+    return response.ok(disponibilites)
+  } catch (error) {
+    console.error('Erreur dans index :', error)
+    return response.status(500).send({
+      message: 'Erreur lors de la récupération des disponibilités.',
+      error: error.message,
+    })
+  }
+}
+
+
   public async store({ request, response }: HttpContextContract) {
     const data = request.only([
       'idDoctor',

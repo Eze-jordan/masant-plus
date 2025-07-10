@@ -37,6 +37,7 @@ import User from '#models/user'
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
+const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
  const  NotificationControllers  = new  NotificationController()
 const  loginadmin = new  UsersControllers()
@@ -2681,7 +2682,7 @@ router.get('/disponibilites', async (ctx) => {
   
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return new DisponibilitesController().index(ctx)
+      return disponibilityuser.index(ctx)
     })
   })
 }).middleware([throttle])
@@ -2692,7 +2693,7 @@ router.get('/disponibilites/:id', async (ctx) => {
   
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return new DisponibilitesController().getByDoctor(ctx)
+      return  disponibilityuser.getByDoctor(ctx)
     })
   })
 }).middleware([throttle])
@@ -2704,7 +2705,7 @@ router.post('/disponibilites', async (ctx) => {
 
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return new DisponibilitesController().store(ctx)
+      return disponibilityuser.store(ctx)
     })
   })
 }).middleware([throttle])
@@ -2715,7 +2716,7 @@ router.put('/disponibilites/:id', async (ctx) => {
   
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return new DisponibilitesController().update(ctx)
+      return disponibilityuser.update(ctx)
     })
   })
 }).middleware([throttle])
@@ -2726,7 +2727,7 @@ router.delete('/disponibilites/:id', async (ctx) => {
   
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return new DisponibilitesController().destroy(ctx)
+      return  disponibilityuser.destroy(ctx)
     })
   })
 }).middleware([throttle])
