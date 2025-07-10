@@ -1,6 +1,5 @@
 <template>
-  
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 overflow-x-hidden">
     
     <!-- Header Section -->
     <header class="bg-white shadow-sm">
@@ -64,9 +63,9 @@
           <p class="text-gray-600">Des chiffres qui parlent d'eux-mêmes</p>
         </div>
         <div class="grid md:grid-cols-3 gap-8 text-center">
-          <StatCard value="{{ animatedUsers }}" label="Utilisateurs actifs" iconClass="User" iconColor="indigo" />
-          <StatCard value="{{ animatedProjects }}" label="Projets réalisés" iconClass="Project" iconColor="green" />
-          <StatCard value="{{ animatedSatisfaction }}" label="Satisfaction client" iconClass="Star" iconColor="purple" />
+          <StatCard :value="animatedUsers" label="Utilisateurs actifs" iconClass="User" iconColor="indigo" />
+          <StatCard :value="animatedProjects" label="Projets réalisés" iconClass="Project" iconColor="green" />
+          <StatCard :value="animatedSatisfaction" label="Satisfaction client" iconClass="Star" iconColor="purple" />
         </div>
       </div>
 
@@ -192,10 +191,6 @@ onMounted(() => {
   // Démarrer l'animation des chiffres après un délai
   setTimeout(animateNumbers, 500)
 })
-const goToLoginPage = () => {
-  // Utilise inertia pour rediriger directement
-  Inertia.visit('/login')  // Ceci redirige l'utilisateur vers la route /login en utilisant Inertia
-}
 
 const showMoreInfo = () => {
   Inertia.visit('/info') 
@@ -220,5 +215,10 @@ const showMoreInfo = () => {
 
 .animate-bounce {
   animation: bounce 2s infinite;
+}
+
+/* Empêche le scroll horizontal global */
+html, body {
+  overflow-x: hidden;
 }
 </style>

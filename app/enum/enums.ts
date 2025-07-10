@@ -22,13 +22,13 @@ export const TypeRDV = {
 } as const
 export type TypeRDV = (typeof TypeRDV)[keyof typeof TypeRDV]
 
-// Statut d’un paiement
-export const StatusPaiement = {
-  EN_ATTENTE: 'EN_ATTENTE',
-  PAYE: 'PAYE',
-  ECHOUE: 'ECHOUE',
-} as const
-export type StatusPaiement = (typeof StatusPaiement)[keyof typeof StatusPaiement]
+// Statut d’un paiement (avec le statut RETRAIT ajouté)
+export enum StatusPaiement {
+  EN_ATTENTE = 'EN_ATTENTE',
+  PAYE = 'PAYE',
+  ECHOUE = 'ECHOUE',
+  RETRAIT = 'RETRAIT', // Ajout du statut RETRAIT
+}
 
 // Statut de traitement d'une suggestion
 export const StatutSuggestion = {
