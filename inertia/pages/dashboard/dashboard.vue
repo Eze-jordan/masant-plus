@@ -182,10 +182,8 @@
             <MessageCircle class="w-6 h-6 text-gray-600 cursor-pointer" @click="showMessagesModal = true" />
             <Bell class="w-6 h-6 text-gray-600 cursor-pointer" @click="showNotificationsModal = true" />
             <button @click="logout" class="focus:outline-none">
-  <User class="w-6 h-6 text-gray-600" />
-</button>
-
-
+            <User class="w-6 h-6 text-gray-600" />
+             </button>
           </div>
         </div>
 
@@ -245,7 +243,7 @@
                 <Stethoscope class="w-6 h-6 text-green-500" />
                 <div>
                   <p class="font-semibold">{{ props.users.length }}</p>
-<p class="text-sm text-gray-500">{{ Math.round((activeDoctors / props.users.length) * 100) || 0 }}% actif</p>
+                  <p class="text-sm text-gray-500">{{ Math.round((activeDoctors / props.users.length) * 100) || 0 }}% actif</p>
 
                 </div>
               </div>
