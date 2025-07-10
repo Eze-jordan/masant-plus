@@ -4,6 +4,7 @@ import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
 import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
@@ -35,6 +36,7 @@ import User from '#models/user'
 
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
+import retraits_controller from '#controllers/retraits_controller';
 const userupdate    =  new   update_users_controller()
  const  NotificationControllers  = new  NotificationController()
 const  loginadmin = new  UsersControllers()
@@ -43,6 +45,7 @@ const user  = new  UsersController()
 const livecontroller    = new  live_for_users_controller()
 const appointmentController = new AppointmentController()
 const livesController = new LivesController()
+const paymentre   = new retraits_controller()
 const doctorsController = new DoctorsController()
 const feedbackController = new FeedbackController()
 const deletecompte  = new AccountDeletionController()
@@ -2636,7 +2639,7 @@ router.delete('/users/:id', async (ctx) => {
   console.log('[GET /users/:id] Params:', JSON.stringify(ctx.request.params(), null, 2))
 
   await onlyFrontend.handle(ctx, async () => {
-    
+
     await appKeyGuard.handle(ctx, async () => {
       console.log('[GET /users/:id] Avant appel controller show')
       return user.destroy(ctx)  // Méthode pour récupérer l'utilisateur
@@ -2724,6 +2727,21 @@ router.delete('/disponibilites/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return new DisponibilitesController().destroy(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+router.get('/paiements/retraits-mois/:id', async (ctx) => {
+  console.log(`[GET /paiements/retraits-mois/${ctx.params.id}] Début`)
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      // Passage de ctx avec un type explicite
+      return  paymentre.retraitsParUser({
+        params: { id: ctx.params.id }, // On cast explicitement le type de `params`
+        response: ctx.response
+      })
     })
   })
 }).middleware([throttle])
@@ -3260,6 +3278,7 @@ router.get('/csrf-check', async ({ response }) => {
   return response.ok({ status: 'ok' })
 })
 
+
 router.get('/dashboard', async ({ request, response, inertia }) => {
   const token = request.cookie('token')
 
@@ -3268,18 +3287,51 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
   }
 
   try {
+    // Vérifier le token JWT
     const payload = verifyJwtToken(token) as { id: string; email: string }
-    const currentUser = await User.find(payload.id)
+    const currentUser = await User.query().where('id', payload.id).preload('role').first()
 
     if (!currentUser) {
       return response.redirect('/login')
     }
 
-    // Charger tout, sauf les champs sensibles
-    const users = await User.all()
-   console.log(users)
-    // Retourner tous les champs sauf les sensibles
-    const safeUsers = users.map(user => ({
+    // Charger tous les utilisateurs avec leur rôle
+    const users = await User.query().preload('role')
+
+    // Filtrer les patients (role.name === 'patient')
+    const patients = users.filter(
+      (u) => u.role && u.role.label.toLowerCase() === 'patient'
+    )
+
+    // Filtrer les docteurs (role.name === 'doctor' ou 'medecin')
+    const doctors = users.filter(
+      (u) =>
+        u.role &&
+        ['doctor', 'medecin'].includes(u.role.label.toLowerCase())
+    )
+
+    // Calcul stats docteurs
+    const totalDoctors = doctors.length
+    const activeDoctors = doctors.filter(
+      (u) => u.accountStatus && u.accountStatus.toLowerCase() === 'active'
+    ).length
+    const inactiveDoctors = totalDoctors - activeDoctors
+    const doctorPercentActive = totalDoctors
+      ? Math.round((activeDoctors / totalDoctors) * 100)
+      : 0
+
+    // Calcul stats patients
+    const totalPatients = patients.length
+    const activePatients = patients.filter(
+      (p) => p.accountStatus && p.accountStatus.toLowerCase() === 'active'
+    ).length
+    const inactivePatients = totalPatients - activePatients
+    const patientPercentActive = totalPatients
+      ? Math.round((activePatients / totalPatients) * 100)
+      : 0
+
+    // Préparer users safe (sans données sensibles)
+    const safeUsers = users.map((user) => ({
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -3291,9 +3343,10 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
       profileImage: user.profileImage,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      // ajoute ici d'autres champs que tu veux exposer
+      role: user.role ? user.role.label : null,
     }))
 
+    // Renvoyer les données à Inertia
     return inertia.render('dashboard/dashboard', {
       user: {
         id: currentUser.id,
@@ -3307,14 +3360,28 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
         profileImage: currentUser.profileImage,
         createdAt: currentUser.createdAt,
         updatedAt: currentUser.updatedAt,
+        role: currentUser.role ? currentUser.role.label : null,
       },
       users: safeUsers,
+
+      stats: {
+        totalPatients,
+        activePatients,
+        inactivePatients,
+        percentActive: patientPercentActive,
+        totalDoctors,
+        activeDoctors,
+        inactiveDoctors,
+        percentDoctorsActive: doctorPercentActive,
+      },
     })
   } catch (error: any) {
     console.error('[Dashboard] Erreur JWT :', error.message)
     return response.redirect('/login')
   }
 })
+
+
 
 router.get('/logout', async (ctx) => {
   await authController.logout(ctx) // ctx contient { request, response, ... }

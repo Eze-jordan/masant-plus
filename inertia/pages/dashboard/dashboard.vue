@@ -146,8 +146,9 @@
 
       </div>
       <div class="text-sm">
-        <p class="font-semibold">        Administrateur</p>
-        <p class="text-gray-200">administrateur@gmail.com</p>
+        <p class="font-semibold">{{ user?.name || 'Utilisateur' }}</p>
+<p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
+
       </div>
     </aside>
 
@@ -195,8 +196,9 @@
               <div class="flex items-center gap-2">
                 <User class="w-6 h-6 text-blue-600" />
                 <div>
-                  <p class="font-semibold">12,345</p>
-                  <p class="text-sm text-gray-500">65% actif</p>
+                  <p class="font-semibold">{{ props.stats.totalPatients }}</p>
+<p class="text-sm text-gray-500">{{ props.stats.percentActive }}% actif</p>
+
                 </div>
               </div>
               <select class="border rounded px-2 py-1 text-sm">
@@ -224,8 +226,9 @@
               <div class="flex items-center gap-2">
                 <Stethoscope class="w-6 h-6 text-green-500" />
                 <div>
-                  <p class="font-semibold">600</p>
-                  <p class="text-sm text-gray-500">80% actif</p>
+                  <p class="font-semibold">{{ props.users.length }}</p>
+<p class="text-sm text-gray-500">{{ Math.round((activeDoctors / props.users.length) * 100) || 0 }}% actif</p>
+
                 </div>
               </div>
               <select class="border rounded px-2 py-1 text-sm">
@@ -259,8 +262,8 @@
   </div>
 </template>
 
-<script setup>
-import { defineComponent, ref } from 'vue'
+<script setup lang="ts">
+import { computed, ref } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -285,47 +288,100 @@ import {
   MessageCircle,
   ChevronRight
 } from 'lucide-vue-next'
+
 import GererDocteur from './geredocteur.vue'
 import ListeDemande from './ListeDemande.vue'
 import GererPatients from './GererPatients.vue'
 import GererUrgences from './GererUrgences.vue'
 import HistoriquePaiement from './HistoriquePaiement.vue'
 
-ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
-const props = defineProps({
-  user: Object,
-  users: Array,
-})
+// Props typés
+const props = defineProps<{
+  stats: {
+    totalPatients: number
+    activePatients: number
+    inactivePatients: number
+    percentActive: number
+  },
+  user: any,
+  users: any[]
+}>()
 
+// Stat cards dynamiques
 const stats = [
-  { label: 'Total Patients', value: '2K+', icon: Users },
-  { label: 'Total Docteurs', value: '600', icon: Stethoscope },
-  { label: 'Urgent', value: '800', icon: Calendar },
+  { label: 'Total Patients', value: props.stats.totalPatients, icon: Users },
+  { label: 'Total Docteurs', value: props.users.length, icon: Stethoscope },
+  { label: 'Urgent', value: '0', icon: Calendar },
   { label: 'Revenus', value: 'XAF 60K', icon: DollarSign }
 ]
 
-const chartData = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  datasets: [
-    {
-      label: 'Compte actif',
-      backgroundColor: '#c7d2fe',
-      borderColor: '#3b82f6',
-      data: [1000, 8000, 6000, 7000, 7500, 6800, 8000, 9000, 12000, 11000, 13000, 15000],
-      fill: true,
-      tension: 0.4
-    },
-    {
-      label: 'Compte inactif',
-      backgroundColor: '#e0e7ff',
-      borderColor: '#6366f1',
-      data: [400, 1600, 2000, 1200, 1400, 1800, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
-      fill: true,
-      tension: 0.4
-    }
-  ]
+// Docteurs actifs/inactifs estimés
+const activeDoctors = computed(() => Math.round(props.users.length * 0.8))
+const inactiveDoctors = computed(() => props.users.length - activeDoctors.value)
+
+// Chart.js registration
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
+
+// Fonction pour générer les labels des mois jusqu'au mois actuel
+function getMonthLabelsUntilNow(): string[] {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const currentMonth = new Date().getMonth()
+  return months.slice(0, currentMonth + 1)
 }
 
+// Patients chart (dynamique)
+const chartData = computed(() => {
+  const months = getMonthLabelsUntilNow()
+  return {
+    labels: months,
+    datasets: [
+      {
+        label: 'Compte actif',
+        backgroundColor: '#c7d2fe',
+        borderColor: '#3b82f6',
+        data: Array(months.length - 1).fill(0).concat(props.stats.activePatients),
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'Compte inactif',
+        backgroundColor: '#e0e7ff',
+        borderColor: '#6366f1',
+        data: Array(months.length - 1).fill(0).concat(props.stats.inactivePatients),
+        fill: true,
+        tension: 0.4
+      }
+    ]
+  }
+})
+
+// Docteurs chart (dynamique)
+const chartDataMedecins = computed(() => {
+  const months = getMonthLabelsUntilNow()
+  return {
+    labels: months,
+    datasets: [
+      {
+        label: 'Compte actif',
+        backgroundColor: '#bbf7d0',
+        borderColor: '#22c55e',
+        data: Array(months.length - 1).fill(0).concat(activeDoctors.value),
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'Compte inactif',
+        backgroundColor: '#dcfce7',
+        borderColor: '#4ade80',
+        data: Array(months.length - 1).fill(0).concat(inactiveDoctors.value),
+        fill: true,
+        tension: 0.4
+      }
+    ]
+  }
+})
+
+// Chart options (communs)
 const chartOptions = {
   responsive: true,
   plugins: {
@@ -337,50 +393,27 @@ const chartOptions = {
   }
 }
 
-const LineChart = defineComponent({
-  name: 'LineChart',
-  props: ['chartData', 'chartOptions'],
-  components: { Line },
-  template: `<Line :data="chartData" :options="chartOptions" />`
-})
-
-const chartDataMedecins = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  datasets: [
-    {
-      label: 'Compte actif',
-      backgroundColor: '#bbf7d0',
-      borderColor: '#22c55e',
-      data: [200, 800, 1200, 1500, 1700, 1800, 2000, 2200, 2500, 2700, 3000, 3200],
-      fill: true,
-      tension: 0.4
-    },
-    {
-      label: 'Compte inactif',
-      backgroundColor: '#dcfce7',
-      borderColor: '#4ade80',
-      data: [50, 100, 200, 150, 180, 200, 250, 300, 350, 400, 450, 500],
-      fill: true,
-      tension: 0.4
-    }
-  ]
-}
-
-const openSubMenu = ref(null)
+// État UI sidebar
+const openSubMenu = ref<string | null>(null)
 const activeMenu = ref('dashboard')
 const activeSubMenu = ref('')
 
-function toggleSubMenu(menu) {
+function toggleSubMenu(menu: string) {
   openSubMenu.value = openSubMenu.value === menu ? null : menu
 }
-function setActiveMenu(menu) {
+
+function setActiveMenu(menu: string) {
   activeMenu.value = menu
   activeSubMenu.value = ''
 }
-function setActiveSubMenu(parent, submenu) {
+
+function setActiveSubMenu(parent: string, submenu: string) {
   activeMenu.value = parent
   activeSubMenu.value = submenu
 }
 </script>
+
+
+
 
 <style scoped></style>
