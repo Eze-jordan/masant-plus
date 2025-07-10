@@ -2692,7 +2692,7 @@ router.get('/disponibilites/:id', async (ctx) => {
   
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return new DisponibilitesController().show(ctx)
+      return new DisponibilitesController().getByDoctor(ctx)
     })
   })
 }).middleware([throttle])
