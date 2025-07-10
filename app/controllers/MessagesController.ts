@@ -65,10 +65,15 @@ export default class MessagesController {
       const newMessage = await Message.create({
         idDiscussion: discussion.id,
         idUserSender,
+        idUserReceiver,
         message,
       })
 
-      // Création de la notification pour le destinataire
+      // Charger l'expéditeur et le destinataire
+      await newMessage.load('sender')
+      await newMessage.load('receiver')
+
+      // Créer la notification pour le destinataire
       await Notification.create({
         idUser: idUserReceiver,
         titre: 'Nouveau message reçu',
@@ -78,7 +83,14 @@ export default class MessagesController {
 
       return response.created({
         message: 'Message envoyé avec succès.',
-        data: newMessage,
+        data: {
+          id: newMessage.id,
+          message: newMessage.message,
+          createdAt: newMessage.createdAt,
+          senderUsername: newMessage.sender?.username ?? 'Inconnu',
+          receiverUsername: newMessage.receiver?.username ?? 'Inconnu',
+          idDiscussion: newMessage.idDiscussion,
+        },
       })
     } catch (error: any) {
       return response.status(500).send({
@@ -88,62 +100,58 @@ export default class MessagesController {
     }
   }
 
-
   public async getByUser({ params, response }: HttpContextContract) {
-    const userId = params.userId;
-  
+    const userId = params.userId
+
     try {
-      // Récupérer toutes les discussions où l'utilisateur est impliqué
       const discussions = await Discussion.query()
         .where('idDoctor', userId)
         .orWhere('idPatient', userId)
         .preload('doctor')
-        .preload('patient');
-  
+        .preload('patient')
+
       if (discussions.length === 0) {
         return response.ok({
-          message: "Aucune discussion trouvée pour cet utilisateur.",
+          message: 'Aucune discussion trouvée pour cet utilisateur.',
           data: [],
-        });
+        })
       }
-  
-      const results = [];
-  
+
+      const results = []
+
       for (const discussion of discussions) {
-        // Dernier message de cette discussion
         const lastMessage = await Message.query()
           .where('idDiscussion', discussion.id)
           .orderBy('createdAt', 'desc')
-          .first();
-  
-        if (!lastMessage) continue;
-  
-        // Trouver l'autre utilisateur dans la discussion
-        const otherUser = discussion.idDoctor === userId ? discussion.patient : discussion.doctor;
-  
+          .first()
+
+        if (!lastMessage) continue
+
+        const otherUser = discussion.idDoctor === userId ? discussion.patient : discussion.doctor
+
         results.push({
           id: discussion.id,
           name: `${otherUser.firstName} ${otherUser.lastName}`,
           lastMessage: lastMessage.message,
           time: lastMessage.createdAt.toFormat('HH:mm'),
-          unread: false, // à adapter si tu veux suivre les messages lus
+          unread: false,
           avatar: otherUser.profileImage || `https://ui-avatars.com/api/?name=${otherUser.firstName}+${otherUser.lastName}`,
-          isOnline: false, // à gérer plus tard avec un système de présence
-        });
+          isOnline: false,
+        })
       }
-  
+
       return response.ok({
         message: 'Discussions récupérées avec succès.',
         data: results,
-      });
+      })
     } catch (error: any) {
       return response.status(500).send({
         message: 'Erreur lors de la récupération des messages.',
         error: error.message,
-      });
+      })
     }
   }
-  
+
   /**
    * Récupérer les messages d'une discussion
    */
@@ -154,11 +162,20 @@ export default class MessagesController {
       const messages = await Message.query()
         .where('idDiscussion', discussionId)
         .preload('sender')
+        .preload('receiver')
         .orderBy('createdAt', 'asc')
+
+      const formatted = messages.map((m) => ({
+        id: m.id,
+        message: m.message,
+        createdAt: m.createdAt,
+        senderUsername: m.sender?.username ?? 'Inconnu',
+        receiverUsername: m.receiver?.username ?? 'Inconnu',
+      }))
 
       return response.ok({
         message: 'Messages récupérés avec succès.',
-        data: messages,
+        data: formatted,
       })
     } catch (error: any) {
       return response.status(500).send({
@@ -168,9 +185,6 @@ export default class MessagesController {
     }
   }
 
-  /**
-   * Mettre à jour un message
-   */
   public async update({ params, request, response }: HttpContextContract) {
     const messageId = params.id
     const { message } = request.only(['message'])
@@ -180,8 +194,6 @@ export default class MessagesController {
       if (!existingMessage) {
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
-
-      // 🔐 Vérifier les autorisations ici
 
       if (message !== undefined) {
         existingMessage.message = message
@@ -201,17 +213,12 @@ export default class MessagesController {
     }
   }
 
-  /**
-   * Supprimer un message
-   */
   public async delete({ params, response }: HttpContextContract) {
     try {
       const message = await Message.find(params.id)
       if (!message) {
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
-
-      // 🔐 Vérifier les autorisations ici
 
       await message.delete()
 
@@ -226,9 +233,6 @@ export default class MessagesController {
     }
   }
 
-  /**
-   * Supprimer tous les messages d'une discussion
-   */
   public async deleteAllByDiscussion({ params, response }: HttpContextContract) {
     try {
       const discussionId = params.discussionId
@@ -238,8 +242,6 @@ export default class MessagesController {
       if (messages.length === 0) {
         return response.status(404).send({ message: 'Aucun message trouvé pour cette discussion.' })
       }
-
-      // 🔐 Vérifier les autorisations ici
 
       await Message.query().where('idDiscussion', discussionId).delete()
 

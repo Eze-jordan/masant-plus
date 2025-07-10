@@ -33,11 +33,12 @@ import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
-
+const patient   =  new    PatientController()
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
 import Paiement from '#models/paiement';
+import PatientController from '#controllers/PatientController';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
  const  NotificationControllers  = new  NotificationController()
@@ -2776,11 +2777,18 @@ router.get('/patients/count/:userId', async (ctx) => {
   })
 }).middleware([throttle])
 
-
 router.get('/patients', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return patientsController.index(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/patientsuser/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patient.show(ctx)
     })
   })
 }).middleware([throttle])
