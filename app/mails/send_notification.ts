@@ -1,4 +1,4 @@
-import { BaseMail } from '@adonisjs/mail'
+ /**import { BaseMail } from '@adonisjs/mail'
 import mail from '@adonisjs/mail/services/main'
 
 export default class SendoptNotification extends BaseMail {
@@ -37,3 +37,4 @@ export default class SendoptNotification extends BaseMail {
     }
   }
 }
+*/

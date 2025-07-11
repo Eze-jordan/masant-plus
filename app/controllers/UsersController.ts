@@ -9,7 +9,6 @@ import { cuid } from '@adonisjs/core/helpers'
 import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import hash from '@adonisjs/core/services/hash'
-import SendoptNotification from '#mails/send_notification'
 
 export default class UsersController {
   public async show({ params, response }: HttpContextContract) {
@@ -148,7 +147,6 @@ export default class UsersController {
               const hashedPassword = await hash.make(randomPassword)
               user.password = hashedPassword
   
-              await new SendoptNotification(user.email, randomPassword).sendEmail()
               console.log('Email avec mot de passe envoyé à:', user.email)
             } else {
               console.error('Erreur : email utilisateur manquant ou invalide')
