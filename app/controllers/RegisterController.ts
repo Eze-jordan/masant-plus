@@ -7,11 +7,12 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { createUserValidator } from '#validators/create_user'
+import { createDocteurValidator } from '#validators/create_user'
+import { createPatientValidator } from '#validators/create_user'
 import { cuid } from '@adonisjs/core/helpers'
 
 export default class RegisterController {
-  public async register(ctx: HttpContextContract) {
+  public async registerDocteur(ctx: HttpContextContract) {
     const { request, response, logger } = ctx
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
@@ -37,7 +38,7 @@ export default class RegisterController {
     }
 
     try {
-      const validatedData = await createUserValidator.validate(requestData)
+      const validatedData = await createDocteurValidator.validate(requestData)
 
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
@@ -77,6 +78,55 @@ export default class RegisterController {
         ...sanitizedData,
         roleId: selectedRole.id,
         profileImage: profileImageUrl,
+      })
+
+      return response.status(201).send({
+        message: 'Utilisateur créé avec succès.',
+        user: user.serialize(),
+      })
+
+    } catch (error: any) {
+      logger.error('[RegisterController] Erreur création utilisateur', {
+        message: error.message,
+        stack: error.stack,
+        dataSent: requestData,
+      })
+      return response.status(500).send({
+        message: 'Erreur création utilisateur.',
+        error: error.message,
+        stack: error.stack,
+        dataReceived: requestData,
+      })
+    }
+  }
+
+  public async registerPatient(ctx: HttpContextContract) {
+    const { request, response, logger } = ctx
+    const raw = request.all()
+    logger.info('[RegisterController] Données brutes reçues :', raw)
+
+    const password = raw.password || 'changeme123'
+    const requestData = {
+      username: raw.firstName,
+      email: raw.email,
+      password: password,
+      last_name: raw.lastName,
+      phone: raw.phone,
+      address: raw.address ?? '',
+    }
+
+    try {
+      const validatedData = await createPatientValidator.validate(requestData)
+
+      const userExists = await User.findBy('email', validatedData.email)
+      if (userExists) {
+        return response.status(400).send({ message: 'Un utilisateur avec cet email existe déjà.' })
+      }
+
+      const {...sanitizedData } = validatedData
+
+      const user = await User.create({
+        ...sanitizedData,
       })
 
       return response.status(201).send({

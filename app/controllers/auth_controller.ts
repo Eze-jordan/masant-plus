@@ -23,11 +23,6 @@ export default class AuthController {
       return response.status(401).send({ error: 'Email invalide.' })
     }
 
-    if (user.accountStatus !== 'ACTIVE') {
-      return response.status(403).send({
-        error: 'Compte désactivé. Veuillez contacter l\'administrateur.',
-      })
-    }
 
     const storedHash = user.password?.trim() ?? ''
     logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)
@@ -74,6 +69,70 @@ export default class AuthController {
         specialty: user.specialty,
         matricule : user.registrationNumber,
         role: user.role?.label ?? 'Non défini', // ✅ sécurisé + propre
+      },
+      token,
+    })
+  }
+
+  //Login du patient
+  public async loginPatient({ request, response, logger }: HttpContextContract) {
+    const { email, password } = request.only(['email', 'password'])
+
+    if (!email || !password) {
+      return response.status(400).send({ error: 'Email et mot de passe requis.' })
+    }
+
+    // ⛔ Tu utilisais `User.findBy` sans relation
+    const user = await User.query()
+      .where('email', email)
+      .first()
+
+    if (!user) {
+      return response.status(401).send({ error: 'Email invalide.' })
+    }
+
+
+    const storedHash = user.password?.trim() ?? ''
+    logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)
+    logger.info(`[AuthController] Mot de passe envoyé : ${password}`)
+
+    try {
+      const isPasswordValid = await hash.verify(storedHash, password)
+      if (!isPasswordValid) {
+        logger.warn(`[AuthController] Mot de passe et email invalide pour : ${email}`)
+        return response.status(401).send({ error: 'Mot de passe invalide.' })
+      }
+    } catch (error: any) {
+      logger.error(`[AuthController] Erreur lors de la vérification du mot de passe : ${error.message}`)
+      return response.status(500).send({ error: 'Erreur interne lors de la vérification du mot de passe.' })
+    }
+
+    const token = generateJwtToken({ id: user.id, email: user.email })
+
+    await SessionUser.create({
+      userId: String(user.id),
+      token,
+      expiresAt: DateTime.now().plus({ days: 7 }),
+    })
+
+    response.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    })
+
+    return response.ok({
+      user: {
+        id: user.id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        username: user.username,
+        lastName: user.lastName,
+        phone: user.phone,
+        address: user.address,
+        profileImage: user.profileImage,
       },
       token,
     })
