@@ -170,8 +170,14 @@
     <!-- Main -->
     <main class="flex-1 p-6 overflow-auto">
       <GererDocteur v-if="activeSubMenu === 'liste-docteurs'"  :user="user" :users="users"/>
-      <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" :user="user" :users="users" />
-      <GererPatients v-else-if="activeSubMenu === 'gerer-patients'" />
+      <ListeDemande
+  v-else-if="activeSubMenu === 'Liste-demande'"
+  :user="user"
+  :users="users"
+  :demandes="demandes"
+/>
+      <GererPatients v-else-if="activeSubMenu === 'gerer-patients'" :user="user" :users="patients" />
+
       <GererUrgences v-else-if="activeSubMenu === 'gerer-urgences'" />
       <HistoriquePaiement v-else-if="activeSubMenu === 'historique'" />
       <div v-else>
@@ -368,7 +374,7 @@ import {
   MessageCircle,
   ChevronRight
 } from 'lucide-vue-next'
-
+import { usePoll } from '@inertiajs/vue3'
 import GererDocteur from './geredocteur.vue'
 import ListeDemande from './ListeDemande.vue'
 import GererPatients from './GererPatients.vue'
@@ -388,9 +394,14 @@ const props = defineProps<{
   user: any,
   users: any[]
 }>()
+const patients = computed(() =>
+  props.users.filter((u) => ['patient', 'Patient', 'PATIENT'].includes(u.role || ''))
+)
+const demandes = computed(() =>
+  props.users.filter((u) => (u.account_status || '').toUpperCase() === 'PENDING')
+)
 
 
- 
 const topDoctors = computed(() => {
   return props.users
     .filter(user => ['doctor', 'medecin'].includes((user.role || '').toLowerCase()))

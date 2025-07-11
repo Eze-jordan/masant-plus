@@ -172,9 +172,9 @@
           <div class="mb-4">
             <label class="block mb-1">Statut</label>
             <select v-model="selectedDocteur.accountStatus" class="w-full border rounded px-3 py-2">
-              <option value="Actif">Actif</option>
-              <option value="Inactif">Inactif</option>
-              <option value="Pending">En attente</option>
+              <option value="ACTIVE">Actif</option>
+              <option value="INACTIVE">Inactif</option>
+              <option value="PENDING">En attente</option>
             </select>
           </div>
           <div class="mb-4">
@@ -236,6 +236,8 @@ const props = defineProps({
     default: () => []
   }
 })
+
+
 
 // Refs
 const search = ref('')

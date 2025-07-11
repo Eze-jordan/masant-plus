@@ -1,4 +1,5 @@
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+// app/controllers/UsersController.ts
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from '#models/user'
 import vine from '@vinejs/vine'
 import { promises as fs } from 'fs'
@@ -7,6 +8,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { cuid } from '@adonisjs/core/helpers'
 import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
+import hash from '@adonisjs/core/services/hash'
+import SendoptNotification from '#mails/send_notification'
 
 export default class UsersController {
   public async show({ params, response }: HttpContextContract) {
@@ -39,129 +42,151 @@ export default class UsersController {
     }
   }
 
-  public async update(ctx: HttpContextContract) {
-    const { request, response, params, inertia } = ctx
-
-    const updateUserSchema = vine.object({
-      firstName: vine.string().trim().maxLength(50).optional(),
-      lastName: vine.string().trim().maxLength(50).optional(),
-      email: vine
-        .string()
-        .trim()
-        .email()
-        .maxLength(255)
-        .unique(async (db, value) => {
-          const existingUser = await db
-            .from('users')
-            .where('email', value)
-            .whereNot('id', params.id)
-            .first()
-          return !existingUser
-        })
-        .optional(),
-      phone: vine.string().trim().mobile().maxLength(20).optional(),
-      address: vine.string().trim().maxLength(255).optional(),
-      specialisation: vine.string().trim().maxLength(100).optional(),
-      about: vine.string().trim().optional(),
-      accountStatus: vine.enum(Object.values(Status) as [Status, ...Status[]]).optional(),
-      yearsExperience: vine.string().trim().optional(),
-      availability: vine.string().trim().optional(),
-      specialty: vine.string().trim().optional(),
-      profileImage: vine.file({
-        size: '2mb',
-        extnames: ['jpg', 'jpeg', 'png', 'webp'],
-      }).optional(),
-    })
-
-    try {
-      const payload = await vine.validate({
-        schema: updateUserSchema,
-        data: {
-          ...request.all(),
-          profileImage: request.file('profileImage'),
-        },
+  
+    public async update({ request, response, params, inertia }: HttpContextContract) {
+      const updateUserSchema = vine.object({
+        firstName: vine.string().trim().maxLength(50).optional(),
+        lastName: vine.string().trim().maxLength(50).optional(),
+        email: vine
+          .string()
+          .trim()
+          .email()
+          .maxLength(255)
+          .unique(async (db, value) => {
+            const existingUser = await db
+              .from('users')
+              .where('email', value)
+              .whereNot('id', params.id)
+              .first()
+            return !existingUser
+          })
+          .optional(),
+        phone: vine.string().trim().mobile().maxLength(20).optional(),
+        address: vine.string().trim().maxLength(255).optional(),
+        specialisation: vine.string().trim().maxLength(100).optional(),
+        about: vine.string().trim().optional(),
+        accountStatus: vine.enum(Object.values(Status) as [Status, ...Status[]]).optional(),
+        yearsExperience: vine.string().trim().optional(),
+        availability: vine.string().trim().optional(),
+        specialty: vine.string().trim().optional(),
+        profileImage: vine.file({
+          size: '2mb',
+          extnames: ['jpg', 'jpeg', 'png', 'webp'],
+        }).optional(),
       })
-
-      const user = await User.findOrFail(params.id)
-
-      const uploadedProfileImage = request.file('profileImage')
-      if (uploadedProfileImage?.tmpPath) {
-        const fileName = `uploads/profile/${cuid()}.${uploadedProfileImage.extname}`
-        const fileBuffer = await fs.readFile(uploadedProfileImage.tmpPath)
-
-        await drive.use('s3').put(fileName, fileBuffer)
-
-        // Génération URL signée
-        const {
-          AWS_ACCESS_KEY_ID,
-          AWS_SECRET_ACCESS_KEY,
-          AWS_REGION,
-          S3_ENDPOINT,
-          S3_BUCKET,
-          S3_FORCE_PATH_STYLE,
-        } = process.env
-
-        if (
-          AWS_ACCESS_KEY_ID &&
-          AWS_SECRET_ACCESS_KEY &&
-          AWS_REGION &&
-          S3_ENDPOINT &&
-          S3_BUCKET
-        ) {
-          const s3 = new S3Client({
-            region: AWS_REGION,
-            credentials: {
-              accessKeyId: AWS_ACCESS_KEY_ID,
-              secretAccessKey: AWS_SECRET_ACCESS_KEY,
-            },
-            endpoint: S3_ENDPOINT,
-            forcePathStyle: S3_FORCE_PATH_STYLE === 'true',
-          })
-
-          const command = new GetObjectCommand({
-            Bucket: S3_BUCKET,
-            Key: fileName,
-          })
-
-          const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 }) // 7 jours
-          console.log('URL signée générée :', signedUrl)
-
-          user.profileImage = signedUrl // <- Stocke l’URL signée directement
-        } else {
-          // Si config S3 absente, stocke juste la clé
-          user.profileImage = fileName
+  
+      try {
+        const payload = await vine.validate({
+          schema: updateUserSchema,
+          data: {
+            ...request.all(),
+            profileImage: request.file('profileImage'),
+          },
+        })
+  
+        const user = await User.findOrFail(params.id)
+        const oldStatus = user.accountStatus
+  
+        const uploadedProfileImage = request.file('profileImage')
+        if (uploadedProfileImage?.tmpPath) {
+          const fileName = `uploads/profile/${cuid()}.${uploadedProfileImage.extname}`
+          const fileBuffer = await fs.readFile(uploadedProfileImage.tmpPath)
+  
+          await drive.use('s3').put(fileName, fileBuffer)
+  
+          const {
+            AWS_ACCESS_KEY_ID,
+            AWS_SECRET_ACCESS_KEY,
+            AWS_REGION,
+            S3_ENDPOINT,
+            S3_BUCKET,
+            S3_FORCE_PATH_STYLE,
+          } = process.env
+  
+          if (
+            AWS_ACCESS_KEY_ID &&
+            AWS_SECRET_ACCESS_KEY &&
+            AWS_REGION &&
+            S3_ENDPOINT &&
+            S3_BUCKET
+          ) {
+            const s3 = new S3Client({
+              region: AWS_REGION,
+              credentials: {
+                accessKeyId: AWS_ACCESS_KEY_ID,
+                secretAccessKey: AWS_SECRET_ACCESS_KEY,
+              },
+              endpoint: S3_ENDPOINT,
+              forcePathStyle: S3_FORCE_PATH_STYLE === 'true',
+            })
+  
+            const command = new GetObjectCommand({
+              Bucket: S3_BUCKET,
+              Key: fileName,
+            })
+  
+            const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 })
+            console.log('URL signée générée :', signedUrl)
+            user.profileImage = signedUrl
+          } else {
+            user.profileImage = fileName
+          }
         }
-      }
-
-      const { profileImage, ...restPayload } = payload
-      user.merge(restPayload)
-      await user.save()
-
-      if (request.header('X-Inertia')) {
-        inertia.share({ success: 'Profil mis à jour avec succès' })
-        return response.redirect().back()
-      }
-
-      return response.ok({
-        message: 'Profil mis à jour avec succès',
-        user: user.serialize(),
-      })
-    } catch (error: any) {
-      console.error(error)
-
-      if (request.header('X-Inertia')) {
-        inertia.share({
-          errors: error.messages || { error: error.message },
+  
+        const { profileImage, ...restPayload } = payload
+        user.merge(restPayload)
+  
+        // Si statut devient ACTIVE : générer mot de passe + envoyer par mail
+        if (
+          restPayload.accountStatus &&
+          restPayload.accountStatus !== oldStatus &&
+          restPayload.accountStatus === Status.ACTIVE
+        ) {
+          try {
+            if (typeof user.email === 'string' && user.email.trim() !== '') {
+              const randomPassword = Math.random().toString(36).slice(-10)
+              const hashedPassword = await hash.make(randomPassword)
+              user.password = hashedPassword
+  
+              await new SendoptNotification(user.email, randomPassword).sendEmail()
+              console.log('Email avec mot de passe envoyé à:', user.email)
+            } else {
+              console.error('Erreur : email utilisateur manquant ou invalide')
+            }
+          } catch (mailError) {
+            console.error('Erreur envoi email d\'activation:', mailError)
+          }
+        }
+  
+        await user.save()
+  
+        if (request.header('X-Inertia')) {
+          inertia.share({ success: 'Profil mis à jour avec succès' })
+          return response.redirect().back()
+        }
+  
+        return response.ok({
+          message: 'Profil mis à jour avec succès',
+          user: user.serialize(),
         })
-        return response.redirect().back()
+      } catch (error: any) {
+        console.error(error)
+  
+        if (request.header('X-Inertia')) {
+          inertia.share({
+            errors: error.messages || { error: error.message },
+          })
+          return response.redirect().back()
+        }
+  
+        return response.status(error.status || 500).json({
+          message: 'Erreur lors de la mise à jour du profil',
+          error: error.messages || error.message,
+        })
       }
-
-      return response.status(error.status || 500).json({
-        message: 'Erreur lors de la mise à jour du profil',
-        error: error.messages || error.message,
-      })
     }
-  }
+  
+  
 
   public async destroy({ params, response }: HttpContextContract) {
     try {
