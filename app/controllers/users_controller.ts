@@ -17,15 +17,14 @@ export default class AuthController {
     const user = await User.query().where('email', email).preload('role').first()
 
     if (!user) {
+      logger.warn(`[AuthController] Email non trouvé: ${email}`)
       return response.status(401).send({ error: 'Email invalide.' })
     }
 
-    // 🔐 Vérifier que l'utilisateur est administrateur
-    if (!user.role || user.role.label !== 'admin') {
-      return response.status(403).send({ error: 'Accès refusé : vous devez être administrateur.' })
-    }
+    // 🔍 Log rôle pour debug
+    logger.info(`[AuthController] Utilisateur trouvé. Rôle: ${user.role?.label}`)
 
-    // 🔒 Vérifier le mot de passe
+    // ✅ Vérifier le mot de passe
     const storedHash = user.password?.trim() ?? ''
     logger.info(`[AuthController] Tentative de connexion pour : ${email}`)
 
@@ -71,6 +70,7 @@ export default class AuthController {
         address: user.address,
         profileImage: user.profileImage,
         specialty: user.specialty,
+        role: user.role?.label ?? 'inconnu',
       },
       token,
     })

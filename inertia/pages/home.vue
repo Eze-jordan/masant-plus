@@ -142,6 +142,7 @@
 </template>
 
 <script setup>
+
 import { ref, onMounted } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { Sparkles, Heart, Zap, Shield, Users, CheckCircle } from 'lucide-vue-next'

@@ -1,6 +1,6 @@
 import { defineConfig, drivers } from '@adonisjs/core/hash'
 
-const hashConfig = defineConfig({
+export default defineConfig({
   default: 'scrypt',
 
   list: {
@@ -8,9 +8,9 @@ const hashConfig = defineConfig({
       cost: 16384,
       blockSize: 8,
       parallelization: 1,
+      saltSize: 16,
+      keyLength: 64,
       maxMemory: 33554432,
     }),
   },
 })
-
-export default hashConfig

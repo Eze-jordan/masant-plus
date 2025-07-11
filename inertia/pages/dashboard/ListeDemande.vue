@@ -104,11 +104,11 @@ import { Stethoscope } from 'lucide-vue-next'
 
 const search = ref('')
 const props = defineProps({
-  demandes: {
-    type: Array,
-    default: () => []
-  }
+  user: Object,
+  users: Array,
+  demandes: Array
 })
+
 
 const demandes = ref(props.demandes)
 

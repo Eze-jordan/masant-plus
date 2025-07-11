@@ -28,6 +28,7 @@ const addForm = ref({
 })
 
 const patients = ref([...props.users])
+console.log("boulingui",patients.value)
 
 const totalPatients = computed(() => patients.value.length)
 
@@ -123,7 +124,7 @@ function ajouterPatient() {
             <th class="py-2 px-2">Téléphone</th>
             <th class="py-2 px-2">Email</th>
             <th class="py-2 px-2">Adresse</th>
-            <th class="py-2 px-2">Statut</th>
+
             <th class="py-2 px-2"></th>
           </tr>
         </thead>
@@ -139,17 +140,7 @@ function ajouterPatient() {
             <td class="py-2 px-2">{{ patient.phone }}</td>
             <td class="py-2 px-2">{{ patient.email }}</td>
             <td class="py-2 px-2">{{ patient.adresse }}</td>
-            <td class="py-2 px-2">
-              <span
-                :class="[ 'px-3 py-1 rounded-full text-xs font-semibold',
-                  patient.accountStatus?.toLowerCase() === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-200 text-gray-700'
-                ]"
-              >
-                {{ patient.accountStatus }}
-              </span>
-            </td>
+            
             <td class="py-2 px-2 relative">
               <button @click="toggleMenu(patient.id)" class="px-2 py-1 rounded hover:bg-gray-200">...</button>
               <div

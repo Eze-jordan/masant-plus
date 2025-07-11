@@ -197,175 +197,89 @@
     </div>
   </template>
   
-  <script>
-  export default {
-    name: 'PatientsPage',
-    data() {
-      return {
-        searchQuery: '',
-        activeDropdown: null,
-        showAddModal: false,
-        currentPage: 1,
-        itemsPerPage: 10,
-        sortField: '',
-        sortDirection: 'asc',
-        newPatient: {
-          nom: '',
-          prenom: '',
-          email: '',
-          statut: 'Actif'
-        },
-        patients: [
-          {
-            id: 1,
-            nom: 'OLILI',
-            prenom: 'Arnaud',
-            email: 'arnaud.olili@email.com',
-            statut: 'Actif',
-            selected: false
-          },
-          {
-            id: 2,
-            nom: 'MARTIN',
-            prenom: 'Sophie',
-            email: 'sophie.martin@email.com',
-            statut: 'Inactif',
-            selected: false
-          },
-          {
-            id: 3,
-            nom: 'DUBOIS',
-            prenom: 'Pierre',
-            email: 'pierre.dubois@email.com',
-            statut: 'Actif',
-            selected: false
-          },
-          {
-            id: 4,
-            nom: 'BERNARD',
-            prenom: 'Marie',
-            email: 'marie.bernard@email.com',
-            statut: 'Actif',
-            selected: false
-          },
-          {
-            id: 5,
-            nom: 'PETIT',
-            prenom: 'Jean',
-            email: 'jean.petit@email.com',
-            statut: 'Inactif',
-            selected: false
-          }
-        ]
-      }
+  <script setup>
+  import { ref, computed } from 'vue'
+  import { User } from 'lucide-vue-next'
+  
+  const props = defineProps({
+    user: Object,
+    users: {
+      type: Array,
+      required: true,
+      default: () => [],
     },
-    computed: {
-      filteredPatients() {
-        let filtered = this.patients.filter(patient => 
-          patient.nom.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          patient.prenom.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          patient.email.toLowerCase().includes(this.searchQuery.toLowerCase())
-        )
-        
-        if (this.sortField) {
-          filtered.sort((a, b) => {
-            let aVal = a[this.sortField]
-            let bVal = b[this.sortField]
-            
-            if (this.sortDirection === 'asc') {
-              return aVal > bVal ? 1 : -1
-            } else {
-              return aVal < bVal ? 1 : -1
-            }
-          })
-        }
-        
-        const start = (this.currentPage - 1) * this.itemsPerPage
-        const end = start + this.itemsPerPage
-        return filtered.slice(start, end)
-      },
-      totalItems() {
-        return this.patients.length
-      },
-      totalPages() {
-        return Math.ceil(this.totalItems / this.itemsPerPage)
-      }
-    },
-    methods: {
-      toggleDropdown(patientId) {
-        this.activeDropdown = this.activeDropdown === patientId ? null : patientId
-      },
-      
-      sortBy(field) {
-        if (this.sortField === field) {
-          this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
-        } else {
-          this.sortField = field
-          this.sortDirection = 'asc'
-        }
-      },
-      
-      selectAll(event) {
-        this.filteredPatients.forEach(patient => {
-          patient.selected = event.target.checked
-        })
-      },
-      
-      addPatient() {
-        const patient = {
-          id: Date.now(),
-          ...this.newPatient,
-          selected: false
-        }
-        this.patients.push(patient)
-        this.showAddModal = false
-        this.resetNewPatient()
-      },
-      
-      editPatient(patient) {
-        console.log('Editing patient:', patient)
-        this.activeDropdown = null
-      },
-      
-      viewPatient(patient) {
-        console.log('Viewing patient:', patient)
-        this.activeDropdown = null
-      },
-      
-      deletePatient(patientId) {
-        if (confirm('Êtes-vous sûr de vouloir supprimer ce patient ?')) {
-          this.patients = this.patients.filter(p => p.id !== patientId)
-        }
-        this.activeDropdown = null
-      },
-      
-      resetNewPatient() {
-        this.newPatient = {
-          nom: '',
-          prenom: '',
-          email: '',
-          statut: 'Actif'
-        }
-      },
-      
-      previousPage() {
-        if (this.currentPage > 1) {
-          this.currentPage--
-        }
-      },
-      
-      nextPage() {
-        if (this.currentPage < this.totalPages) {
-          this.currentPage++
-        }
-      }
-    },
-    mounted() {
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('.relative')) {
-          this.activeDropdown = null
-        }
-      })
+  })
+  
+  const search = ref('')
+  const openMenu = ref(null)
+  const showDetails = ref(false)
+  const selectedPatient = ref(null)
+  const isEditing = ref(false)
+  const showAddForm = ref(false)
+  
+  const addForm = ref({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    adresse: '',
+    accountStatus: 'active'
+  })
+  
+  const patients = ref([...props.users])
+  
+  const totalPatients = computed(() => patients.value.length)
+  
+  const filteredPatients = computed(() => {
+    if (!search.value) return patients.value
+    return patients.value.filter(p =>
+      p.lastName?.toLowerCase().includes(search.value.toLowerCase()) ||
+      p.firstName?.toLowerCase().includes(search.value.toLowerCase()) ||
+      p.phone?.toLowerCase().includes(search.value.toLowerCase()) ||
+      p.email?.toLowerCase().includes(search.value.toLowerCase()) ||
+      p.adresse?.toLowerCase().includes(search.value.toLowerCase())
+    )
+  })
+  
+  function toggleMenu(id) {
+    openMenu.value = openMenu.value === id ? null : id
+  }
+  function voirPlus(patient) {
+    selectedPatient.value = { ...patient }
+    showDetails.value = true
+    isEditing.value = false
+    openMenu.value = null
+  }
+  function modifier(patient) {
+    selectedPatient.value = { ...patient }
+    showDetails.value = true
+    isEditing.value = true
+    openMenu.value = null
+  }
+  function supprimer(patient) {
+    if (confirm('Supprimer ' + patient.lastName + ' ?')) {
+      patients.value = patients.value.filter(p => p.id !== patient.id)
+    }
+    openMenu.value = null
+  }
+  function enregistrerModif() {
+    const idx = patients.value.findIndex(p => p.id === selectedPatient.value.id)
+    if (idx !== -1) {
+      patients.value[idx] = { ...selectedPatient.value }
+    }
+    showDetails.value = false
+  }
+  function ajouterPatient() {
+    const nouveau = { ...addForm.value, id: Date.now() }
+    patients.value.push(nouveau)
+    showAddForm.value = false
+    addForm.value = {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      adresse: '',
+      accountStatus: 'active'
     }
   }
   </script>
