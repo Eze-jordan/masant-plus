@@ -2750,7 +2750,7 @@ router.get('/paiements/retraits-mois/:id', async (ctx) => {
 }).middleware([throttle])
 
 
-router.post('/register', async (ctx) => {
+router.post('/registerdocteur', async (ctx) => {
   console.log('[POST /register] Début de traitement')
   console.log('[POST /register] Headers:', JSON.stringify(ctx.request.headers(), null, 2))
   console.log('[POST /register] Query Params:', JSON.stringify(ctx.request.qs(), null, 2))
@@ -2759,7 +2759,22 @@ router.post('/register', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       console.log('[POST /register] Avant appel controller')
-      return registerController.register(ctx)
+      return registerController.registerDocteur(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+router.post('/registerclient', async (ctx) => {
+  console.log('[POST /register] Début de traitement')
+  console.log('[POST /register] Headers:', JSON.stringify(ctx.request.headers(), null, 2))
+  console.log('[POST /register] Query Params:', JSON.stringify(ctx.request.qs(), null, 2))
+  console.log('[POST /register] Body:', JSON.stringify(ctx.request.body(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[POST /register] Avant appel controller')
+      return registerController.registerPatient(ctx)
     })
   })
 }).middleware([throttle])
