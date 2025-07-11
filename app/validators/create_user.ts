@@ -1,7 +1,7 @@
 import vine from '@vinejs/vine'
 import { Status } from '../enum/enums.js'
 
-const schema = vine.object({
+const schemaDocteur = vine.object({
   username: vine.string().trim().optional(),
   first_name: vine.string().optional(),
   last_name: vine.string().optional(),
@@ -20,5 +20,16 @@ const schema = vine.object({
   address: vine.string().optional(),      // <-- Ajout ici
   role: vine.string().trim().optional(),
 })
+export const createDocteurValidator = vine.compile(schemaDocteur)
 
-export const createUserValidator = vine.compile(schema)
+
+const schemaPatient = vine.object({
+  username: vine.string().trim().optional(),
+  last_name: vine.string().optional(),
+  email: vine.string(),
+  phone: vine.string().optional(),
+  password: vine.string(),
+  address: vine.string().optional(),  
+})
+
+export const createPatientValidator = vine.compile(schemaPatient)
