@@ -86,9 +86,10 @@
               </div>
   
               <div class="text-sm">
-                <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
-                  Mot de passe oublié ?
-                </a>
+                <Link href="/auth/rest-password" class="font-medium text-blue-600 hover:text-blue-500">
+  Mot de passe oublié ?
+</Link>
+
               </div>
             </div>
   
@@ -124,8 +125,9 @@
     </div>
   </template><script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
 
+import { router } from '@inertiajs/vue3'
 import ServerError from "../errors/ServerError.vue"
 
 const email = ref('')

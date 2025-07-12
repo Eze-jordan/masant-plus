@@ -2489,6 +2489,8 @@ router.get('/paiements/solde/:userId', async (ctx) => {
   })
 }).middleware([throttle])
 
+
+
 router.get('/medecins/:userId/specialty', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -2656,8 +2658,22 @@ router.put('/user/:id', async (ctx) => {
 
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      console.log('[GET /users/:id] Avant appel controller show')
+      console.log('[GET /users/:id] Avant appel changePassword controller show')
       return user.update(ctx)  // Méthode pour récupérer l'utilisateur
+    })
+  })
+}).middleware([throttle])
+
+
+
+router.put('/users/:id/change-password', async (ctx) => {
+  console.log('[PUT /users/:id/change-password] Débutz de traitement')
+  console.log('[PUT /users/:id/change-password] Params:', JSON.stringify(ctx.request.params(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[PUT /users/:id/change-password] Avant appel controller changePassword')
+      return user.changePassword(ctx)  // Méthode pour changer le mot de passe
     })
   })
 }).middleware([throttle])
@@ -3274,11 +3290,9 @@ router.get('/login', async ({ inertia }) => {
 
 
 
-
-router.get('/forgot-password', async ({ inertia }) => {
-  return inertia.render('auth/forgot-password') // le fichier React attendu
+router.get('/auth/rest-password', async ({ inertia }) => {
+  return inertia.render('auth/rest-password')
 })
-
 
 // routes.ts
 router.get('/logins', async ({ inertia }) => {
@@ -3417,6 +3431,9 @@ router.get('/logout', async (ctx) => {
 router.get('/404', async ({ inertia }) => {
   return inertia.render('errors/not_found')
 })
+
+
+
 
 // Route fallback - doit être la dernière route
 router.get('*', async ({ inertia }) => {

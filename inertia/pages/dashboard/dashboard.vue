@@ -1,3 +1,4 @@
+
 <template>
   <div class="flex h-screen bg-gray-100">
     <!-- Sidebar -->
@@ -187,9 +188,8 @@
           <div class="flex gap-4 items-center">
             <MessageCircle class="w-6 h-6 text-gray-600 cursor-pointer" @click="showMessagesModal = true" />
             <Bell class="w-6 h-6 text-gray-600 cursor-pointer" @click="showNotificationsModal = true" />
-            <button @click="logout" class="focus:outline-none">
             <User class="w-6 h-6 text-gray-600" />
-             </button>
+            
           </div>
         </div>
 
@@ -395,7 +395,7 @@ const props = defineProps<{
   users: any[]
 }>()
 const patients = computed(() =>
-  props.users.filter((u) => ['patient', 'Patient', 'PATIENT'].includes(u.role || ''))
+  props.users.filter((u) => ['patient', 'Patient', 'PATIENT',''].includes(u.role || ''))
 )
 const demandes = computed(() =>
   props.users.filter((u) => (u.account_status || '').toUpperCase() === 'PENDING')
@@ -409,13 +409,20 @@ const topDoctors = computed(() => {
 })
 
 
-// Stat cards dynamiques
+const totalDoctors = computed(() =>
+  props.users.filter(u => (u.role || '').toLowerCase() === 'doctor').length
+)
+
+const totalPatients = computed(() =>
+  props.users.filter(u => !u.role || u.role === '').length
+)
+
 const stats = [
-  { label: 'Total Patients', value: props.stats.totalPatients, icon: Users },
-  { label: 'Total Docteurs', value: props.users.length, icon: Stethoscope },
+  { label: 'Total Patients', value: totalPatients.value, icon: Users },
+  { label: 'Total Docteurs', value: totalDoctors.value, icon: Stethoscope },
   { label: 'Urgent', value: '0', icon: Calendar },
   { label: 'Revenus', value: `XAF ${props.stats.montantTotalPlateforme.toLocaleString()}`, icon: DollarSign }
-  ]
+]
 
 // Docteurs actifs/inactifs estimés
 const activeDoctors = computed(() => Math.round(props.users.length * 0.8))
@@ -432,6 +439,13 @@ function getMonthLabelsUntilNow(): string[] {
 }
 
 // Patients chart (dynamique)
+const totalActivePatients = computed(() =>
+  props.users.filter(u => (!u.role || u.role === '') && (u.accountStatus || '').toLowerCase() === 'active').length
+)
+const totalInactivePatients = computed(() =>
+  props.users.filter(u => (!u.role || u.role === '') && (u.accountStatus || '').toLowerCase() === 'inactive').length
+)
+
 const chartData = computed(() => {
   const months = getMonthLabelsUntilNow()
   return {
@@ -441,7 +455,7 @@ const chartData = computed(() => {
         label: 'Compte actif',
         backgroundColor: '#2563eb',
         borderColor: '#2563eb',
-        data: Array(months.length - 1).fill(0).concat(props.stats.activePatients),
+        data: Array(months.length - 1).fill(0).concat(totalActivePatients.value),
         fill: true,
         tension: 0.4
       },
@@ -449,7 +463,7 @@ const chartData = computed(() => {
         label: 'Compte inactif',
         backgroundColor: '#93c5fd',
         borderColor: '#93c5fd',
-        data: Array(months.length - 1).fill(0).concat(props.stats.inactivePatients),
+        data: Array(months.length - 1).fill(0).concat(totalInactivePatients.value),
         fill: true,
         tension: 0.4
       }
@@ -458,6 +472,13 @@ const chartData = computed(() => {
 })
 
 // Docteurs chart (dynamique)
+const totalActiveDoctors = computed(() =>
+  props.users.filter(u => (u.role || '').toLowerCase() === 'doctor' && (u.accountStatus || '').toLowerCase() === 'active').length
+)
+const totalInactiveDoctors = computed(() =>
+  props.users.filter(u => (u.role || '').toLowerCase() === 'doctor' && (u.accountStatus || '').toLowerCase() === 'inactive').length
+)
+
 const chartDataMedecins = computed(() => {
   const months = getMonthLabelsUntilNow()
   return {
@@ -467,7 +488,7 @@ const chartDataMedecins = computed(() => {
         label: 'Compte actif',
         backgroundColor: '#16a34a',
         borderColor: '#16a34a',
-        data: Array(months.length - 1).fill(0).concat(activeDoctors.value),
+        data: Array(months.length - 1).fill(0).concat(totalActiveDoctors.value),
         fill: true,
         tension: 0.4
       },
@@ -475,7 +496,7 @@ const chartDataMedecins = computed(() => {
         label: 'Compte inactif',
         backgroundColor: '#86efac',
         borderColor: '#86efac',
-        data: Array(months.length - 1).fill(0).concat(inactiveDoctors.value),
+        data: Array(months.length - 1).fill(0).concat(totalInactiveDoctors.value),
         fill: true,
         tension: 0.4
       }
@@ -521,6 +542,7 @@ function setActiveSubMenu(parent: string, submenu: string) {
 
 const showMessagesModal = ref(false)
 const showNotificationsModal = ref(false)
+
 </script>
 
 <style scoped></style>
