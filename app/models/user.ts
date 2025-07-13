@@ -98,6 +98,10 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public localisation?: string
 
+  @column()
+public expoPushToken?: string
+
+
   @column.dateTime({ autoCreate: true })
   public createdAt!: DateTime
 

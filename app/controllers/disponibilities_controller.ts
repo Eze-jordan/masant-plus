@@ -42,7 +42,7 @@ public async store({ request, response }: HttpContextContract) {
   }
 
   try {
-    // Vérifier que l'utilisateur a bien le rôle doctor
+    // Vérifier que l'utilisateur a bien le rôle "doctor"
     const user = await User.query()
       .where('id', data.idDoctor)
       .preload('role')
@@ -54,6 +54,7 @@ public async store({ request, response }: HttpContextContract) {
       })
     }
 
+    // Vérification des heures de début et fin
     if (!data.heureDebut || !data.heureFin) {
       return response.status(400).send({
         message: 'heureDebut et heureFin sont obligatoires.',
@@ -73,47 +74,20 @@ public async store({ request, response }: HttpContextContract) {
     // Créer la disponibilité
     const disponibilite = await Disponibilite.create({
       idDoctor: data.idDoctor,
-      heureDebut: data.heureDebut,  // selon ton modèle
+      heureDebut: data.heureDebut,
       heureFin: data.heureFin,
       dateDebut,
       dateFin,
       actif: data.actif ?? true,
     })
 
-    // Générer les créneaux en snake_case pour la BDD
-    const allCreneaux = []
+    // Créer les créneaux pour un an sans trop de requêtes
+    const allCreneaux = this.generateCreneaux(data.heureDebut, data.heureFin, dateDebut, dateFin, disponibilite.id)
 
-    const heureDebut = DateTime.fromFormat(data.heureDebut, 'HH:mm')
-    const heureFin = DateTime.fromFormat(data.heureFin, 'HH:mm')
-
-    if (!heureDebut.isValid || !heureFin.isValid) {
-      return response.badRequest({ message: 'Format des heures invalide.' })
-    }
-
-    const start = dateDebut ?? DateTime.now()
-    const end = dateFin ?? start
-
-    for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-      let current = heureDebut
-      while (current < heureFin) {
-        const next = current.plus({ minutes: 30 })
-
-        allCreneaux.push({
-          id_disponibilite: disponibilite.id, // correct
-          heure_debut: current.toFormat('HH:mm'),
-          heure_fin: next.toFormat('HH:mm'),
-          disponible: true,
-        })
-        
-
-        current = next
-      }
-    }
-
-    // Insérer tous les créneaux d’un coup
+    // Insérer tous les créneaux en une seule requête
     await Creneau.createMany(allCreneaux)
 
-    // Précharger relations avant de renvoyer
+    // Précharger les relations avant de renvoyer la réponse
     await disponibilite.load('creneaux')
     await disponibilite.load('doctor')
 
@@ -125,6 +99,40 @@ public async store({ request, response }: HttpContextContract) {
       error: error.message,
     })
   }
+}
+
+// Fonction pour générer les créneaux
+private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTime | null, dateFin: DateTime | null, idDisponibilite: string) {
+  const allCreneaux = []
+  const start = dateDebut ?? DateTime.now()
+  const end = dateFin ?? start.plus({ years: 1 }) // Un an de créneaux
+
+  const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
+  const fin = DateTime.fromFormat(heureFin, 'HH:mm')
+
+  if (!debut.isValid || !fin.isValid) {
+    throw new Error('Format des heures invalide.')
+  }
+
+  // Boucle pour chaque jour entre start et end
+  for (let day = start; day <= end; day = day.plus({ days: 1 })) {
+    let current = debut
+    while (current < fin) {
+      const next = current.plus({ minutes: 30 })
+
+      // Ajouter chaque créneau dans un tableau
+      allCreneaux.push({
+        id_disponibilite: idDisponibilite,
+        heure_debut: current.toFormat('HH:mm'),
+        heure_fin: next.toFormat('HH:mm'),
+        disponible: true,
+      })
+
+      current = next
+    }
+  }
+
+  return allCreneaux
 }
 
    

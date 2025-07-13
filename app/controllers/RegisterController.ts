@@ -10,6 +10,7 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { createDocteurValidator } from '#validators/create_user'
 import { createPatientValidator } from '#validators/create_user'
 import { cuid } from '@adonisjs/core/helpers'
+import WelcomeMailService from '#services/WelcomeMailService'
 
 export default class RegisterController {
   public async registerDocteur(ctx: HttpContextContract) {
@@ -79,7 +80,11 @@ export default class RegisterController {
         roleId: selectedRole.id,
         profileImage: profileImageUrl,
       })
-
+      await WelcomeMailService.sendAccountInfo(
+        user.email as string,
+        `${user.firstName} ${user.lastName}`,
+        password,
+      )
       return response.status(201).send({
         message: 'Utilisateur créé avec succès.',
         user: user.serialize(),
@@ -124,11 +129,15 @@ export default class RegisterController {
       }
 
       const {...sanitizedData } = validatedData
-
+     
       const user = await User.create({
         ...sanitizedData,
       })
-
+      await WelcomeMailService.sendAccountInfo(
+        user.email as string,
+        `${user.firstName} ${user.lastName}`,
+        password,
+      )
       return response.status(201).send({
         message: 'Utilisateur créé avec succès.',
         user: user.serialize(),

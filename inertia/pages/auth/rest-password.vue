@@ -116,57 +116,34 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import { usePage } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { useForm } from '@inertiajs/vue3'
 
-const props = usePage().props
-const userId = props.user?.id || 'cf9cb3a9-49a6-4cb6-89f9-b4d4f497ba17'
+const showCurrentPassword = ref(false)
+const showPassword = ref(false)
+const showPasswordConfirm = ref(false)
 
-const form = reactive({
+const form = useForm({
   current_password: '',
   password: '',
   password_confirmation: '',
 })
 
-const loading = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
-
-// états pour afficher/cacher les passwords
-const showCurrentPassword = ref(false)
-const showPassword = ref(false)
-const showPasswordConfirm = ref(false)
-
-const handleSubmit = async () => {
-  errorMessage.value = ''
-  successMessage.value = ''
+const handleSubmit = () => {
+  form.clearErrors()
 
   if (form.password !== form.password_confirmation) {
-    errorMessage.value = 'Les nouveaux mots de passe ne correspondent pas.'
+    form.setError('password_confirmation', 'Les nouveaux mots de passe ne correspondent pas.')
     return
   }
 
-  loading.value = true
-  try {
-    const response = await fetch(`/users/${userId}/change-password`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json',   'x-app-key': 'boulinguiboulingui',  },
-      body: JSON.stringify(form),
-    })
-
-    if (!response.ok) {
-      const data = await response.json()
-      throw new Error(data.message || 'Erreur serveur')
-    }
-
-    successMessage.value = 'Mot de passe changé avec succès.'
-    form.current_password = ''
-    form.password = ''
-    form.password_confirmation = ''
-  } catch (err) {
-    errorMessage.value = err.message || 'Erreur lors du changement.'
-  } finally {
-    loading.value = false
-  }
+  form.put(`/users/${form.user_id || 'cf9cb3a9-49a6-4cb6-89f9-b4d4f497ba17'}/change-password`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      form.reset()
+      form.clearErrors()
+    },
+  })
 }
 </script>
+
