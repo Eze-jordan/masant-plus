@@ -26,22 +26,22 @@
           
           <!-- Navigation Links -->
           <nav class="hidden md:flex space-x-10">
-            <a href="#" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
+            <Link href="/" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
               <span>Accueil</span>
               <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </a>
-            <a href="#" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
+            </Link>
+            <Link href="/about" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
               <span>À propos</span>
               <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </a>
-            <a href="#" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
+            </Link>
+            <Link href="/service" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
               <span>Services</span>
               <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </a>
-            <a href="#" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
+            </Link>
+            <Link href="/contact" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
               <span>Contact</span>
               <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </a>
+            </Link>
           </nav>
           
           <!-- Connexion Button -->
@@ -299,25 +299,25 @@
           <div>
             <h3 class="font-bold mb-6 text-[#165DFB] text-xl">Produit</h3>
             <ul class="space-y-4 text-gray-400">
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Fonctionnalités</a></li>
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Tarifs</a></li>
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Documentation</a></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Fonctionnalités</Link></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Tarifs</Link></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Documentation</Link></li>
             </ul>
           </div>
           <div>
             <h3 class="font-bold mb-6 text-sky-400 text-xl">Entreprise</h3>
             <ul class="space-y-4 text-gray-400">
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">À propos</a></li>
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Carrières</a></li>
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Blog</a></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">À propos</Link></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Carrières</Link></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Blog</Link></li>
             </ul>
           </div>
           <div>
             <h3 class="font-bold mb-6 text-cyan-400 text-xl">Support</h3>
             <ul class="space-y-4 text-gray-400">
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Centre d'aide</a></li>
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Contact</a></li>
-              <li><a href="#" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Statut</a></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Centre d'aide</Link></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Contact</Link></li>
+              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Statut</Link></li>
             </ul>
           </div>
         </div>
@@ -462,15 +462,10 @@ const showMoreInfo = () => {
   transform: scale(0.8) translateY(-50px);
 }
 
-/* Empêche le scroll horizontal global */
-html, body {
-  overflow-x: hidden;
-}
+
 
 /* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
+
 
 /* Custom scrollbar avec la couleur principale */
 ::-webkit-scrollbar {

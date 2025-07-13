@@ -9,6 +9,7 @@ import { cuid } from '@adonisjs/core/helpers'
 import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import hash from '@adonisjs/core/services/hash'
+import { changePasswordSchema } from '#validators/changePasswordValidator'
 
 export default class UsersController {
   public async show({ params, response }: HttpContextContract) {
@@ -41,6 +42,45 @@ export default class UsersController {
     }
   }
 
+  public async changePassword({ request, response, params }: HttpContextContract) {
+    try {
+      // Valider les données avec current_password, password, password_confirmation
+      const payload = await vine.validate({
+        schema: changePasswordSchema,
+        data: request.only(['current_password', 'password', 'password_confirmation']),
+      })
+  
+      const user = await User.findOrFail(params.id)
+      console.log('[changePassword] User ID:', user.id)
+  
+      // Vérifier si l'ancien mot de passe est correct
+      const isOldPasswordValid = await hash.verify(user.password || '', payload.current_password)
+  
+      if (!isOldPasswordValid) {
+        return response.status(401).send({
+          message: 'Ancien mot de passe incorrect.',
+        })
+      }
+  
+      // Ne PAS hasher ici, juste assigner le mot de passe clair
+      user.password = payload.password
+  
+      await user.save()
+  
+      // Relecture pour vérifier
+      const savedUser = await User.findOrFail(user.id)
+      console.log('[changePassword] Hash final enregistré:', savedUser.password)
+  
+      return response.ok({ message: 'Mot de passe mis à jour avec succès.' })
+    } catch (error: any) {
+      console.error('Erreur changement mot de passe:', error)
+      return response.status(error.status || 500).send({
+        message: 'Erreur lors du changement de mot de passe.',
+        error: error.messages || error.message,
+      })
+    }
+  }
+  
   
     public async update({ request, response, params, inertia }: HttpContextContract) {
       const updateUserSchema = vine.object({

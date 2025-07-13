@@ -7,26 +7,25 @@ import { DateTime } from 'luxon'
 
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
-    const { email, password } = request.only(['email', 'password'])
+    const { email, password: rawPassword } = request.only(['email', 'password'])
+    const password = rawPassword.trim()
 
     if (!email || !password) {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
 
-    // ⛔ Tu utilisais `User.findBy` sans relation
     const user = await User.query()
       .where('email', email)
-      .preload('role') // ✅ important : précharger le rôle
+      .preload('role') // Charge le rôle si utile
       .first()
 
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
 
-
     const storedHash = user.password?.trim() ?? ''
-    logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)
-    logger.info(`[AuthController] Mot de passe envoyé : ${password}`)
+    logger.info(`[AuthController] Hash stocké : ${storedHash}`)
+    logger.info(`[AuthController] Mot de passe reçu (trimmed) : ${password}`)
 
     try {
       const isPasswordValid = await hash.verify(storedHash, password)
@@ -67,8 +66,8 @@ export default class AuthController {
         address: user.address,
         profileImage: user.profileImage,
         specialty: user.specialty,
-        matricule : user.registrationNumber,
-        role: user.role?.label ?? 'Non défini', // ✅ sécurisé + propre
+        matricule: user.registrationNumber,
+        role: user.role?.label ?? 'Non défini',
       },
       token,
     })

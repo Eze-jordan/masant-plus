@@ -10,7 +10,7 @@ export default defineConfig({
       parallelization: 1,
       saltSize: 16,
       keyLength: 64,
-      maxMemory: 33554432,
+      maxMemory: 32 * 1024 * 1024,
     }),
   },
 })

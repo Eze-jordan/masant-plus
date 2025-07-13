@@ -34,6 +34,10 @@ export default class Paiement extends BaseModel {
   @column()
   public modeId!: string
 
+  @column()
+public numeroTelephone!: string
+
+
   @belongsTo(() => User, { foreignKey: 'idUser' })
   public user!: BelongsTo<typeof User>
 

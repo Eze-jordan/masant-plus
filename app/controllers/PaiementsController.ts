@@ -1,21 +1,28 @@
 import Paiement from '#models/paiement'
-import ModePaiement from '#models/mode_paiement' // Ajoute ce modèle pour gérer les modes de paiement
+import ModePaiement from '#models/mode_paiement'
 import { DateTime } from 'luxon'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { StatusPaiement } from '../enum/enums.js'
 import { CreateInvoice, GetInvoice, MakePushUSSD } from '#services/ebilling'
 
 export default class PaiementsController {
-  // Crée un paiement simple en base (ex: Stripe ou autre)
+  /**
+   * Crée un paiement simple en base (ex: Stripe ou autre)
+   */
   public async create({ request, response }: HttpContextContract) {
-    const { idUser, idAppointment, montant, modeId } = request.only(['idUser', 'idAppointment', 'montant', 'modeId'])
+    const { idUser, idAppointment, montant, modeId } = request.only([
+      'idUser',
+      'idAppointment',
+      'montant',
+      'modeId',
+    ])
 
     try {
       const paiement = await Paiement.create({
         idUser,
         idAppointment,
         montant,
-        statut: StatusPaiement.EN_ATTENTE,
+        statut: StatusPaiement.PAYE,
         datePaiement: DateTime.now(),
         modeId,
       })
@@ -24,12 +31,17 @@ export default class PaiementsController {
         message: 'Paiement créé avec succès',
         paiement,
       })
-    } catch (error:any) {
-      return response.status(500).send({ message: 'Erreur création paiement', error: error.message })
+    } catch (error: any) {
+      return response.status(500).send({
+        message: 'Erreur lors de la création du paiement',
+        error: error.message,
+      })
     }
   }
 
-  // Crée une facture Mobile Money via ebilling + push USSD, puis enregistre le paiement
+  /**
+   * Crée une facture Mobile Money via eBilling + push USSD, puis enregistre le paiement
+   */
   public async createMobileMoneyInvoice({ request, response }: HttpContextContract) {
     const {
       amount,
@@ -54,17 +66,16 @@ export default class PaiementsController {
       'idUser',
       'idAppointment',
     ])
-
+  
     try {
-      // Recherche du mode paiement "airtelmoney"
-      let modeAirtel = await ModePaiement.query().where('label', 'airtelmoney').first()
-
-      // Création si le mode paiement n'existe pas
-      if (!modeAirtel) {
-        modeAirtel = await ModePaiement.create({ label: 'airtelmoney' })
+      // 1. Détection du mode de paiement (basé sur le numéro)
+      const modeLabel = this.detectPaymentLabel(payer_msisdn)
+      let modePaiement = await ModePaiement.query().where('label', modeLabel).first()
+      if (!modePaiement) {
+        modePaiement = await ModePaiement.create({ label: modeLabel })
       }
-
-      // Création de la facture
+  
+      // 2. Création de la facture via eBilling
       const invoice = await CreateInvoice({
         amount,
         payer_msisdn,
@@ -74,50 +85,69 @@ export default class PaiementsController {
         description,
         expiry_period,
       })
-
-      const bill_id = invoice?.e_bill?.bill_id
-
-      if (!bill_id) {
-        console.error("Erreur lors de la création de la facture", invoice)
-        return response.status(500).send({ message: 'Échec création facture.', detail: invoice })
-      }
-
-      // Envoi du push USSD
-      const ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name })
-
-      console.log("Réponse USSD : ", ussdResponse)
-
-      // Enregistrement du paiement
-      await Paiement.create({
-        idUser: typeof idUser === 'string' ? parseInt(idUser, 10) : idUser ?? 0,
-        idAppointment: typeof idAppointment === 'string' ? parseInt(idAppointment, 10) : idAppointment ?? 0,
+  
+      const bill_id = invoice?.e_bill?.bill_id ?? null
+  
+      // 3. Enregistrement du paiement, même si le push échoue
+      const paiement = await Paiement.create({
+        idUser: idUser,
+        idAppointment: idAppointment,
         montant: amount,
         statut: StatusPaiement.EN_ATTENTE,
         datePaiement: DateTime.now(),
-        modeId: modeAirtel.id,
+        modeId: modePaiement.id,
+        numeroTelephone: payer_msisdn,
       })
-
+  
+      // 4. Envoi du push USSD (optionnel)
+      let ussdResponse = null
+      try {
+        if (bill_id) {
+          ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name })
+          console.log('Réponse USSD:', ussdResponse)
+        } else {
+          console.warn('Pas de bill_id, push USSD ignoré.')
+        }
+      } catch (pushError) {
+        console.error('Erreur lors de l\'envoi du push USSD :', pushError)
+        // Le paiement est enregistré, donc on ne bloque pas la réponse ici
+      }
+  
       return response.created({
-        message: 'Facture créée et push USSD envoyé avec succès.',
+        message: 'Paiement enregistré. Facture créée et push tenté.',
         bill_id,
+        paiement,
         invoice,
         ussdResponse,
       })
-    } catch (error:any) {
-      console.error("Erreur lors du traitement Mobile Money:", error)
+    } catch (error: any) {
+      console.error('Erreur traitement Mobile Money:', error)
       return response.status(500).send({ message: 'Erreur traitement Mobile Money.', error: error.message })
     }
   }
+  
 
-  // Vérifie le statut d'une facture par bill_id
+  /**
+   * Vérifie le statut d'une facture par bill_id
+   */
   public async checkInvoiceStatus({ params, response }: HttpContextContract) {
     const billId = params.bill_id
 
     try {
       const result = await GetInvoice(billId)
       return response.ok({ message: 'Facture récupérée avec succès.', data: result })
-    } catch (error) {
-      return response.status(500).send({ message: 'Erreur récupération facture.', error })
+    } catch (error: any) {
+      return response.status(500).send({ message: 'Erreur récupération facture.', error: error.message })
     }
+  }
+
+  /**
+   * Détecte le mode de paiement à partir du numéro de téléphone
+   */
+  private detectPaymentLabel(numero: string): string {
+    if (numero.startsWith('077') || numero.startsWith('076')) {
+      return 'airtelmoney'
+    }
+    return 'liberits'
   }
 }

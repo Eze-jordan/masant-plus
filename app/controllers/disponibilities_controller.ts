@@ -1,43 +1,63 @@
 import Disponibilite from '#models/disponibilite'
 import Creneau from '#models/creneau'
+import User from '#models/user'  // Assure-toi que cet import est correct
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { DateTime } from 'luxon'
 
 export default class DisponibiliteController {
-  // ➤ Créer une disponibilité avec créneaux générés automatiquement
-
   // ➤ Retourne toutes les disponibilités pour tous les médecins
-public async index({ response }: HttpContextContract) {
-  try {
-    const disponibilites = await Disponibilite.query()
-      .preload('creneaux')
-      .preload('doctor')
-      .orderBy('dateDebut', 'desc')
+  public async index({ response }: HttpContextContract) {
+    try {
+      const disponibilites = await Disponibilite.query()
+        .preload('creneaux')
+        .preload('doctor')
+        .orderBy('dateDebut', 'desc')
 
-    return response.ok(disponibilites)
-  } catch (error) {
-    console.error('Erreur dans index :', error)
-    return response.status(500).send({
-      message: 'Erreur lors de la récupération des disponibilités.',
-      error: error.message,
+      return response.ok(disponibilites)
+    } catch (error) {
+      console.error('Erreur dans index :', error)
+      return response.status(500).send({
+        message: 'Erreur lors de la récupération des disponibilités.',
+        error: error.message,
+      })
+    }
+  }
+
+  // ➤ Créer une disponibilité avec créneaux générés automatiquement
+// ➤ Créer une disponibilité avec créneaux générés automatiquement
+public async store({ request, response }: HttpContextContract) {
+  const data = request.only([
+    'idDoctor',
+    'heureDebut',
+    'heureFin',
+    'date_debut',
+    'date_fin',
+    'actif',
+  ])
+
+  if (!data.idDoctor) {
+    return response.status(400).send({
+      message: 'idDoctor est obligatoire.',
     })
   }
-}
 
+  try {
+    // Vérifier que l'utilisateur a bien le rôle "doctor"
+    const user = await User.query()
+      .where('id', data.idDoctor)
+      .preload('role')
+      .firstOrFail()
 
-  public async store({ request, response }: HttpContextContract) {
-    const data = request.only([
-      'idDoctor',
-      'heureDebut',
-      'heureFin',
-      'date_debut',
-      'date_fin',
-      'actif',
-    ])
+    if (!user.role || user.role.label !== 'doctor') {
+      return response.status(403).send({
+        message: 'L\'utilisateur n\'a pas le rôle "Doctor".',
+      })
+    }
 
-    if (!data.idDoctor || !data.heureDebut || !data.heureFin) {
+    // Vérification des heures de début et fin
+    if (!data.heureDebut || !data.heureFin) {
       return response.status(400).send({
-        message: 'idDoctor, heureDebut et heureFin sont obligatoires.',
+        message: 'heureDebut et heureFin sont obligatoires.',
       })
     }
 
@@ -51,77 +71,84 @@ public async index({ response }: HttpContextContract) {
       return response.badRequest({ message: 'La date_fin est invalide.' })
     }
 
-    try {
-      // ➤ Créer la disponibilité
-      const disponibilite = await Disponibilite.create({
-        idDoctor: data.idDoctor,
-        heureDebut: data.heureDebut,
-        heureFin: data.heureFin,
-        dateDebut,
-        dateFin,
-        actif: data.actif ?? true,
-      })
+    // Créer la disponibilité
+    const disponibilite = await Disponibilite.create({
+      idDoctor: data.idDoctor,
+      heureDebut: data.heureDebut,
+      heureFin: data.heureFin,
+      dateDebut,
+      dateFin,
+      actif: data.actif ?? true,
+    })
 
-      const allCreneaux = []
-      const heureDebut = DateTime.fromFormat(data.heureDebut, 'HH:mm')
-      const heureFin = DateTime.fromFormat(data.heureFin, 'HH:mm')
+    // Créer les créneaux pour un an sans trop de requêtes
+    const allCreneaux = this.generateCreneaux(data.heureDebut, data.heureFin, dateDebut, dateFin, disponibilite.id)
 
-      if (!heureDebut.isValid || !heureFin.isValid) {
-        return response.badRequest({ message: 'Format des heures invalide.' })
-      }
+    // Insérer tous les créneaux en une seule requête
+    await Creneau.createMany(allCreneaux)
 
-      const start = dateDebut ?? DateTime.now()
-      const end = dateFin ?? start
+    // Précharger les relations avant de renvoyer la réponse
+    await disponibilite.load('creneaux')
+    await disponibilite.load('doctor')
 
-      for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-        let current = heureDebut
-        while (current < heureFin) {
-          const next = current.plus({ minutes: 30 })
-
-          allCreneaux.push({
-            idDisponibilite: disponibilite.id,
-            heureDebut: current.toFormat('HH:mm'),
-            heureFin: next.toFormat('HH:mm'),
-            disponible: true,
-            date: day.toISODate(),
-          })
-
-          current = next
-        }
-      }
-
-      // ➤ Insertion groupée des créneaux
-      await Creneau.createMany(allCreneaux)
-
-      // ➤ Préchargement des relations
-      await disponibilite.load('creneaux')
-      await disponibilite.load('doctor')
-
-      return response.created(disponibilite)
-    } catch (error: any) {
-      console.error(error)
-      return response.status(500).send({
-        message: 'Erreur lors de la création de la disponibilité.',
-        error: error.message,
-      })
-    }
-  }
-
-  // ➤ Liste toutes les disponibilités avec relations
-// Exemple simple dans ton controller DisponibiliteController
-public async getByDoctor({ params, response }: HttpContextContract) {
-  try {
-    const disponibilites = await Disponibilite.query()
-      .where('idDoctor', params.id)
-      .preload('creneaux')
-      .orderBy('dateDebut', 'desc')
-    console.log(disponibilites)
-    return response.ok(disponibilites) // renvoie un tableau
-  } catch (error) {
-    return response.status(500).send({ message: 'Erreur serveur', error: error.message })
+    return response.created(disponibilite)
+  } catch (error: any) {
+    console.error(error)
+    return response.status(500).send({
+      message: 'Erreur lors de la création de la disponibilité.',
+      error: error.message,
+    })
   }
 }
 
+// Fonction pour générer les créneaux
+private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTime | null, dateFin: DateTime | null, idDisponibilite: string) {
+  const allCreneaux = []
+  const start = dateDebut ?? DateTime.now()
+  const end = dateFin ?? start.plus({ years: 1 }) // Un an de créneaux
+
+  const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
+  const fin = DateTime.fromFormat(heureFin, 'HH:mm')
+
+  if (!debut.isValid || !fin.isValid) {
+    throw new Error('Format des heures invalide.')
+  }
+
+  // Boucle pour chaque jour entre start et end
+  for (let day = start; day <= end; day = day.plus({ days: 1 })) {
+    let current = debut
+    while (current < fin) {
+      const next = current.plus({ minutes: 30 })
+
+      // Ajouter chaque créneau dans un tableau
+      allCreneaux.push({
+        id_disponibilite: idDisponibilite,
+        heure_debut: current.toFormat('HH:mm'),
+        heure_fin: next.toFormat('HH:mm'),
+        disponible: true,
+      })
+
+      current = next
+    }
+  }
+
+  return allCreneaux
+}
+
+   
+
+  // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
+  public async getByDoctor({ params, response }: HttpContextContract) {
+    try {
+      const disponibilites = await Disponibilite.query()
+        .where('idDoctor', params.id)
+        .preload('creneaux')
+        .orderBy('dateDebut', 'desc')
+      return response.ok(disponibilites)
+    } catch (error) {
+      return response.status(500).send({ message: 'Erreur serveur', error: error.message })
+    }
+  }
 
   // ➤ Détails d'une disponibilité
   public async show({ params, response }: HttpContextContract) {
@@ -173,10 +200,17 @@ public async getByDoctor({ params, response }: HttpContextContract) {
         disponibilite.dateFin = parsed
       }
 
-      disponibilite.actif = data.actif ?? disponibilite.actif
+      // IMPORTANT : vérifie que "actif" est bien défini dans la requête
+      if (typeof data.actif !== 'undefined') {
+        disponibilite.actif = data.actif
+      }
 
       await disponibilite.save()
-      return response.ok(disponibilite)
+      return response.ok({
+        message: 'Disponibilité mise à jour avec succès',
+        disponibilite, // retourne aussi l'objet mis à jour
+      })
+      
     } catch (error: any) {
       console.error(error)
       return response.status(404).send({
