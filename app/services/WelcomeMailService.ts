@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer'
+import nodemailer from 'nodemailer';
 
 export default class WelcomeMailService {
   private static transporter = nodemailer.createTransport({
@@ -7,9 +7,9 @@ export default class WelcomeMailService {
     secure: false,
     auth: {
       user: 'elieboulingui2@gmail.com',
-      pass: 'ozdf cset gqcr ofsd',
+      pass: 'ozdf cset gqcr ofsd', // Assure-toi qu'il vient bien des mots de passe d'app
     },
-  })
+  });
 
   static async sendAccountInfo(email: string, fullName: string, password: string) {
     const html = `
@@ -18,13 +18,21 @@ export default class WelcomeMailService {
       <p><strong>Email :</strong> ${email}</p>
       <p><strong>Mot de passe :</strong> ${password}</p>
       <p>Vous pouvez le changer une fois connecté.</p>
-    `
+    `;
 
-    return await this.transporter.sendMail({
-      from: '"Support" <elieboulingui2@gmail.com>',
-      to: email,
-      subject: 'Bienvenue sur notre plateforme',
-      html,
-    })
+    try {
+      const info = await this.transporter.sendMail({
+        from: '"Support" <elieboulingui2@gmail.com>',
+        to: email,
+        subject: 'Bienvenue sur notre plateforme',
+        html,
+      });
+
+      console.log('✅ Email envoyé :', info.messageId);
+      return info;
+    } catch (error) {
+      console.error('❌ Erreur d’envoi d’email :', error);
+      throw error;
+    }
   }
 }

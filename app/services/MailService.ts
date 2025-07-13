@@ -7,7 +7,7 @@ export default class MailService {
     port: 587,
     secure: false,                // TLS
     auth: {
-      user: 'eliebouligui2@gmail.com',    // ← Ton adresse Gmail
+      user: 'elieboulingui2@gmail.com',    // ← Ton adresse Gmail
       pass: 'ozdf cset gqcr ofsd',       // ← Ton mot de passe d'application Gmail
     },
   })

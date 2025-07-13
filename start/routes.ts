@@ -39,8 +39,10 @@ import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
 import Paiement from '#models/paiement';
 import PatientController from '#controllers/PatientController';
+import verify_emails_controller from '#controllers/verify_emails_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
+const emailverify = new verify_emails_controller()
  const  NotificationControllers  = new  NotificationController()
 const  loginadmin = new  UsersControllers()
 const controller = new MessagesController()
@@ -2915,6 +2917,15 @@ router.post('/auth/reset-password', async (ctx) => {
   })
 })
 ///auth/verify-otp
+
+
+router.post('/verify-email', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return emailverify.checkDoctorEmail(ctx)
+    })
+  })
+})
 
 router.post('/auth/verify-otp', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
