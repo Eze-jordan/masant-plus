@@ -3390,7 +3390,7 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
       lastName: user.last_name,
       email: user.email,
       phone: user.phone,
-      specialty: user.specialites, // adapte selon le nom exact
+      specialty: user.specialites, 
       accountStatus: user.accountStatus,
       profileImage: user.profileImage,
       createdAt: user.createdAt,
