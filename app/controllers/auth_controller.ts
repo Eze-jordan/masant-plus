@@ -4,7 +4,7 @@ import hash from '@adonisjs/core/services/hash'
 import { generateJwtToken } from '../Utils/Jwt.js'
 import SessionUser from '#models/session_user'
 import { DateTime } from 'luxon'
-import { Status } from 'app/enum/enums.js'
+import { Status } from '../enum/enums.js'
 
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
