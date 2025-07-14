@@ -8,6 +8,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
+const DemandeController =new DemandeDocteurController()
 import { throttle } from '#start/limiter'
 import RegisterController from '#controllers/RegisterController'
 import AuthController from '#controllers/auth_controller'
@@ -40,6 +41,7 @@ import retraits_controller from '#controllers/retraits_controller';
 import Paiement from '#models/paiement';
 import PatientController from '#controllers/PatientController';
 import verify_emails_controller from '#controllers/verify_emails_controller';
+import DemandeDocteurController from '#controllers/DemandeDocteurController';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -2531,7 +2533,7 @@ router.post('/upload/image', async (ctx) => {
         // Upload vers S3
         await drive.use('s3').put(`uploads/${fileName}`, fileBuffer)
 
-        // Construire l’URL publique (à adapter selon ta config)
+        // Construire l'URL publique (à adapter selon ta config)
         const s3BaseUrl = process.env.S3_ENDPOINT?.replace(/\/$/, '') || ''
         const bucket = process.env.S3_BUCKET || ''
         const publicUrl = `${s3BaseUrl}/${bucket}/uploads/${fileName}`
@@ -2542,7 +2544,7 @@ router.post('/upload/image', async (ctx) => {
         })
       } catch (error) {
         console.error(error)
-        return response.internalServerError({ message: 'Erreur lors de l’envoi de l’image' })
+        return response.internalServerError({ message: "Erreur lors de l'envoi de l'image" })
       }
     })
   })
@@ -2590,7 +2592,7 @@ router.get('/get-url', async (ctx) => {
         ctx.response.status(200).json({ url });
       } catch (error) {
         console.error(error);
-        ctx.response.status(500).json({ message: "Erreur lors de la génération de l’URL." });
+        ctx.response.status(500).json({ message: "Erreur lors de la génération de l'URL." });
       }
     });
   });
@@ -3384,12 +3386,11 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
     // ✅ Version "safe" des utilisateurs (sans mot de passe ou infos sensibles)
     const safeUsers = users.map((user) => ({
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.first_name,
+      lastName: user.last_name,
       email: user.email,
       phone: user.phone,
-      specialty: user.specialisation,
-      registrationNumber: user.registrationNumber,
+      specialty: user.specialites, // adapte selon le nom exact
       accountStatus: user.accountStatus,
       profileImage: user.profileImage,
       createdAt: user.createdAt,
@@ -3401,12 +3402,11 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
     return inertia.render('dashboard/dashboard', {
       user: {
         id: currentUser.id,
-        firstName: currentUser.firstName,
-        lastName: currentUser.lastName,
+        firstName: currentUser.first_name,
+        lastName: currentUser.last_name,
         email: currentUser.email,
         phone: currentUser.phone,
-        specialty: currentUser.specialty,
-        registrationNumber: currentUser.registrationNumber,
+      
         accountStatus: currentUser.accountStatus,
         profileImage: currentUser.profileImage,
         createdAt: currentUser.createdAt,
@@ -3508,3 +3508,15 @@ router.group(() => {
     })
   })
 })
+
+
+//route pour les demandes des docteurs 
+router.post('/DemandeDocteur', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await DemandeController.store(ctx)
+    })
+  })
+})
+
+

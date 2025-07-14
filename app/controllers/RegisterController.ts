@@ -20,22 +20,17 @@ export default class RegisterController {
 
     const password = raw.password || 'changeme123'
     const requestData = {
-      username: raw.firstName,
       email: raw.email,
       password: password,
       first_name: raw.firstName,
       last_name: raw.lastName,
       phone: raw.phone,
-      address: raw.address ?? '',
-      specialisation: raw.specialty,
-      years_experience: raw.experience ? parseInt(raw.experience.split('-')[0]) : 0,
-      registration_number: raw.licenseNumber ?? '',
-      institution_name: raw.institution ?? '',
+      specialisation: raw.specialisation,
+      license_number: raw.licenseNumber ?? '',
       role: raw.role,
-      about: raw.about,
       account_status: Status.PENDING,
-      availability: raw.availability,
-      localisation: raw.localisation,
+      type: 'doctor', // Ajoutez ceci
+
     }
 
     try {
@@ -53,7 +48,7 @@ export default class RegisterController {
         selectedRole = await Role.create({ label: roleLabel })
         logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
-
+      /*
       // Upload de la photo de profil
       let profileImageUrl: string | undefined = undefined
       const imageFile = request.file('profileImage', {
@@ -72,17 +67,17 @@ export default class RegisterController {
         const bucket = process.env.S3_BUCKET
         profileImageUrl = `${endpoint}/${bucket}/${fileName}`
       }
-
+*/
       const { role, ...sanitizedData } = validatedData
 
       const user = await User.create({
         ...sanitizedData,
         roleId: selectedRole.id,
-        profileImage: profileImageUrl,
+    //    profileImage: profileImageUrl,
       })
       await WelcomeMailService.sendAccountInfo(
         user.email as string,
-        `${user.firstName} ${user.lastName}`,
+        `${user.first_name} ${user.last_name}`,
         password,
       )
       return response.status(201).send({
@@ -104,7 +99,6 @@ export default class RegisterController {
       })
     }
   }
-
   public async registerPatient(ctx: HttpContextContract) {
     const { request, response, logger } = ctx
     const raw = request.all()
@@ -112,12 +106,14 @@ export default class RegisterController {
 
     const password = raw.password || 'changeme123'
     const requestData = {
-      username: raw.firstName,
       email: raw.email,
       password: password,
+      first_name: raw.firstName,
       last_name: raw.lastName,
       phone: raw.phone,
       address: raw.address ?? '',
+      role: raw.role,
+      type: 'patient'
     }
 
     try {
@@ -125,39 +121,50 @@ export default class RegisterController {
 
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
-        return response.status(400).send({ message: 'Un utilisateur avec cet email existe déjà.' })
+        return response.status(400).send({ 
+          message: 'Un utilisateur avec cet email existe déjà.' 
+        })
       }
 
-      const {...sanitizedData } = validatedData
-     
+      const roleLabel = (validatedData.role ?? 'patient').toLowerCase()
+      let selectedRole = await Role.findBy('label', roleLabel)
+      if (!selectedRole) {
+        selectedRole = await Role.create({ label: roleLabel })
+        logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
+      }
+
+  
+      const { role, ...sanitizedData } = validatedData
+
       const user = await User.create({
         ...sanitizedData,
+        roleId: selectedRole.id,
       })
       await WelcomeMailService.sendAccountInfo(
         user.email as string,
-        `${user.firstName} ${user.lastName}`,
+        `${user.first_name} ${user.last_name}`,
         password,
       )
+      
       return response.status(201).send({
-        message: 'Utilisateur créé avec succès.',
+        message: 'Patient créé avec succès.',
         user: user.serialize(),
       })
-
+      
+    
     } catch (error: any) {
-      logger.error('[RegisterController] Erreur création utilisateur', {
+      logger.error('[RegisterController] Erreur création patient', {
         message: error.message,
         stack: error.stack,
         dataSent: requestData,
       })
       return response.status(500).send({
-        message: 'Erreur création utilisateur.',
+        message: 'Erreur création patient.',
         error: error.message,
-        stack: error.stack,
         dataReceived: requestData,
       })
     }
   }
-
   public async update(ctx: HttpContextContract) {
     const { request, response, params, inertia } = ctx
 

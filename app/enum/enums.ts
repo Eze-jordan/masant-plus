@@ -37,3 +37,4 @@ export const StatutSuggestion = {
   TRAITE: 'TRAITE',
 } as const
 export type StatutSuggestion = (typeof StatutSuggestion)[keyof typeof StatutSuggestion]
+
