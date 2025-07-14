@@ -4,7 +4,6 @@ import { compose } from '@adonisjs/core/helpers'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { Status } from '../enum/enums.js'
-
 import Role from './role.js'
 import Appointment from './appointment.js'
 import Like from './like.js'
@@ -18,7 +17,6 @@ import Message from './message.js'
 import Discussion from './discussion.js'
 import SpecialiteDoctor from './specialite_doctor.js'
 import ServiceDoctor from './service_doctor.js'
-import DiscussionMessagery from './discussion_messagery.js'
 import SessionUser from './session_user.js'
 import LiveUser from './live.js'
 
@@ -35,72 +33,29 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public id!: string
 
   @column()
-  public username?: string
-
-  @column()
   public email?: string
 
   @column()
   public phone?: string
 
-
   @column({ serializeAs: null })
   public password?: string
 
   @column()
-  public availability?: string
+  public first_name?: string
 
   @column()
-  public firstName?: string
+  public last_name?: string
+
 
   @column()
-  public lastName?: string
-
-  @column()
-  public registrationNumber?: string
-
-  @column()
-  public institutionName?: string
-
-  @column()
-  public certificateUrl?: string
-
-  @column()
-  public licenseNumber?: string
-
-  @column()
-  public certificate?: string
-
-  @column()
-  public institution?: string
-
-  @column()
-  public address?: string
-
-  @column()
-  public specialty?: string
-
-  @column()
-  public experience?: string
+  public declare address?: string // Ajout de la déclaration pour éviter les erreurs
 
   @column()
   public accountStatus?: Status
 
   @column()
-  public about?: string
-
-  @column()
-  public yearsExperience?: string
-
-  @column()
-  public specialisation?: string
-
-  @column()
-  public localisation?: string
-
-  @column()
-public expoPushToken?: string
-
+  public expoPushToken?: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt!: DateTime
@@ -112,31 +67,13 @@ public expoPushToken?: string
   public roleId?: string
 
   @column()
-public profileImage!: string
+  public profileImage!: string
 
   @belongsTo(() => Role)
   public role!: BelongsTo<typeof Role>
 
   @hasMany(() => SessionUser)
   public sessions!: HasMany<typeof SessionUser>
-
-  @hasMany(() => Appointment, { foreignKey: 'idUser' })
-  public appointmentsAsPatient!: HasMany<typeof Appointment>
-
-  @hasMany(() => Appointment, { foreignKey: 'idDoctor' })
-  public appointmentsAsDoctor!: HasMany<typeof Appointment>
-
-  @hasMany(() => Like, { foreignKey: 'idUser' })
-  public likesSent!: HasMany<typeof Like>
-
-  @hasMany(() => Like, { foreignKey: 'idDoctor' })
-  public likesReceived!: HasMany<typeof Like>
-
-  @hasMany(() => Experience, { foreignKey: 'idDoctor' })
-  public experiences!: HasMany<typeof Experience>
-
-  @hasMany(() => Disponibilite, { foreignKey: 'idDoctor' })
-  public disponibilites!: HasMany<typeof Disponibilite>
 
   @hasMany(() => Notification, { foreignKey: 'idUser' })
   public notifications!: HasMany<typeof Notification>
@@ -153,11 +90,31 @@ public profileImage!: string
   @hasMany(() => Message, { foreignKey: 'idUserSender' })
   public messagesSent!: HasMany<typeof Message>
 
-  @hasMany(() => Discussion, { foreignKey: 'idDoctor' })
-  public discussionsDoctor!: HasMany<typeof Discussion>
-
   @hasMany(() => Discussion, { foreignKey: 'idPatient' })
   public discussionsPatient!: HasMany<typeof Discussion>
+
+  @hasMany(() => Like, { foreignKey: 'idUser' })
+  public likesSent!: HasMany<typeof Like>
+
+  @hasMany(() => LiveUser)
+  public liveUsers!: HasMany<typeof LiveUser>
+
+  public static accessTokens = DbAccessTokensProvider.forModel(User)
+
+  @hasMany(() => Appointment, { foreignKey: 'idDoctor' })
+  public appointmentsAsDoctor!: HasMany<typeof Appointment>
+
+  @hasMany(() => Like, { foreignKey: 'idDoctor' })
+  public likesReceived!: HasMany<typeof Like>
+
+  @hasMany(() => Experience, { foreignKey: 'idDoctor' })
+  public experiences!: HasMany<typeof Experience>
+
+  @hasMany(() => Disponibilite, { foreignKey: 'idDoctor' })
+  public disponibilites!: HasMany<typeof Disponibilite>
+
+  @hasMany(() => Discussion, { foreignKey: 'idDoctor' })
+  public discussionsDoctor!: HasMany<typeof Discussion>
 
   @hasMany(() => SpecialiteDoctor, { foreignKey: 'idDoctor' })
   public specialites!: HasMany<typeof SpecialiteDoctor>
@@ -165,11 +122,32 @@ public profileImage!: string
   @hasMany(() => ServiceDoctor, { foreignKey: 'idDoctor' })
   public services!: HasMany<typeof ServiceDoctor>
 
-  @hasMany(() => DiscussionMessagery, { foreignKey: 'idUserSender' })
-  public discussionMessageries!: HasMany<typeof DiscussionMessagery>
+  @column()
+  public type: 'doctor' | 'patient' | 'admin' = (() => {
+    if (this instanceof Docteur) return 'doctor'
+    if (this instanceof Patient) return 'patient'
+    return 'admin' // ou une autre valeur par défaut
+  })() as 'doctor' | 'patient' | 'admin'
 
-  @hasMany(() => LiveUser)
-  public liveUsers!: HasMany<typeof LiveUser>
+  // Méthode pour vérifier le type
+  public get isDoctor() {
+    return this.type === 'doctor'
+  }
+}
 
-  public static accessTokens = DbAccessTokensProvider.forModel(User)
+export class Docteur extends User {
+  public static selfAssignPrimaryKey = true // Important pour l'héritage
+
+  @column()
+  public declare license_number?: string // `declare` pour éviter les conflits
+
+  @column()
+  public declare specialisation?: string
+}
+
+export class Patient extends User {
+  public static selfAssignPrimaryKey = true
+  
+  @column({ serializeAs: null }) // Optionnel: masquer l'adresse dans les sérialisations
+  public declare address?: string
 }
