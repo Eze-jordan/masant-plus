@@ -4,6 +4,7 @@ import hash from '@adonisjs/core/services/hash'
 import { generateJwtToken } from '../Utils/Jwt.js'
 import SessionUser from '#models/session_user'
 import { DateTime } from 'luxon'
+import { Status } from '../enum/enums.js'
 
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
@@ -21,6 +22,13 @@ export default class AuthController {
 
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
+    }
+
+    // Check if account is active
+    if (user.accountStatus !== Status.ACTIVE) {
+      return response.status(403).send({ 
+        error: 'Votre compte n\'est pas actif. Veuillez contacter l\'administrateur.' 
+      })
     }
 
     const storedHash = user.password?.trim() ?? ''
@@ -68,6 +76,7 @@ export default class AuthController {
         specialty: user.specialty,
         matricule: user.registrationNumber,
         role: user.role?.label ?? 'Non défini',
+        accountStatus: user.accountStatus, // You might want to include this in the response
       },
       token,
     })
