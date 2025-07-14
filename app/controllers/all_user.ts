@@ -26,12 +26,12 @@ export default class UsersController {
     // Sérialiser les docteurs dans un format que Vue comprend
     const serializedUsers = users.map((user) => ({
       id: user.id,
-      nom: user.firstName,
-      prenom: user.lastName,
+      nom: user.first_name,
+      prenom: user.last_name,
       telephone: user.phone,
       email: user.email,
       specialite: user.specialty,
-      matricule: user.registrationNumber,
+      matricule: user.license_number,
       statut: user.accountStatus,
       photo: user.profileImage || '/doctor1.jpg',
     }))
@@ -41,12 +41,11 @@ export default class UsersController {
     const serializedAuthUser = authUser
       ? {
           id: authUser.id,
-          nom: authUser.firstName,
+          nom: authUser.first_name,
           prenom: authUser.lastName,
           telephone: authUser.phone,
           email: authUser.email,
           specialite: authUser.specialty,
-          matricule: authUser.registrationNumber,
           statut: authUser.accountStatus,
           photo: authUser.profileImage || '/doctor1.jpg',
         }

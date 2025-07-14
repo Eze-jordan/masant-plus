@@ -1,5 +1,4 @@
-import SessionUser from '#models/session_user'
-import User from '#models/user'
+
 import hash from '@adonisjs/core/services/hash'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { generateJwtToken } from '../Utils/Jwt.js'

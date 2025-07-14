@@ -22,12 +22,11 @@ export default class DoctorsController {
     }
 
     return response.json({
-      fullName: doctor.username || 'Dr Inconnu',
+      fullName: doctor.first_name || 'Dr Inconnu',
       specialisation: doctor.specialisation || 'Spécialité inconnue',
       email: doctor.email,
       phone: doctor.phone,
-      matricule: doctor.licenseNumber || 'Matricule non défini',  // <-- Ajout matricule ici
-      experience: doctor.experience,
+      matricule: doctor.license_number || 'Matricule non défini',  // <-- Ajout matricule ici
       address: doctor.address,
     })
   }
