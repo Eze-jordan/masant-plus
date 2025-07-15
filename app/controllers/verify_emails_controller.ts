@@ -1,5 +1,5 @@
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from '#models/user'
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class VerifyEmailController {
   public async checkDoctorEmail({ request, response }: HttpContextContract) {

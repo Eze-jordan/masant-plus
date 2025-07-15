@@ -138,6 +138,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
 }
 
 export class Docteur extends User {
+   public static table = 'users'
   public static selfAssignPrimaryKey = true // Important pour l'héritage
 
   @column()

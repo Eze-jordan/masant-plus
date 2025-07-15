@@ -4,6 +4,7 @@ import hash from '@adonisjs/core/services/hash'
 import { generateJwtToken } from '../Utils/Jwt.js'
 import SessionUser from '#models/session_user'
 import { DateTime } from 'luxon'
+import { Status } from '../enum/enums.js'
 
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
@@ -14,13 +15,29 @@ export default class AuthController {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
 
-    const user = await User.query()
+    // Utilisation de Docteur ou User selon le type
+    let user = await User.query()
       .where('email', email)
       .preload('role') // Charge le rôle si utile
       .first()
 
+    // Si l'utilisateur n'est pas trouvé, essayer Docteur
+    if (!user) {
+      user = await Docteur.query()
+        .where('email', email)
+        .preload('role') // Charge le rôle si utile
+        .first()
+    }
+
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
+    }
+
+    // Check if account is active
+    if (user.accountStatus !== Status.ACTIVE) {
+      return response.status(403).send({ 
+        error: 'Votre compte n\'est pas actif. Veuillez contacter l\'administrateur.' 
+      })
     }
 
     const storedHash = user.password?.trim() ?? ''
@@ -54,13 +71,14 @@ export default class AuthController {
       path: '/',
     })
 
+    // Retourner les propriétés spécifiques au type d'utilisateur (Docteur ou Patient)
     return response.ok({
       user: {
         id: user.id,
         name: `${user.first_name} ${user.last_name}`,
         email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         phone: user.phone,
         address: user.address,
         profileImage: user.profileImage,
@@ -83,7 +101,6 @@ export default class AuthController {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
 
-    // ⛔ Tu utilisais `User.findBy` sans relation
     const user = await User.query()
       .where('email', email)
       .first()
@@ -91,7 +108,6 @@ export default class AuthController {
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
-
 
     const storedHash = user.password?.trim() ?? ''
     logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)
@@ -129,7 +145,9 @@ export default class AuthController {
         id: user.id,
         name: `${user.first_name} ${user.last_name}`,
         email: user.email,
+
         lastName: user.last_name,
+
         phone: user.phone,
         address: user.address,
         profileImage: user.profileImage,

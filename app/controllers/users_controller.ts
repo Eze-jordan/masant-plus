@@ -1,9 +1,10 @@
-import SessionUser from '#models/session_user'
-import User from '#models/user'
 import hash from '@adonisjs/core/services/hash'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { generateJwtToken } from '../Utils/Jwt.js'
 import { DateTime } from 'luxon'
+import User from '#models/user'
+import SessionUser from '#models/session_user'
+import { Docteur } from '#models/user'  // Importer le modèle Docteur
 
 export default class AuthController {
   public async login({ request, response, logger }: HttpContextContract) {
@@ -39,6 +40,12 @@ export default class AuthController {
       return response.status(500).send({ error: 'Erreur serveur lors de la connexion.' })
     }
 
+    // ✅ Vérifier si l'utilisateur est un docteur et récupérer sa spécialité
+    let specialty = null
+    if (user instanceof Docteur) {
+      specialty = user.specialisation  // Utilise `specialisation` de `Docteur`
+    }
+
     // ✅ Générer le token JWT
     const token = generateJwtToken({ id: user.id, email: user.email })
 
@@ -61,15 +68,14 @@ export default class AuthController {
     return response.ok({
       user: {
         id: user.id,
-        name: `${user.firstName} ${user.lastName}`,
+        name: `${user.first_name} ${user.last_name}`,
         email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        first_name: user.first_name,
+        last_name: user.last_name,
         phone: user.phone,
         address: user.address,
         profileImage: user.profileImage,
-        specialty: user.specialty,
+        specialty: specialty,  // Récupérer la spécialité si c'est un docteur
         role: user.role?.label ?? 'inconnu',
       },
       token,

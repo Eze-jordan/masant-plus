@@ -4,7 +4,6 @@ import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
 import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
@@ -17,6 +16,7 @@ import ConsultationsController from '#controllers/consultations_controller'
 import PaymentsController from '#controllers/payments_controller'
 import DoctorsController from '#controllers/doctors_controller'
 import swaggerSpec from './swagger.js'
+const doctorAll   =  new   doctor_displays_controller()
 import PasswordResetController from '#controllers/otps_controller'
 import AccountDeletionController from '#controllers/account_deletions_controller'
 import AccountManagementController from '#controllers/AccountManagementController'
@@ -42,6 +42,7 @@ import Paiement from '#models/paiement';
 import PatientController from '#controllers/PatientController';
 import verify_emails_controller from '#controllers/verify_emails_controller';
 import DemandeDocteurController from '#controllers/DemandeDocteurController';
+import doctor_displays_controller from '#controllers/doctor_displays_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -3327,6 +3328,14 @@ router.post('/logins', async (ctx) => {
   })
 })
 
+router.get('/doctors', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await doctorAll.getUserInfo(ctx)
+    })
+  })
+})
+
 router.get('/csrf-check', async ({ response }) => {
   return response.ok({ status: 'ok' })
 })
@@ -3387,11 +3396,11 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
     // ✅ Version "safe" des utilisateurs (sans mot de passe ou infos sensibles)
     const safeUsers = users.map((user) => ({
       id: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       email: user.email,
       phone: user.phone,
-      specialty: user.specialites, // adapte selon le nom exact
+      specialty: user.specialites, 
       accountStatus: user.accountStatus,
       profileImage: user.profileImage,
       createdAt: user.createdAt,
@@ -3521,3 +3530,20 @@ router.post('/DemandeDocteur', async (ctx) => {
 })
 
 
+router.post('/demandes-docteurs/reject/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new DemandeDocteurController()
+      return await controller.reject(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.post('/demandes-docteurs/approve/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new DemandeDocteurController()
+      return await controller.approve(ctx)
+    })
+  })
+}).middleware([throttle])

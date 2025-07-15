@@ -1,14 +1,12 @@
-import User from '#models/user'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { Docteur } from '#models/user'  // Importation du modèle Docteur
 
 export default class DoctorsController {
-  /**
-   * 🔍 Récupérer le profil complet du médecin
-   */
   public async getDoctorProfile({ params, response }: HttpContextContract) {
     const doctorId = params.id
 
-    const doctor = await User.query()
+    // Récupérer un Docteur au lieu de User
+    const doctor = await Docteur.query()
       .where('id', doctorId)
       .preload('role')
       .first()
@@ -22,23 +20,20 @@ export default class DoctorsController {
     }
 
     return response.json({
-      fullName: doctor.username || 'Dr Inconnu',
+      fullName: doctor.first_name || 'Dr Inconnu',
       specialisation: doctor.specialisation || 'Spécialité inconnue',
       email: doctor.email,
       phone: doctor.phone,
-      matricule: doctor.licenseNumber || 'Matricule non défini',  // <-- Ajout matricule ici
-      experience: doctor.experience,
+      matricule: doctor.license_number || 'Matricule non défini',  // Ajout matricule ici
       address: doctor.address,
     })
   }
 
-  /**
-   * 🎯 Récupérer uniquement la spécialisation du médecin
-   */
   public async getDoctorSpecialty({ params, response }: HttpContextContract) {
     const doctorId = params.userId
 
-    const doctor = await User.query()
+    // Récupérer un Docteur au lieu de User
+    const doctor = await Docteur.query()
       .where('id', doctorId)
       .preload('role')
       .first()
@@ -52,9 +47,8 @@ export default class DoctorsController {
     }
 
     return response.json({
-      fullName: doctor.username || 'Dr Inconnu',
       specialisation: doctor.specialisation || 'Spécialité inconnue',
-      matricule: doctor.licenseNumber || 'Matricule non défini',  // <-- Aussi ici si besoin
+      matricule: doctor.license_number || 'Matricule non défini',
     })
   }
 }

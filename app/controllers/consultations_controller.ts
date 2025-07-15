@@ -14,7 +14,7 @@ export default class AppointmentsController {
         .query()
         .where('id_user', userId)
         .preload('patient', (query) => {
-          query.select(['id', 'username'])
+          query.select(['id', 'first_name'])
         })
         .orderBy('date_rdv', 'desc')
 
@@ -43,7 +43,7 @@ export default class AppointmentsController {
 
         return {
           id: appointment.id,
-          patientName: appointment.patient?.username ?? 'Inconnu',
+          patientName: appointment.patient?.first_name ?? 'Inconnu',
           date: appointment.dateRdv.toISODate(),
           heureDebut: appointment.heureDebut,
           heureFin: appointment.heureFin,
@@ -70,8 +70,8 @@ export default class AppointmentsController {
       const appointment = await Appointment
         .query()
         .where('id', appointmentId)
-        .preload('patient', (query) => query.select(['id', 'username']))
-        .preload('doctor', (query) => query.select(['id', 'username']))
+        .preload('patient', (query) => query.select(['id', 'first_name']))
+        .preload('doctor', (query) => query.select(['id', 'first_name']))
         .firstOrFail()
 
       const start = DateTime.fromISO(`${appointment.dateRdv.toISODate()}T${appointment.heureDebut}`)
@@ -97,8 +97,8 @@ export default class AppointmentsController {
 
       const result = {
         id: appointment.id,
-        patientName: appointment.patient?.username ?? 'Inconnu',
-        doctorName: appointment.doctor?.username ?? 'Inconnu',
+        patientName: appointment.patient?.first_name ?? 'Inconnu',
+        doctorName: appointment.doctor?.first_name ?? 'Inconnu',
         date: appointment.dateRdv.toISODate(),
         heureDebut: appointment.heureDebut,
         heureFin: appointment.heureFin,

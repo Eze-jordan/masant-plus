@@ -1,8 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Paiement from '#models/paiement'
 import { DateTime } from 'luxon' // ou dayjs/moment selon ton setup
 import { StatusPaiement } from '../enum/enums.js'
+import Paiement from '#models/paiement'
 import Notification from '#models/notification'
+
 
 export default class PaymentsController {
   public async getBalance({ params, response }: HttpContextContract) {
@@ -46,15 +47,15 @@ export default class PaymentsController {
         await Notification.create({
           idUser: userId,
           titre: 'Nouveau paiement reçu',
-          description: `Vous avez reçu un paiement de ${paiement.user?.username ?? 'un utilisateur'} pour un montant de ${paiement.montant}xfa.`,
+          description: `Vous avez reçu un paiement de ${paiement.user?.first_name ?? 'un utilisateur'} pour un montant de ${paiement.montant}xfa.`,
           isRead: false,
         })
       }))
   
       const payers = paiements.map((paiement) => ({
         payerId: paiement.user?.id,
-        username: paiement.user?.username,
-        fullName: `${paiement.user?.firstName ?? ''} ${paiement.user?.lastName ?? ''}`.trim(),
+        first_name: paiement.user?.first_name,
+        fullName: `${paiement.user?.last_name ?? ''} ${paiement.user?.last_name ?? ''}`.trim(),
         montant: paiement.montant,
         paiementId: paiement.id,
       }))

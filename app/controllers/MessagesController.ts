@@ -102,8 +102,8 @@ export default class MessagesController {
           id: newMessage.id,
           message: newMessage.message,
           createdAt: newMessage.createdAt,
-          senderUsername: newMessage.sender?.username ?? 'Inconnu',
-          receiverUsername: newMessage.receiver?.username ?? 'Inconnu',
+          senderUsername: newMessage.sender?.first_name ?? 'Inconnu',
+          receiverUsername: newMessage.receiver?.first_name ?? 'Inconnu',
           idDiscussion: newMessage.idDiscussion,
         },
       })
@@ -153,11 +153,11 @@ export default class MessagesController {
 
         results.push({
           id: discussion.id,
-          name: `${otherUser.firstName} ${otherUser.lastName}`,
+          name: `${otherUser.first_name} ${otherUser.last_name}`,
           lastMessage: lastMessage.message,
           time: lastMessage.createdAt.toFormat('HH:mm'),
           unread: false,
-          avatar: otherUser.profileImage || `https://ui-avatars.com/api/?name=${otherUser.firstName}+${otherUser.lastName}`,
+          avatar: otherUser.profileImage || `https://ui-avatars.com/api/?name=${otherUser.first_name}+${otherUser.last_name}`,
           isOnline: false,
         })
       }
@@ -201,8 +201,8 @@ export default class MessagesController {
         createdAt: m.createdAt,
         senderId: m.sender?.id ?? null,
         receiverId: m.receiver?.id ?? null,
-        senderUsername: m.sender?.username ?? 'Inconnu',
-        receiverUsername: m.receiver?.username ?? 'Inconnu',
+        senderUsername: m.sender?.first_name ?? 'Inconnu',
+        receiverUsername: m.receiver?.first_name ?? 'Inconnu',
       }));
   
       console.log(`Messages formatés pour discussionId=${discussionId}:`, formatted);
