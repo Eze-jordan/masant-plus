@@ -44,7 +44,6 @@ export default class UsersController {
 
   public async changePassword({ request, response, params }: HttpContextContract) {
     try {
-      // Valider les données avec current_password, password, password_confirmation
       const payload = await vine.validate({
         schema: changePasswordSchema,
         data: request.only(['current_password', 'password', 'password_confirmation']),
@@ -53,23 +52,15 @@ export default class UsersController {
       const user = await User.findOrFail(params.id)
       console.log('[changePassword] User ID:', user.id)
   
-      // Vérifier si l'ancien mot de passe est correct
       const isOldPasswordValid = await hash.verify(user.password || '', payload.current_password)
-  
       if (!isOldPasswordValid) {
-        return response.status(401).send({
-          message: 'Ancien mot de passe incorrect.',
-        })
+        return response.status(401).send({ message: 'Ancien mot de passe incorrect.' })
       }
   
-      // Ne PAS hasher ici, juste assigner le mot de passe clair
-      user.password = payload.password
-  
+      user.password = payload.password  // en clair, le hook s’occupe du hash
       await user.save()
   
-      // Relecture pour vérifier
-      const savedUser = await User.findOrFail(user.id)
-      console.log('[changePassword] Hash final enregistré:', savedUser.password)
+      console.log('[changePassword] Nouveau mot de passe hashé enregistré')
   
       return response.ok({ message: 'Mot de passe mis à jour avec succès.' })
     } catch (error: any) {
@@ -80,6 +71,8 @@ export default class UsersController {
       })
     }
   }
+  
+
   
   
     public async update({ request, response, params, inertia }: HttpContextContract) {

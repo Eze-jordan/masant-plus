@@ -30,4 +30,16 @@ const schemaPatient = vine.object({
 })
 export const createPatientValidator = vine.compile(schemaPatient)
 
+const schemaAdmin = vine.object({
+  first_name: vine.string().optional(),
+  last_name: vine.string().optional(),
+  email: vine.string().trim(),
+  phone: vine.string().optional(),
+  password: vine.string(),
+  role: vine.string().trim().optional(),
+  type: vine.literal('admin'), // Force le type 'doctor'
+
+})
+export const createAdminValidator = vine.compile(schemaAdmin)
+
 

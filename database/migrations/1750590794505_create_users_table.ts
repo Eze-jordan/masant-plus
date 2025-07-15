@@ -18,7 +18,7 @@ export default class Users extends BaseSchema {
       table.string('expo_push_token').nullable() // Ajouté pour le modèle
   
       // Discriminant pour l'héritage
-      table.enum('type', ['user', 'doctor', 'patient']).defaultTo('user')
+      table.enum('type', ['doctor', 'patient', 'admin']).defaultTo('user')
   
       // Champs spécifiques aux docteurs (peuvent être null)
       table.string('license_number').nullable()

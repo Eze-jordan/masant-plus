@@ -1,17 +1,16 @@
-
+import User from '#models/user'
+import Role from '#models/role'
 import vine from '@vinejs/vine'
 import { promises as fs } from 'fs'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import drive from '@adonisjs/drive/services/main'
+import { createAdminValidator, createDocteurValidator } from '#validators/create_user'
+import { createPatientValidator } from '#validators/create_user'
 import { cuid } from '@adonisjs/core/helpers'
-import Role from '#models/role'
-import User from '#models/user'
 import WelcomeMailService from '#services/WelcomeMailService'
-import { createDocteurValidator, createPatientValidator } from '#validators/create_user'
-
 
 export default class RegisterController {
   public async registerDocteur(ctx: HttpContextContract) {
@@ -24,7 +23,6 @@ export default class RegisterController {
       email: raw.email,
       first_name: raw.firstName,
       last_name: raw.lastName,
-
       phone: raw.phone,
       specialisation: raw.specialisation ?? '',
       license_number: raw.licenseNumber ?? '',
@@ -165,12 +163,76 @@ export default class RegisterController {
       })
     }
   }
+  public async registerAdmin(ctx: HttpContextContract) {
+    const { request, response, logger } = ctx
+    const raw = request.all()
+    logger.info('[RegisterController] Données brutes reçues :', raw)
+
+    const requestData = {
+      email: raw.email,
+      password: raw.password,
+      first_name: raw.firstName,
+      last_name: raw.lastName,
+      phone: raw.phone,
+      role: raw.role,
+      type: 'admin'
+    }
+
+    try {
+      const validatedData = await createAdminValidator.validate(requestData)
+
+      const userExists = await User.findBy('email', validatedData.email)
+      if (userExists) {
+        return response.status(400).send({ 
+          message: 'Un utilisateur avec cet email existe déjà.' 
+        })
+      }
+
+      const roleLabel = (validatedData.role ?? 'admin').toLowerCase()
+      let selectedRole = await Role.findBy('label', roleLabel)
+      if (!selectedRole) {
+        selectedRole = await Role.create({ label: roleLabel })
+        logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
+      }
+
+  
+      const { role, ...sanitizedData } = validatedData
+
+      const user = await User.create({
+        ...sanitizedData,
+        roleId: selectedRole.id,
+      })
+      await WelcomeMailService.sendAccountInfo(
+        user.email as string,
+        `${user.first_name} ${user.last_name}`,
+        user.password as string,
+      )
+      
+      return response.status(201).send({
+        message: 'Admin créé avec succès.',
+        user: user.serialize(),
+      })
+      
+    
+    } catch (error: any) {
+      logger.error('[RegisterController] Erreur création Admin', {
+        message: error.message,
+        stack: error.stack,
+        dataSent: requestData,
+      })
+      return response.status(500).send({
+        message: 'Erreur création admin.',
+        error: error.message,
+        dataReceived: requestData,
+      })
+    }
+  }
   public async update(ctx: HttpContextContract) {
     const { request, response, params, inertia } = ctx
 
     const updateUserSchema = vine.object({
-      first_name: vine.string().trim().maxLength(50).optional(),
-      last_name: vine.string().trim().maxLength(50).optional(),
+      firstName: vine.string().trim().maxLength(50).optional(),
+      lastName: vine.string().trim().maxLength(50).optional(),
       email: vine
         .string()
         .trim()
