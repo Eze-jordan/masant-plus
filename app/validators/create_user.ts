@@ -36,6 +36,7 @@ const schemaAdmin = vine.object({
   email: vine.string().trim(),
   phone: vine.string().optional(),
   password: vine.string(),
+  account_status: vine.enum(Object.values(Status)).optional(),
   role: vine.string().trim().optional(),
   type: vine.literal('admin'), // Force le type 'doctor'
 

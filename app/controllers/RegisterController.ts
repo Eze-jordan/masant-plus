@@ -174,6 +174,7 @@ export default class RegisterController {
       first_name: raw.firstName,
       last_name: raw.lastName,
       phone: raw.phone,
+      account_status: Status.ACTIVE,
       role: raw.role,
       type: 'admin'
     }
