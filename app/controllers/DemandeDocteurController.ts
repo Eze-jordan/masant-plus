@@ -4,11 +4,19 @@ import DemandeDocteur from '../models/demande_docteur.js'
 import { Docteur } from '../models/user.js'
 import Role from '../models/role.js'
 import { Status } from '../enum/enums.js'
+import MailFordoctor from '#services/MailFordoctor'
 
 export default class DemandeDocteurController {
   // Enregistrer une nouvelle demande
   public async store({ request, response }: HttpContextContract) {
-    const data = request.only(['firstName', 'lastName', 'email', 'phone', 'license_number', 'specialisation'])  // Change 'licenseNumber' to 'license_number'
+    const data = request.only([
+        'firstName', 
+        'lastName', 
+        'email', 
+        'phone', 
+        'licenseNumber', 
+        'specialisation'])
+
     const demande = await DemandeDocteur.create({ ...data, status: 'pending' })
     return response.created(demande)
   }
@@ -55,6 +63,7 @@ export default class DemandeDocteurController {
     })
     demande.status = 'approved'
     await demande.save()
+    await MailFordoctor.sendApprovalEmail(docteur.email, docteur.first_name, docteur.last_name)
     return response.ok({ message: 'Demande validée, compte docteur créé', docteur })
   }
 
