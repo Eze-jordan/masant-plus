@@ -6,8 +6,8 @@ const baseURL = 'https://backend.sammomed.online'
 test.group('User Creation API', () => {
   test('creates a new user successfully', async ({ assert }) => {
     const userPayload = {
-      firstName: 'John',
-      lastName: 'Doe',
+      first_name: 'John',
+      last_name: 'Doe',
       email: 'johnd@example.com',
       password: 'secret',
       phone: '123456789',
@@ -30,8 +30,8 @@ test.group('User Creation API', () => {
     // Assert: Vérifie les données de l'utilisateur dans la réponse
     assert.exists(response.body.user.id)
     assert.equal(response.body.user.email, userPayload.email)
-    assert.equal(response.body.user.firstName, userPayload.firstName)
-    assert.equal(response.body.user.lastName, userPayload.lastName)
+    assert.equal(response.body.user.first_name, userPayload.first_name)
+    assert.equal(response.body.user.last_name, userPayload.last_name)
     assert.equal(response.body.user.role, 'doctor')
   })
 })

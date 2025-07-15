@@ -3386,8 +3386,8 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
     // ✅ Version "safe" des utilisateurs (sans mot de passe ou infos sensibles)
     const safeUsers = users.map((user) => ({
       id: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       email: user.email,
       phone: user.phone,
       specialty: user.specialites, 

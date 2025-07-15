@@ -1,0 +1,205 @@
+{
+  "_GererUrgences-DccO0yi4.js": {
+    "file": "GererUrgences-DccO0yi4.js",
+    "name": "GererUrgences",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js",
+      "_createLucideIcon-C1lUWojF.js"
+    ]
+  },
+  "_HistoriquePaiement-DGmGt3yB.js": {
+    "file": "HistoriquePaiement-DGmGt3yB.js",
+    "name": "HistoriquePaiement",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js",
+      "_createLucideIcon-C1lUWojF.js",
+      "_user-DeXyKuzE.js",
+      "_stethoscope-Da-aWrjo.js"
+    ]
+  },
+  "__plugin-vue_export-helper-DlAUqK2U.js": {
+    "file": "_plugin-vue_export-helper-DlAUqK2U.js",
+    "name": "_plugin-vue_export-helper"
+  },
+  "_createLucideIcon-C1lUWojF.js": {
+    "file": "createLucideIcon-C1lUWojF.js",
+    "name": "createLucideIcon",
+    "imports": [
+      "inertia/app/app.ts"
+    ]
+  },
+  "_stethoscope-Da-aWrjo.js": {
+    "file": "stethoscope-Da-aWrjo.js",
+    "name": "stethoscope",
+    "imports": [
+      "_createLucideIcon-C1lUWojF.js"
+    ]
+  },
+  "_user-DeXyKuzE.js": {
+    "file": "user-DeXyKuzE.js",
+    "name": "user",
+    "imports": [
+      "_createLucideIcon-C1lUWojF.js"
+    ]
+  },
+  "_users-Bh4ksiLj.js": {
+    "file": "users-Bh4ksiLj.js",
+    "name": "users",
+    "imports": [
+      "_createLucideIcon-C1lUWojF.js"
+    ]
+  },
+  "inertia/app/app.ts": {
+    "file": "app-CfV6an-M.js",
+    "name": "app",
+    "src": "inertia/app/app.ts",
+    "isEntry": true,
+    "dynamicImports": [
+      "inertia/pages/auth/login.vue",
+      "inertia/pages/auth/rest-password.vue",
+      "inertia/pages/dashboard/GererPatients.vue",
+      "_GererUrgences-DccO0yi4.js",
+      "_HistoriquePaiement-DGmGt3yB.js",
+      "inertia/pages/dashboard/ListeDemande.vue",
+      "inertia/pages/dashboard/dashboard.vue",
+      "inertia/pages/dashboard/geredocteur.vue",
+      "inertia/pages/errors/ServerError.vue",
+      "inertia/pages/errors/not_found.vue",
+      "inertia/pages/home.vue"
+    ],
+    "css": [
+      "app-BzaCkNEt.css"
+    ]
+  },
+  "inertia/pages/auth/login.vue": {
+    "file": "login-B3oQGGlR.js",
+    "name": "login",
+    "src": "inertia/pages/auth/login.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "inertia/pages/errors/ServerError.vue",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ]
+  },
+  "inertia/pages/auth/rest-password.vue": {
+    "file": "rest-password-DvFVlNf5.js",
+    "name": "rest-password",
+    "src": "inertia/pages/auth/rest-password.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ]
+  },
+  "inertia/pages/dashboard/GererPatients.vue": {
+    "file": "GererPatients-FzBFasby.js",
+    "name": "GererPatients",
+    "src": "inertia/pages/dashboard/GererPatients.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js",
+      "_user-DeXyKuzE.js",
+      "_createLucideIcon-C1lUWojF.js"
+    ],
+    "css": [
+      "GererPatients-BFUuHWAs.css"
+    ]
+  },
+  "inertia/pages/dashboard/ListeDemande.vue": {
+    "file": "ListeDemande-BfPolrZ_.js",
+    "name": "ListeDemande",
+    "src": "inertia/pages/dashboard/ListeDemande.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js",
+      "_stethoscope-Da-aWrjo.js",
+      "_createLucideIcon-C1lUWojF.js"
+    ],
+    "css": [
+      "ListeDemande-BcTQVVZg.css"
+    ]
+  },
+  "inertia/pages/dashboard/dashboard.vue": {
+    "file": "dashboard-CDSD8WBf.js",
+    "name": "dashboard",
+    "src": "inertia/pages/dashboard/dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "inertia/pages/dashboard/geredocteur.vue",
+      "inertia/pages/dashboard/ListeDemande.vue",
+      "inertia/pages/dashboard/GererPatients.vue",
+      "_GererUrgences-DccO0yi4.js",
+      "_HistoriquePaiement-DGmGt3yB.js",
+      "_users-Bh4ksiLj.js",
+      "_stethoscope-Da-aWrjo.js",
+      "_createLucideIcon-C1lUWojF.js",
+      "_user-DeXyKuzE.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "assets": [
+      "logo-Cmqv-nFX.png"
+    ]
+  },
+  "inertia/pages/dashboard/geredocteur.vue": {
+    "file": "geredocteur-Br06EOf7.js",
+    "name": "geredocteur",
+    "src": "inertia/pages/dashboard/geredocteur.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js",
+      "_stethoscope-Da-aWrjo.js",
+      "_createLucideIcon-C1lUWojF.js"
+    ],
+    "css": [
+      "geredocteur-_Zj_JgkD.css"
+    ]
+  },
+  "inertia/pages/errors/ServerError.vue": {
+    "file": "ServerError-BwPjHvt-.js",
+    "name": "ServerError",
+    "src": "inertia/pages/errors/ServerError.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ]
+  },
+  "inertia/pages/errors/not_found.vue": {
+    "file": "not_found-C73mT53N.js",
+    "name": "not_found",
+    "src": "inertia/pages/errors/not_found.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ]
+  },
+  "inertia/pages/home.vue": {
+    "file": "home-mfdLIg5o.js",
+    "name": "home",
+    "src": "inertia/pages/home.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "inertia/app/app.ts",
+      "__plugin-vue_export-helper-DlAUqK2U.js",
+      "_createLucideIcon-C1lUWojF.js",
+      "_users-Bh4ksiLj.js"
+    ],
+    "css": [
+      "home-DECPOzh4.css"
+    ]
+  },
+  "public/logo.png": {
+    "file": "logo-Cmqv-nFX.png",
+    "src": "public/logo.png"
+  }
+}

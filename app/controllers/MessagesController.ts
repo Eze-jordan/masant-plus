@@ -153,7 +153,7 @@ export default class MessagesController {
 
         results.push({
           id: discussion.id,
-          name: `${otherUser.first_name} ${otherUser.lastName}`,
+          name: `${otherUser.first_name} ${otherUser.last_name}`,
           lastMessage: lastMessage.message,
           time: lastMessage.createdAt.toFormat('HH:mm'),
           unread: false,
