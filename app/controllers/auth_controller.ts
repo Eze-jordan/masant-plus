@@ -156,6 +156,8 @@ export default class AuthController {
     })
   }
 
+  
+
   public async logout({ response, request, logger }: HttpContextContract) {
     const token = request.cookie('token')
 
