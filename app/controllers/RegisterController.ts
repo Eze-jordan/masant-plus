@@ -1,16 +1,17 @@
-import User from '#models/user'
-import Role from '#models/role'
+
 import vine from '@vinejs/vine'
 import { promises as fs } from 'fs'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { createDocteurValidator } from '#validators/create_user'
-import { createPatientValidator } from '#validators/create_user'
+import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
+import Role from '#models/role'
+import User from '#models/user'
 import WelcomeMailService from '#services/WelcomeMailService'
+import { createDocteurValidator, createPatientValidator } from '#validators/create_user'
+
 
 export default class RegisterController {
   public async registerDocteur(ctx: HttpContextContract) {
@@ -23,8 +24,9 @@ export default class RegisterController {
       email: raw.email,
       first_name: raw.firstName,
       last_name: raw.lastName,
+
       phone: raw.phone,
-      specialisation: raw.specialisation,
+      specialisation: raw.specialisation ?? '',
       license_number: raw.licenseNumber ?? '',
       role: raw.role,
       account_status: Status.PENDING,
@@ -167,8 +169,8 @@ export default class RegisterController {
     const { request, response, params, inertia } = ctx
 
     const updateUserSchema = vine.object({
-      firstName: vine.string().trim().maxLength(50).optional(),
-      lastName: vine.string().trim().maxLength(50).optional(),
+      first_name: vine.string().trim().maxLength(50).optional(),
+      last_name: vine.string().trim().maxLength(50).optional(),
       email: vine
         .string()
         .trim()

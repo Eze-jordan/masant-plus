@@ -36,7 +36,7 @@ export default class UserController {
         message: `Le statut de l'utilisateur a été mis à jour à ${status}`,
         user: {
           id: user.id,
-          name: `${user.firstName} ${user.lastName}`,
+          name: `${user.first_name} ${user.last_name}`,
           email: user.email,
           accountStatus: user.accountStatus,
         },

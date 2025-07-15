@@ -18,8 +18,8 @@ export default class UsersController {
         .where('id', params.id)
         .select([
           'id',
-          'firstName',
-          'lastName',
+          'first_name',
+          'last_name',
           'email',
           'phone',
           'specialisation',
@@ -84,8 +84,8 @@ export default class UsersController {
   
     public async update({ request, response, params, inertia }: HttpContextContract) {
       const updateUserSchema = vine.object({
-        firstName: vine.string().trim().maxLength(50).optional(),
-        lastName: vine.string().trim().maxLength(50).optional(),
+        first_name: vine.string().trim().maxLength(50).optional(),
+        last_name: vine.string().trim().maxLength(50).optional(),
         email: vine
           .string()
           .trim()

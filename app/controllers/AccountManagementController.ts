@@ -1,15 +1,16 @@
-import Role from '#models/role'
-import User from '#models/user'
-import Paiement from '#models/paiement'
-import Feedback from '#models/feedback'
-import { GetInvoice } from '#services/ebilling'
+
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { Status } from '../enum/enums.js'
+import User from '#models/user'
+import Role from '#models/role'
+import { GetInvoice } from '#services/ebilling'
+import Paiement from '#models/paiement'
+import Feedback from '#models/feedback'
 
 export default class AccountManagementController {
   public async createAccount({ request, response }: HttpContextContract) {
-    const { username, email, password, role, first_name, last_name, phone } = request.only([
-      'username', 'email', 'password', 'role', 'first_name', 'last_name', 'phone'
+    const {  email, password, role, first_name, last_name, phone } = request.only([
+      'email', 'password', 'role', 'first_name', 'last_name', 'phone'
     ])
 
     try {
@@ -28,12 +29,11 @@ export default class AccountManagementController {
       const plainPassword = password || 'changeme123'
 
       const user = await User.create({
-        username,
         email,
         password: plainPassword,
         roleId: userRole.id,
-        firstName: first_name,
-        lastName: last_name,
+        first_name: first_name,
+        last_name: last_name,
         phone,
       })
 
@@ -64,7 +64,7 @@ export default class AccountManagementController {
     await user.save()
 
     return response.ok({
-      message: `Le compte de l'utilisateur ${user.username} a été suspendu.`,
+      message: `Le compte de l'utilisateur ${user.first_name} a été suspendu.`,
       user,
     })
   }
@@ -75,7 +75,7 @@ export default class AccountManagementController {
 
     await user.delete()
 
-    return response.ok({ message: `Le compte de l'utilisateur ${user.username} a été supprimé.` })
+    return response.ok({ message: `Le compte de l'utilisateur ${user.first_name} a été supprimé.` })
   }
 
   public async getUserDetails({ params, response }: HttpContextContract) {

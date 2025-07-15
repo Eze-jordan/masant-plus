@@ -1,7 +1,9 @@
-import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Discussion from '#models/discussion'
 import Live from '#models/live'
 import LiveUser from '#models/liveUser'
-import Discussion from '#models/discussion'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+
+
 
 export default class LiveController {
   
@@ -74,7 +76,7 @@ export default class LiveController {
         id: liveUser.live.id,
         name: liveUser.live.name,
         createdAt: liveUser.live.createdAt,
-        user: liveUser.user.firstName + ' ' + liveUser.user.lastName,
+        user: liveUser.user.first_name + ' ' + liveUser.user.first_name,
       }))
 
       return response.ok({
@@ -109,9 +111,9 @@ export default class LiveController {
 
       const users = liveUsers.map(liveUser => ({
         id: liveUser.user.id,
-        firstName: liveUser.user.firstName,
-        lastName: liveUser.user.lastName,
-        avatar: liveUser.user.profileImage || `https://ui-avatars.com/api/?name=${liveUser.user.firstName}+${liveUser.user.lastName}`,
+        firstName: liveUser.user.first_name,
+        last_name: liveUser.user.last_name,
+        avatar: liveUser.user.profileImage || `https://ui-avatars.com/api/?name=${liveUser.user.first_name}+${liveUser.user.last_name}`,
       }))
 
       return response.ok({
