@@ -1,5 +1,5 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import User from '#models/user'
+import User, { Docteur } from '#models/user' // Assure-toi d'importer la classe User et Docteur
 import hash from '@adonisjs/core/services/hash'
 import { generateJwtToken } from '../Utils/Jwt.js'
 import SessionUser from '#models/session_user'
@@ -15,10 +15,19 @@ export default class AuthController {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
 
-    const user = await User.query()
+    // Utilisation de Docteur ou User selon le type
+    let user = await User.query()
       .where('email', email)
       .preload('role') // Charge le rôle si utile
       .first()
+
+    // Si l'utilisateur n'est pas trouvé, essayer Docteur
+    if (!user) {
+      user = await Docteur.query()
+        .where('email', email)
+        .preload('role') // Charge le rôle si utile
+        .first()
+    }
 
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
@@ -62,6 +71,7 @@ export default class AuthController {
       path: '/',
     })
 
+    // Retourner les propriétés spécifiques au type d'utilisateur (Docteur ou Patient)
     return response.ok({
       user: {
         id: user.id,
@@ -72,10 +82,11 @@ export default class AuthController {
         phone: user.phone,
         address: user.address,
         profileImage: user.profileImage,
-        specialty: user.specialty,
-        license_number: user.license_number,
+        // Assurez-vous de vérifier que l'utilisateur est un médecin
+        specialty: user instanceof Docteur ? user.specialisation : undefined,
+        license_number: user instanceof Docteur ? user.license_number : undefined,
         role: user.role?.label ?? 'Non défini',
-        accountStatus: user.accountStatus, // You might want to include this in the response
+        accountStatus: user.accountStatus,
       },
       token,
     })
@@ -89,7 +100,6 @@ export default class AuthController {
       return response.status(400).send({ error: 'Email et mot de passe requis.' })
     }
 
-    // ⛔ Tu utilisais `User.findBy` sans relation
     const user = await User.query()
       .where('email', email)
       .first()
@@ -97,7 +107,6 @@ export default class AuthController {
     if (!user) {
       return response.status(401).send({ error: 'Email invalide.' })
     }
-
 
     const storedHash = user.password?.trim() ?? ''
     logger.info(`[AuthController] Hash stocké (trimmed) : ${storedHash}`)

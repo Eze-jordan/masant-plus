@@ -1,4 +1,5 @@
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+// Importations nécessaires
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import DemandeDocteur from '../models/demande_docteur.js'
 import { Docteur } from '../models/user.js'
 import Role from '../models/role.js'
@@ -7,7 +8,7 @@ import { Status } from '../enum/enums.js'
 export default class DemandeDocteurController {
   // Enregistrer une nouvelle demande
   public async store({ request, response }: HttpContextContract) {
-    const data = request.only(['', 'last_name', 'email', 'phone', 'licenseNumber', 'specialisation'])
+    const data = request.only(['firstName', 'lastName', 'email', 'phone', 'license_number', 'specialisation'])  // Change 'licenseNumber' to 'license_number'
     const demande = await DemandeDocteur.create({ ...data, status: 'pending' })
     return response.created(demande)
   }
@@ -43,11 +44,11 @@ export default class DemandeDocteurController {
     }
     // Création du compte docteur
     const docteur = await Docteur.create({
-      first_name: demande.first_name
-      last_name: demande.last_name,
+      first_name: demande.firstName,   // Utilisation de camelCase
+      last_name: demande.lastName,     // Utilisation de camelCase
       email: demande.email,
       phone: demande.phone,
-      license_number: demande.licenseNumber,
+      license_number: demande.licenseNumber,  // Change to 'license_number'
       specialisation: demande.specialisation,
       roleId: role.id,
       accountStatus: Status.ACTIVE,
