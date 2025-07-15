@@ -63,7 +63,7 @@ export default class DemandeDocteurController {
     })
     demande.status = 'approved'
     await demande.save()
-    await MailFordoctor.sendApprovalEmail(docteur.email, docteur.first_name, docteur.last_name)
+    await MailFordoctor.sendApprovalEmail(docteur.email!, docteur.first_name!, docteur.last_name!)
     return response.ok({ message: 'Demande validée, compte docteur créé', docteur })
   }
 
