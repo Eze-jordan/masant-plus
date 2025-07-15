@@ -109,8 +109,8 @@ export default class RegisterController {
     const requestData = {
       email: raw.email,
       password: password,
-      first_name: raw.firstName,
-      last_name: raw.lastName,
+      first_name: raw.first_name,
+      last_name: raw.last_name,
       phone: raw.phone,
       address: raw.address ?? '',
       role: raw.role,
@@ -170,8 +170,8 @@ export default class RegisterController {
     const { request, response, params, inertia } = ctx
 
     const updateUserSchema = vine.object({
-      firstName: vine.string().trim().maxLength(50).optional(),
-      lastName: vine.string().trim().maxLength(50).optional(),
+      first_name: vine.string().trim().maxLength(50).optional(),
+      last_name: vine.string().trim().maxLength(50).optional(),
       email: vine
         .string()
         .trim()

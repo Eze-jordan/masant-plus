@@ -133,10 +133,10 @@ export default class AuthController {
     return response.ok({
       user: {
         id: user.id,
-        name: `${user.firstName} ${user.lastName}`,
+        name: `${user.first_name} ${user.last_name}`,
         email: user.email,
-        username: user.username,
-        lastName: user.lastName,
+        first_name: user.first_name,
+        last_name: user.last_name,
         phone: user.phone,
         address: user.address,
         profileImage: user.profileImage,

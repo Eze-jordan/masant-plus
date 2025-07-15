@@ -15,7 +15,7 @@ export default class UsersController {
       .select(
         'id',
         'first_name',
-        'lastName',
+        'last_name',
         'phone',
         'email',
         'specialty',

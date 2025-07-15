@@ -15,7 +15,7 @@ export default class PatientController {
       return response.ok({
         id: patient.id,
         firstName: patient.first_name,
-        lastName: patient.last_name,
+        last_name: patient.last_name,
         email: patient.email,
         phone: patient.phone,
       })

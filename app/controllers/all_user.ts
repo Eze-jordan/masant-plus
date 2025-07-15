@@ -13,8 +13,8 @@ export default class UsersController {
       })
       .select(
         'id',
-        'firstName',
-        'lastName',
+        'first_name',
+        'last_name',
         'phone',
         'email',
         'specialty',
@@ -42,7 +42,7 @@ export default class UsersController {
       ? {
           id: authUser.id,
           nom: authUser.first_name,
-          prenom: authUser.lastName,
+          prenom: authUser.last_name,
           telephone: authUser.phone,
           email: authUser.email,
           specialite: authUser.specialty,

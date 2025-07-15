@@ -112,7 +112,7 @@ export default class LiveController {
       const users = liveUsers.map(liveUser => ({
         id: liveUser.user.id,
         firstName: liveUser.user.first_name,
-        lastName: liveUser.user.last_name,
+        last_name: liveUser.user.last_name,
         avatar: liveUser.user.profileImage || `https://ui-avatars.com/api/?name=${liveUser.user.first_name}+${liveUser.user.last_name}`,
       }))
 
