@@ -17,6 +17,7 @@ import ConsultationsController from '#controllers/consultations_controller'
 import PaymentsController from '#controllers/payments_controller'
 import DoctorsController from '#controllers/doctors_controller'
 import swaggerSpec from './swagger.js'
+const doctorAll   =  new   doctor_displays_controller()
 import PasswordResetController from '#controllers/otps_controller'
 import AccountDeletionController from '#controllers/account_deletions_controller'
 import AccountManagementController from '#controllers/AccountManagementController'
@@ -42,6 +43,7 @@ import Paiement from '#models/paiement';
 import PatientController from '#controllers/PatientController';
 import verify_emails_controller from '#controllers/verify_emails_controller';
 import DemandeDocteurController from '#controllers/DemandeDocteurController';
+import doctor_displays_controller from '#controllers/doctor_displays_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -3322,6 +3324,14 @@ router.post('/logins', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       await loginadmin.login(ctx)
+    })
+  })
+})
+
+router.post('/doctors', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await doctorAll.getUserInfo(ctx)
     })
   })
 })
