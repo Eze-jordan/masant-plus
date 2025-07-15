@@ -8,7 +8,14 @@ import { Status } from '../enum/enums.js'
 export default class DemandeDocteurController {
   // Enregistrer une nouvelle demande
   public async store({ request, response }: HttpContextContract) {
-    const data = request.only(['firstName', 'lastName', 'email', 'phone', 'license_number', 'specialisation'])  // Change 'licenseNumber' to 'license_number'
+    const data = request.only([
+        'firstName', 
+        'lastName', 
+        'email', 
+        'phone', 
+        'licenseNumber', 
+        'specialisation'])
+
     const demande = await DemandeDocteur.create({ ...data, status: 'pending' })
     return response.created(demande)
   }
