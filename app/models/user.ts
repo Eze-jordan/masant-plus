@@ -133,6 +133,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public get isDoctor() {
     return this.type === 'doctor'
   }
+
+  
 }
 
 export class Docteur extends User {
@@ -147,7 +149,7 @@ export class Docteur extends User {
 
 export class Patient extends User {
   public static selfAssignPrimaryKey = true
-  
+
   @column({ serializeAs: null }) // Optionnel: masquer l'adresse dans les sérialisations
   public declare address?: string
 }

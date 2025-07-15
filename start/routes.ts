@@ -71,7 +71,7 @@ const passwordResetController = new PasswordResetController()
 
 
 /**
- * @swagger
+ * @swagger 
  * /login:
  *   post:
  *     tags:
@@ -2655,20 +2655,7 @@ router.delete('/users/:id', async (ctx) => {
     })
   })
 }).middleware([throttle])
-
-router.put('/user/:id', async (ctx) => {
-  console.log('[GET /users/:id] Début de traitement')
-  console.log('[GET /users/:id] Params:', JSON.stringify(ctx.request.params(), null, 2))
-
-  await onlyFrontend.handle(ctx, async () => {
-    await appKeyGuard.handle(ctx, async () => {
-      console.log('[GET /users/:id] Avant appel changePassword controller show')
-      return user.update(ctx)  // Méthode pour récupérer l'utilisateur
-    })
-  })
-}).middleware([throttle])
-
-
+// pour changer le mode passe 
 
 router.put('/users/:id/change-password', async (ctx) => {
   console.log('[PUT /users/:id/change-password] Débutz de traitement')
@@ -2795,6 +2782,20 @@ router.post('/registerclient', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       console.log('[POST /register] Avant appel controller')
       return registerController.registerPatient(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.post('/registeradmin', async (ctx) => {
+  console.log('[POST /register] Début de traitement')
+  console.log('[POST /register] Headers:', JSON.stringify(ctx.request.headers(), null, 2))
+  console.log('[POST /register] Query Params:', JSON.stringify(ctx.request.qs(), null, 2))
+  console.log('[POST /register] Body:', JSON.stringify(ctx.request.body(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[POST /register] Avant appel controller')
+      return registerController.registerAdmin(ctx)
     })
   })
 }).middleware([throttle])

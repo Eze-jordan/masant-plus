@@ -7,7 +7,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { createDocteurValidator } from '#validators/create_user'
+import { createAdminValidator, createDocteurValidator } from '#validators/create_user'
 import { createPatientValidator } from '#validators/create_user'
 import { cuid } from '@adonisjs/core/helpers'
 import WelcomeMailService from '#services/WelcomeMailService'
@@ -24,7 +24,7 @@ export default class RegisterController {
       first_name: raw.firstName,
       last_name: raw.lastName,
       phone: raw.phone,
-      specialisation: raw.specialisation,
+      specialisation: raw.specialisation ?? '',
       license_number: raw.licenseNumber ?? '',
       role: raw.role,
       account_status: Status.PENDING,
@@ -158,6 +158,70 @@ export default class RegisterController {
       })
       return response.status(500).send({
         message: 'Erreur création patient.',
+        error: error.message,
+        dataReceived: requestData,
+      })
+    }
+  }
+  public async registerAdmin(ctx: HttpContextContract) {
+    const { request, response, logger } = ctx
+    const raw = request.all()
+    logger.info('[RegisterController] Données brutes reçues :', raw)
+
+    const requestData = {
+      email: raw.email,
+      password: raw.password,
+      first_name: raw.firstName,
+      last_name: raw.lastName,
+      phone: raw.phone,
+      role: raw.role,
+      type: 'admin'
+    }
+
+    try {
+      const validatedData = await createAdminValidator.validate(requestData)
+
+      const userExists = await User.findBy('email', validatedData.email)
+      if (userExists) {
+        return response.status(400).send({ 
+          message: 'Un utilisateur avec cet email existe déjà.' 
+        })
+      }
+
+      const roleLabel = (validatedData.role ?? 'admin').toLowerCase()
+      let selectedRole = await Role.findBy('label', roleLabel)
+      if (!selectedRole) {
+        selectedRole = await Role.create({ label: roleLabel })
+        logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
+      }
+
+  
+      const { role, ...sanitizedData } = validatedData
+
+      const user = await User.create({
+        ...sanitizedData,
+        roleId: selectedRole.id,
+      })
+      await WelcomeMailService.sendAccountInfo(
+        user.email as string,
+        `${user.first_name} ${user.last_name}`,
+        user.password as string,
+      )
+      
+      return response.status(201).send({
+        message: 'Admin créé avec succès.',
+        user: user.serialize(),
+      })
+      
+    
+    } catch (error: any) {
+      logger.error('[RegisterController] Erreur création Admin', {
+        message: error.message,
+        stack: error.stack,
+        dataSent: requestData,
+      })
+      return response.status(500).send({
+        message: 'Erreur création admin.',
         error: error.message,
         dataReceived: requestData,
       })
