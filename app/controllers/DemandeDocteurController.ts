@@ -10,16 +10,27 @@ export default class DemandeDocteurController {
   // Enregistrer une nouvelle demande
   public async store({ request, response }: HttpContextContract) {
     const data = request.only([
-        'firstName', 
-        'lastName', 
-        'email', 
-        'phone', 
-        'licenseNumber', 
-        'specialisation'])
-
+      'firstName', 
+      'lastName', 
+      'email', 
+      'phone', 
+      'licenseNumber', 
+      'specialisation'
+    ])
+  
+    // Create the doctor request (demande)
     const demande = await DemandeDocteur.create({ ...data, status: 'pending' })
+  
+    // Log the email that will be sent
+    console.log(`Sending email to: ${demande.firstName}`)
+  
+    // Send the email after creating the demande
+    await MailFordoctor.sendApprovalEmail(demande.email)
+  
+    // Return the response
     return response.created(demande)
   }
+  
 
   // Lister toutes les demandes (admin)
   public async index({ response }: HttpContextContract) {
@@ -61,11 +72,14 @@ export default class DemandeDocteurController {
       roleId: role.id,
       accountStatus: Status.ACTIVE,
     })
+    console.log(docteur)
     demande.status = 'approved'
     await demande.save()
-    await MailFordoctor.sendApprovalEmail(docteur.email!, docteur.first_name!, docteur.last_name!)
-    return response.ok({ message: 'Demande validée, compte docteur créé', docteur })
-  }
+  
+  // Log avant l'envoi du mail
+
+
+ }
 
   // Refuser une demande
   public async reject({ params, response }: HttpContextContract) {
