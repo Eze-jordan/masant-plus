@@ -4,7 +4,6 @@ import drive from '@adonisjs/drive/services/main'
 import { cuid } from '@adonisjs/core/helpers'
 import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
@@ -3530,3 +3529,20 @@ router.post('/DemandeDocteur', async (ctx) => {
 })
 
 
+router.post('/demandes-docteurs/reject/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new DemandeDocteurController()
+      return await controller.reject(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.post('/demandes-docteurs/approve/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new DemandeDocteurController()
+      return await controller.approve(ctx)
+    })
+  })
+}).middleware([throttle])

@@ -5,7 +5,15 @@ import { Docteur } from '../models/user.js'
 import Role from '../models/role.js'
 import { Status } from '../enum/enums.js'
 import MailFordoctor from '#services/MailFordoctor'
-
+import WelcomeMailService from '#services/WelcomeMailService'
+function generateRandomPassword(length = 12) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?'
+  let password = ''
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
+} 
 export default class DemandeDocteurController {
   // Enregistrer une nouvelle demande
   public async store({ request, response }: HttpContextContract) {
@@ -61,17 +69,21 @@ export default class DemandeDocteurController {
     if (!role) {
       role = await Role.create({ label: 'docteur' })
     }
+    const password = generateRandomPassword(12)
     // Création du compte docteur
     const docteur = await Docteur.create({
-      first_name: demande.firstName,   // Utilisation de camelCase
-      last_name: demande.lastName,     // Utilisation de camelCase
+      first_name: demande.firstName,
+      last_name: demande.lastName,
       email: demande.email,
       phone: demande.phone,
-      license_number: demande.licenseNumber,  // Change to 'license_number'
+      license_number: demande.licenseNumber,
       specialisation: demande.specialisation,
       roleId: role.id,
+      password: password ,
       accountStatus: Status.ACTIVE,
+      type: 'doctor' // Assurez-vous que ce champ est bien défini
     })
+    await WelcomeMailService.sendAccountInfo(docteur.email!, `${docteur.first_name} ${docteur.last_name}`, password)
     console.log(docteur)
     demande.status = 'approved'
     await demande.save()
