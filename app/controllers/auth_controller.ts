@@ -1,5 +1,5 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import User from '#models/user'
+import User,{Docteur}from '#models/user'
 import hash from '@adonisjs/core/services/hash'
 import { generateJwtToken } from '../Utils/Jwt.js'
 import SessionUser from '#models/session_user'
@@ -57,17 +57,19 @@ export default class AuthController {
     return response.ok({
       user: {
         id: user.id,
-        name: `${user.firstName} ${user.lastName}`,
+        name: `${user.first_name} ${user.last_name}`,
         email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.first_name,
+        lastName: user.last_name,
         phone: user.phone,
         address: user.address,
         profileImage: user.profileImage,
-        specialty: user.specialty,
-        matricule: user.registrationNumber,
+        // Assurez-vous de vérifier que l'utilisateur est un médecin
+
+        specialty: user instanceof Docteur ? user.specialisation : undefined,
+        license_number: user instanceof Docteur ? user.license_number : undefined,
         role: user.role?.label ?? 'Non défini',
+        accountStatus: user.accountStatus,
       },
       token,
     })
@@ -125,10 +127,9 @@ export default class AuthController {
     return response.ok({
       user: {
         id: user.id,
-        name: `${user.firstName} ${user.lastName}`,
+        name: `${user.first_name} ${user.last_name}`,
         email: user.email,
-        username: user.username,
-        lastName: user.lastName,
+        lastName: user.last_name,
         phone: user.phone,
         address: user.address,
         profileImage: user.profileImage,

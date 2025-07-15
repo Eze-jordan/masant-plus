@@ -21,7 +21,6 @@ export default class RegisterController {
     const password = raw.password || 'changeme123'
     const requestData = {
       email: raw.email,
-      password: password,
       first_name: raw.firstName,
       last_name: raw.lastName,
       phone: raw.phone,
@@ -104,10 +103,9 @@ export default class RegisterController {
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
 
-    const password = raw.password || 'changeme123'
     const requestData = {
       email: raw.email,
-      password: password,
+      password: raw.password,
       first_name: raw.firstName,
       last_name: raw.lastName,
       phone: raw.phone,
@@ -143,7 +141,7 @@ export default class RegisterController {
       await WelcomeMailService.sendAccountInfo(
         user.email as string,
         `${user.first_name} ${user.last_name}`,
-        password,
+        user.password as string,
       )
       
       return response.status(201).send({

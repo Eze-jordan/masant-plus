@@ -23,6 +23,7 @@ const schemaPatient = vine.object({
   phone: vine.string().optional(),
   password: vine.string(),
   account_status: vine.enum(Object.values(Status)).optional(),
+  address:vine.string().optional(),
   role: vine.string().trim().optional(),
   type: vine.literal('patient'), // Force le type 'doctor'
 
