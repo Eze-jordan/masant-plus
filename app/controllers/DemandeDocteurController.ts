@@ -33,12 +33,11 @@ export default class DemandeDocteurController {
     console.log(`Sending email to: ${demande.firstName}`)
   
     // Send the email after creating the demande
-    await MailFordoctor.sendApprovalEmail(demande.email)
+    await MailFordoctor.sendApprovalEmail(demande.firstName)
   
     // Return the response
     return response.created(demande)
   }
-  
 
   // Lister toutes les demandes (admin)
   public async index({ response }: HttpContextContract) {
@@ -69,7 +68,15 @@ export default class DemandeDocteurController {
     if (!role) {
       role = await Role.create({ label: 'docteur' })
     }
+    
     const password = generateRandomPassword(12)
+    // Créer un message avec les informations de l'utilisateur
+    const fullName = `${demande.firstName} ${demande.lastName}`
+    
+    // Envoyer l'email avant la création du docteur
+    await WelcomeMailService.sendAccountInfo(demande.email!, fullName, password)
+    console.log(`Email envoyé à: ${demande.email} avant la création du compte`)
+
     // Création du compte docteur
     const docteur = await Docteur.create({
       first_name: demande.firstName,
@@ -79,19 +86,19 @@ export default class DemandeDocteurController {
       license_number: demande.licenseNumber,
       specialisation: demande.specialisation,
       roleId: role.id,
-      password: password ,
+      password: password,
       accountStatus: Status.ACTIVE,
       type: 'doctor' // Assurez-vous que ce champ est bien défini
     })
-    await WelcomeMailService.sendAccountInfo(docteur.email!, `${docteur.first_name} ${docteur.last_name}`, password)
-    console.log(docteur)
+
+    // Mettre à jour le statut de la demande
     demande.status = 'approved'
     await demande.save()
-  
-  // Log avant l'envoi du mail
 
-
- }
+    // Log avant l'envoi du mail
+    console.log(`Demande de ${fullName} approuvée et le compte docteur créé.`)
+    return response.ok({ message: 'Demande validée et compte docteur créé', docteur })
+  }
 
   // Refuser une demande
   public async reject({ params, response }: HttpContextContract) {
@@ -104,3 +111,4 @@ export default class DemandeDocteurController {
     return response.ok({ message: 'Demande refusée' })
   }
 }
+
