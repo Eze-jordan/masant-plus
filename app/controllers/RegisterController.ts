@@ -17,7 +17,7 @@ export default class RegisterController {
     const { request, response, logger } = ctx
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
-
+  
     const password = raw.password || 'changeme123'
     const requestData = {
       email: raw.email,
@@ -29,17 +29,16 @@ export default class RegisterController {
       role: raw.role,
       account_status: Status.PENDING,
       type: 'doctor', // Ajoutez ceci
-
     }
-
+  
     try {
       const validatedData = await createDocteurValidator.validate(requestData)
-
+  
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
         return response.status(400).send({ message: 'Un utilisateur avec cet email existe déjà.' })
       }
-
+  
       // Recherche du rôle, création s'il n'existe pas
       const roleLabel = raw.role.toLowerCase()
       let selectedRole = await Role.findBy('label', roleLabel)
@@ -47,43 +46,26 @@ export default class RegisterController {
         selectedRole = await Role.create({ label: roleLabel })
         logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
-      /*
-      // Upload de la photo de profil
-      let profileImageUrl: string | undefined = undefined
-      const imageFile = request.file('profileImage', {
-        size: '2mb',
-        extnames: ['jpg', 'jpeg', 'png', 'webp'],
-      })
-
-      if (imageFile && imageFile.tmpPath) {
-        const fileName = `users/${cuid()}.${imageFile.extname}`
-        const buffer = await fs.readFile(imageFile.tmpPath)
-        await drive.use('s3').put(fileName, buffer, {
-          visibility: 'public',
-        })
-
-        const endpoint = process.env.S3_ENDPOINT?.replace(/\/$/, '')
-        const bucket = process.env.S3_BUCKET
-        profileImageUrl = `${endpoint}/${bucket}/${fileName}`
-      }
-*/
+  
+      // Envoi de l'email avant la création de l'utilisateur
+      await WelcomeMailService.sendAccountInfo(
+        raw.email, // email de l'utilisateur
+       `${raw.firstName} ${raw.lastName}`, // nom complet
+        password // mot de passe temporaire
+      )
+  
+      // Création de l'utilisateur après l'envoi de l'email
       const { role, ...sanitizedData } = validatedData
-
       const user = await User.create({
         ...sanitizedData,
         roleId: selectedRole.id,
-    //    profileImage: profileImageUrl,
       })
-      await WelcomeMailService.sendAccountInfo(
-        user.email as string,
-        `${user.first_name} ${user.last_name}`,
-        password,
-      )
+  
       return response.status(201).send({
         message: 'Utilisateur créé avec succès.',
         user: user.serialize(),
       })
-
+  
     } catch (error: any) {
       logger.error('[RegisterController] Erreur création utilisateur', {
         message: error.message,
@@ -110,6 +92,7 @@ export default class RegisterController {
       last_name: raw.lastName,
       phone: raw.phone,
       address: raw.address ?? '',
+      account_status: Status.ACTIVE,
       role: raw.role,
       type: 'patient'
     }
