@@ -3331,7 +3331,7 @@ router.post('/logins', async (ctx) => {
 router.get('/doctors', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      await doctorAll.getUserInfo(ctx)
+      await doctorAll.getDoctorInfo(ctx)
     })
   })
 })
