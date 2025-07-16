@@ -1,44 +1,51 @@
-import User from '#models/user'
-import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { Docteur } from '#models/user'; // Assurez-vous que le modèle Docteur est bien importé
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
 
 export default class UserController {
 
-  // Méthode pour récupérer toutes les informations de tous les utilisateurs
-  public async getUserInfo({ response }: HttpContextContract) {
+  // Méthode pour récupérer toutes les informations des médecins
+  public async getDoctorInfo({ response }: HttpContextContract) {
     try {
-      // Récupérer tous les utilisateurs avec toutes leurs relations
-      const users = await User.query()
+      // Récupérer uniquement les utilisateurs de type 'doctor' avec toutes leurs relations
+      const doctors = await Docteur.query()
         .preload('feedbacks')           // Feedbacks
         .preload('likesReceived')        // Likes reçus
         .preload('disponibilites')       // Disponibilités (pour le médecin)
         .preload('appointmentsAsDoctor') // Rendez-vous (pour le médecin)
+        .where('type', 'doctor');        // Filtrer uniquement les médecins
 
-      if (!users.length) {
-        return response.status(404).json({ message: 'Aucun utilisateur trouvé' })
+      if (!doctors.length) {
+        return response.status(404).json({ message: 'Aucun médecin trouvé' });
       }
 
-      // Construction de la réponse avec toutes les données des utilisateurs
-      const usersInfo = users.map(user => ({
-        id: user.id,  // Ajouter l'ID de l'utilisateur
-        user: {
-          email: user.email,
-          name: `${user.first_name} ${user.last_name}`,
-          address: user.address,
-          type: user.type,
-          accountStatus: user.accountStatus,
-        },
-        feedbacks: user.feedbacks?.map((feedback: { message: any }) => feedback.message) || [],
-        likesSent: user.likesSent?.map((like) => like.id) || [],
-        likesReceived: user.likesReceived?.map((like) => like.id) || [],
-        disponibilites: user.disponibilites?.map((dispo) => dispo.dateDebut) || [],
-        appointments: user.appointmentsAsDoctor?.map((appointment) => appointment.dateRdv) || [],
-      }));
+      // Construction de la réponse avec toutes les données des médecins
+      const doctorsInfo = doctors.map(doctor => {
+        const doctorInfo = {
+          id: doctor.id,  // Ajouter l'ID du médecin
+          user: {
+            email: doctor.email,
+            name: `${doctor.first_name} ${doctor.last_name}`,
+            address: doctor.address,
+            type: doctor.type,
+            accountStatus: doctor.accountStatus,
+            specialisation: doctor.specialisation, // Ajouter la spécialisation
+          },
+          feedbacks: doctor.feedbacks?.map((feedback: { message: any }) => feedback.message) || [],
+          likesSent: doctor.likesSent?.map((like) => like.id) || [],
+          likesReceived: doctor.likesReceived?.map((like) => like.id) || [],
+          disponibilites: doctor.disponibilites?.map((dispo) => dispo.dateDebut) || [],
+          appointments: doctor.appointmentsAsDoctor?.map((appointment) => appointment.dateRdv) || [],
+        };
 
-      return response.status(200).json(usersInfo);
+        return doctorInfo;
+      });
+
+      return response.status(200).json(doctorsInfo);
 
     } catch (error) {
       console.error(error);
       return response.status(500).json({ message: 'Erreur lors de la récupération des données' });
     }
   }
+
 }
