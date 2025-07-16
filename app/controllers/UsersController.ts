@@ -219,20 +219,23 @@ export default class UsersController {
   
   
 
-  public async destroy({ params, response }: HttpContextContract) {
-    try {
-      const user = await User.findOrFail(params.id)
-      await user.delete()
-
-      return response.ok({
-        message: 'Utilisateur supprimé avec succès',
-      })
-    } catch (error: any) {
-      console.error(error)
-      return response.status(500).json({
-        message: "Erreur lors de la suppression de l'utilisateur",
-        error: error.message,
-      })
+    public async destroy({ params, response }: HttpContextContract) {
+      try {
+        const user = await User.findOrFail(params.id)
+        
+        // Mettre à jour le statut du compte au lieu de supprimer
+        user.accountStatus = 'INACTIVE'
+        await user.save()
+  
+        return response.ok({
+          message: 'Compte utilisateur désactivé avec succès',
+        })
+      } catch (error: any) {
+        console.error(error)
+        return response.status(500).json({
+          message: "Erreur lors de la désactivation du compte utilisateur",
+          error: error.message,
+        })
+      }
     }
-  }
 }
