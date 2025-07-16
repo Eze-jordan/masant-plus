@@ -27,6 +27,7 @@ export default class UserController {
             name: `${doctor.first_name} ${doctor.last_name}`,
             address: doctor.address,
             type: doctor.type,
+            profileImage: doctor.profileImage,
             accountStatus: doctor.accountStatus,
             specialisation: doctor.specialisation, // Ajouter la spécialisation
           },
