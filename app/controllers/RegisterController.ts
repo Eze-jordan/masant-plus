@@ -214,7 +214,7 @@ export default class RegisterController {
       })
     }
   }
-  
+   
   public async update(ctx: HttpContextContract) {
     const { request, response, params, inertia } = ctx
 
