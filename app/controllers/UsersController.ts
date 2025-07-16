@@ -231,7 +231,7 @@ export default class UsersController {
           // Envoyer l'email de notification
           try {
               await MailService.delete({
-                  first_name: user.first_name,
+                  first_name: user.first_name, email: user.email
               })
           } catch (mailError) {
               console.error('Erreur lors de l\'envoi de l\'email:', mailError)
