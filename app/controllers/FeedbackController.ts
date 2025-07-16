@@ -8,38 +8,52 @@ export default class FeedbackController {
    * Créer un feedback
    */
   public async create({ request, response }: HttpContextContract) {
+    console.log('[FeedbackController] ➤ Début de la méthode create')
+  
     const { userId, sujet, message, note } = request.only(['userId', 'sujet', 'message', 'note'])
-
+    console.log('[FeedbackController] ➤ Données reçues du client :', { userId, sujet, message, note })
+  
     try {
+      console.log('[FeedbackController] ➤ Validation des données...')
       const validatedData = await createFeedbackValidator.validate({
         idUser: userId,
         sujet,
         message,
         note,
       })
-
+      console.log('[FeedbackController] ✔️ Données validées :', validatedData)
+  
+      console.log('[FeedbackController] ➤ Recherche de l’utilisateur...')
       const user = await User.find(userId)
       if (!user) {
+        console.log('[FeedbackController] ❌ Utilisateur non trouvé avec ID :', userId)
         return response.status(404).send({ message: 'Utilisateur non trouvé.' })
       }
-
+      console.log('[FeedbackController] ✔️ Utilisateur trouvé :', user.serialize())
+  
+      console.log('[FeedbackController] ➤ Création du feedback...')
       const feedback = await Feedback.create(validatedData)
-
+      console.log('[FeedbackController] ✔️ Feedback créé :', feedback)
+  
       return response.created({
         message: 'Feedback créé avec succès.',
         feedback,
       })
     } catch (error: any) {
+      console.log('[FeedbackController] ❌ Erreur rencontrée :', error)
+  
       if (error.errors) {
+        console.log('[FeedbackController] ❗ Erreurs de validation :', error.errors)
         return response.status(400).send({ message: 'Erreur de validation.', errors: error.errors })
       }
-
+  
       return response.status(500).send({
         message: 'Erreur lors de la création du feedback.',
         error: error.message,
       })
     }
   }
+  
 
   /**
    * Mettre à jour un feedback

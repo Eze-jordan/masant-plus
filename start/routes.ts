@@ -35,6 +35,7 @@ import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
 const patient   =  new    PatientController()
+const specialty  =  new  specialities_controller()
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
@@ -43,6 +44,7 @@ import PatientController from '#controllers/PatientController';
 import verify_emails_controller from '#controllers/verify_emails_controller';
 import DemandeDocteurController from '#controllers/DemandeDocteurController';
 import doctor_displays_controller from '#controllers/doctor_displays_controller';
+import specialities_controller from '#controllers/specialities_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -3327,6 +3329,15 @@ router.post('/logins', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       await loginadmin.login(ctx)
+    })
+  })
+})
+
+
+router.get('/specialities', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await specialty.getAllSpecialties(ctx)
     })
   })
 })
