@@ -3288,7 +3288,10 @@ router.post('/appointments', async (ctx) => {
   })
 })
 
-router.on('/').renderInertia('home')
+router.get('/', async ({ inertia }) => {
+  return inertia.render('home') // => resources/js/Pages/auth/login.tsx
+})
+
 router.get('/auth', async ({ inertia }) => {
   return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
 })
