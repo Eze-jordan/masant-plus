@@ -33,7 +33,7 @@ export default class DemandeDocteurController {
     console.log(`Sending email to: ${demande.firstName}`)
   
     // Send the email after creating the demande
-    await MailFordoctor.sendApprovalEmail(demande.firstName)
+    await MailFordoctor.sendApprovalEmail(demande.email)
   
     // Return the response
     return response.created(demande)
