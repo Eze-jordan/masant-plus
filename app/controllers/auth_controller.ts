@@ -71,7 +71,7 @@ export default class AuthController {
       path: '/',
     })
 
-    // Retourner les propriétés spécifiques au type d'utilisateur (Docteur ou Patient)
+    // Retourner les propriétés spécifiques au  type d'utilisateur (Docteur ou Patient)
     return response.ok({
       user: {
         id: user.id,
