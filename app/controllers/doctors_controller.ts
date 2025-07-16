@@ -62,6 +62,7 @@ export default class DoctorsController {
     return response.json({
       first_name: doctor.first_name || 'Dr Inconnu',
       specialisation: doctor.specialisation || 'Spécialité inconnue',
+      matricule: doctor.license_number || 'Matricule inconnu',
     })
   }
 
