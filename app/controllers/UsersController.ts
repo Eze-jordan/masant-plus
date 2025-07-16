@@ -10,6 +10,7 @@ import drive from '@adonisjs/drive/services/main'
 import { Status } from '../enum/enums.js'
 import hash from '@adonisjs/core/services/hash'
 import { changePasswordSchema } from '#validators/changePasswordValidator'
+import MailService from '#services/delete'
 
 export default class UsersController {
   public async show({ params, response }: HttpContextContract) {
@@ -219,20 +220,33 @@ export default class UsersController {
   
   
 
-  public async destroy({ params, response }: HttpContextContract) {
-    try {
-      const user = await User.findOrFail(params.id)
-      await user.delete()
-
-      return response.ok({
-        message: 'Utilisateur supprimé avec succès',
-      })
-    } catch (error: any) {
-      console.error(error)
-      return response.status(500).json({
-        message: "Erreur lors de la suppression de l'utilisateur",
-        error: error.message,
-      })
-    }
+    public async destroy({ params, response }: HttpContextContract) {
+      try {
+          const user = await User.findOrFail(params.id)
+          
+          // Mettre à jour le statut du compte
+          user.accountStatus = 'INACTIVE'
+          await user.save()
+  
+          // Envoyer l'email de notification
+          try {
+              await MailService.delete({
+                  first_name: user.first_name,
+              })
+          } catch (mailError) {
+              console.error('Erreur lors de l\'envoi de l\'email:', mailError)
+              // On continue même si l'email échoue
+          }
+  
+          return response.ok({
+              message: 'Compte utilisateur désactivé avec succès. Un email de notification a été envoyé.',
+          })
+      } catch (error: any) {
+          console.error(error)
+          return response.status(500).json({
+              message: "Erreur lors de la désactivation du compte utilisateur",
+              error: error.message,
+          })
+      }
   }
 }
