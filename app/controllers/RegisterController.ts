@@ -84,7 +84,7 @@ export default class RegisterController {
     const { request, response, logger } = ctx
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
-
+  
     const requestData = {
       email: raw.email,
       password: raw.password,
@@ -96,43 +96,44 @@ export default class RegisterController {
       role: raw.role,
       type: 'patient'
     }
-
+  
     try {
       const validatedData = await createPatientValidator.validate(requestData)
-
+  
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
         return response.status(400).send({ 
           message: 'Un utilisateur avec cet email existe déjà.' 
         })
       }
-
+  
       const roleLabel = (validatedData.role ?? 'patient').toLowerCase()
       let selectedRole = await Role.findBy('label', roleLabel)
       if (!selectedRole) {
         selectedRole = await Role.create({ label: roleLabel })
         logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
-
   
+      // Envoi de l'email avant la création du compte
+      await WelcomeMailService.sendAccountInfo(
+        validatedData.email,
+        `${validatedData.first_name} ${validatedData.last_name}`,
+        validatedData.password as string,
+      )
+  
+      // Création de l'utilisateur
       const { role, ...sanitizedData } = validatedData
-
+  
       const user = await User.create({
         ...sanitizedData,
         roleId: selectedRole.id,
       })
-      await WelcomeMailService.sendAccountInfo(
-        user.email as string,
-        `${user.first_name} ${user.last_name}`,
-        user.password as string,
-      )
-      
+  
       return response.status(201).send({
         message: 'Patient créé avec succès.',
         user: user.serialize(),
       })
-      
-    
+  
     } catch (error: any) {
       logger.error('[RegisterController] Erreur création patient', {
         message: error.message,
@@ -146,11 +147,12 @@ export default class RegisterController {
       })
     }
   }
+  
   public async registerAdmin(ctx: HttpContextContract) {
     const { request, response, logger } = ctx
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
-
+  
     const requestData = {
       email: raw.email,
       password: raw.password,
@@ -161,43 +163,44 @@ export default class RegisterController {
       role: raw.role,
       type: 'admin'
     }
-
+  
     try {
       const validatedData = await createAdminValidator.validate(requestData)
-
+  
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
         return response.status(400).send({ 
           message: 'Un utilisateur avec cet email existe déjà.' 
         })
       }
-
+  
       const roleLabel = (validatedData.role ?? 'admin').toLowerCase()
       let selectedRole = await Role.findBy('label', roleLabel)
       if (!selectedRole) {
         selectedRole = await Role.create({ label: roleLabel })
         logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
-
   
+      // Envoi de l'email avant la création de l'administrateur
+      await WelcomeMailService.sendAccountInfo(
+        validatedData.email,
+        `${validatedData.first_name} ${validatedData.last_name}`,
+        validatedData.password as string,
+      )
+  
+      // Création de l'utilisateur administrateur
       const { role, ...sanitizedData } = validatedData
-
+  
       const user = await User.create({
         ...sanitizedData,
         roleId: selectedRole.id,
       })
-      await WelcomeMailService.sendAccountInfo(
-        user.email as string,
-        `${user.first_name} ${user.last_name}`,
-        user.password as string,
-      )
-      
+  
       return response.status(201).send({
         message: 'Admin créé avec succès.',
         user: user.serialize(),
       })
-      
-    
+  
     } catch (error: any) {
       logger.error('[RegisterController] Erreur création Admin', {
         message: error.message,
@@ -211,6 +214,7 @@ export default class RegisterController {
       })
     }
   }
+   
   public async update(ctx: HttpContextContract) {
     const { request, response, params, inertia } = ctx
 
