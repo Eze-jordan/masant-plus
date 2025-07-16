@@ -12,7 +12,7 @@ export default class MailService {
   })
 
   // Fonction dédiée pour envoyer le mail d'approbation
-  static async sendApprovalEmail(first_name: string) {
+  static async sendApprovalEmail(first_name: string , email: string) {
     const html = `
       <p>Bonjour ${first_name}</p>
       <p>Votre demande a été enregister avec succès.</p>
@@ -22,7 +22,7 @@ export default class MailService {
 
     return await this.transporter.sendMail({
       from: '"Support AdonisJS" <elieboulingui2@gmail.com>',
-      to: first_name,  // Use the dynamic email address passed to the function
+      to: email,  // Use the dynamic email address passed to the function
       subject: 'Votre demande a été approuvée',
       html,
     })

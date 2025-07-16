@@ -11,6 +11,7 @@ import { createAdminValidator, createDocteurValidator } from '#validators/create
 import { createPatientValidator } from '#validators/create_user'
 import { cuid } from '@adonisjs/core/helpers'
 import WelcomeMailService from '#services/WelcomeMailService'
+import MailFordoctor from '#services/MailFordoctor'
 
 export default class RegisterController {
   public async registerDocteur(ctx: HttpContextContract) {
@@ -30,7 +31,7 @@ export default class RegisterController {
       account_status: Status.PENDING,
       type: 'doctor', // Ajoutez ceci
     }
-  
+     console.log(password)
     try {
       const validatedData = await createDocteurValidator.validate(requestData)
   
@@ -48,10 +49,8 @@ export default class RegisterController {
       }
   
       // Envoi de l'email avant la création de l'utilisateur
-      await WelcomeMailService.sendAccountInfo(
-        raw.email, // email de l'utilisateur
-       `${raw.firstName} ${raw.lastName}`, // nom complet
-        password // mot de passe temporaire
+      await MailFordoctor.sendApprovalEmail(
+        raw.first_name, raw.email // email de l'utilisateur // mot de passe temporaire
       )
   
       // Création de l'utilisateur après l'envoi de l'email
