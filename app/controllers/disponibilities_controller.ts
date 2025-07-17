@@ -1,6 +1,6 @@
 import Disponibilite from '#models/disponibilite'
 import Creneau from '#models/creneau'
-import User from '#models/user'  // Assure-toi que cet import est correct
+import User from '#models/user'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { DateTime } from 'luxon'
 
@@ -24,118 +24,87 @@ export default class DisponibiliteController {
   }
 
   // ➤ Créer une disponibilité avec créneaux générés automatiquement
-// ➤ Créer une disponibilité avec créneaux générés automatiquement
-public async store({ request, response }: HttpContextContract) {
-  const data = request.only([
-    'idDoctor',
-    'heureDebut',
-    'heureFin',
-    'date_debut',
-    'date_fin',
-    'actif',
-  ])
+  public async store({ request, response }: HttpContextContract) {
+    const data = request.only([
+      'idDoctor',
+      'heureDebut',
+      'heureFin',
+      'date_debut',
+      'date_fin',
+      'actif',
+    ])
 
-  if (!data.idDoctor) {
-    return response.status(400).send({
-      message: 'idDoctor est obligatoire.',
-    })
-  }
-
-  try {
-    // Vérifier que l'utilisateur a bien le rôle "doctor"
-    const user = await User.query()
-      .where('id', data.idDoctor)
-      .preload('role')
-      .firstOrFail()
-
-    if (!user.role || user.role.label !== 'doctor') {
-      return response.status(403).send({
-        message: 'L\'utilisateur n\'a pas le rôle "Doctor".',
-      })
-    }
-
-    // Vérification des heures de début et fin
-    if (!data.heureDebut || !data.heureFin) {
+    if (!data.idDoctor) {
       return response.status(400).send({
-        message: 'heureDebut et heureFin sont obligatoires.',
+        message: 'idDoctor est obligatoire.',
       })
     }
 
-    const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
-    const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
+    try {
+      // Vérifier que l'utilisateur a bien le rôle "doctor"
+      const user = await User.query()
+        .where('id', data.idDoctor)
+        .preload('role')
+        .firstOrFail()
 
-    if (dateDebut && !dateDebut.isValid) {
-      return response.badRequest({ message: 'La date_debut est invalide.' })
-    }
-    if (dateFin && !dateFin.isValid) {
-      return response.badRequest({ message: 'La date_fin est invalide.' })
-    }
+      if (!user.role || user.role.label !== 'doctor') {
+        return response.status(403).send({
+          message: 'L\'utilisateur n\'a pas le rôle "Doctor".',
+        })
+      }
 
-    // Créer la disponibilité
-    const disponibilite = await Disponibilite.create({
-      idDoctor: data.idDoctor,
-      heureDebut: data.heureDebut,
-      heureFin: data.heureFin,
-      dateDebut,
-      dateFin,
-      actif: data.actif ?? true,
-    })
+      // Vérification des heures de début et fin
+      if (!data.heureDebut || !data.heureFin) {
+        return response.status(400).send({
+          message: 'heureDebut et heureFin sont obligatoires.',
+        })
+      }
 
-    // Créer les créneaux pour un an sans trop de requêtes
-    const allCreneaux = this.generateCreneaux(data.heureDebut, data.heureFin, dateDebut, dateFin, disponibilite.id)
+      const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
+      const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
 
-    // Insérer tous les créneaux en une seule requête
-    await Creneau.createMany(allCreneaux)
+      if (dateDebut && !dateDebut.isValid) {
+        return response.badRequest({ message: 'La date_debut est invalide.' })
+      }
+      if (dateFin && !dateFin.isValid) {
+        return response.badRequest({ message: 'La date_fin est invalide.' })
+      }
 
-    // Précharger les relations avant de renvoyer la réponse
-    await disponibilite.load('creneaux')
-    await disponibilite.load('doctor')
-
-    return response.created(disponibilite)
-  } catch (error: any) {
-    console.error(error)
-    return response.status(500).send({
-      message: 'Erreur lors de la création de la disponibilité.',
-      error: error.message,
-    })
-  }
-}
-
-// Fonction pour générer les créneaux
-private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTime | null, dateFin: DateTime | null, idDisponibilite: string) {
-  const allCreneaux = []
-  const start = dateDebut ?? DateTime.now()
-  const end = dateFin ?? start.plus({ years: 1 }) // Un an de créneaux
-
-  const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
-  const fin = DateTime.fromFormat(heureFin, 'HH:mm')
-
-  if (!debut.isValid || !fin.isValid) {
-    throw new Error('Format des heures invalide.')
-  }
-
-  // Boucle pour chaque jour entre start et end
-  for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-    let current = debut
-    while (current < fin) {
-      const next = current.plus({ minutes: 30 })
-
-      // Ajouter chaque créneau dans un tableau
-      allCreneaux.push({
-        id_disponibilite: idDisponibilite,
-        heure_debut: current.toFormat('HH:mm'),
-        heure_fin: next.toFormat('HH:mm'),
-        disponible: true,
+      // Créer la disponibilité
+      const disponibilite = await Disponibilite.create({
+        idDoctor: data.idDoctor,
+        heureDebut: data.heureDebut,
+        heureFin: data.heureFin,
+        dateDebut,
+        dateFin,
+        actif: data.actif ?? true,
       })
 
-      current = next
+      // Créer les créneaux pour la période spécifiée
+      const allCreneaux = this.generateCreneaux(
+        data.heureDebut,
+        data.heureFin,
+        dateDebut,
+        dateFin,
+        disponibilite.id
+      )
+
+      // Insérer tous les créneaux en une seule requête
+      await Creneau.createMany(allCreneaux)
+
+      // Précharger les relations avant de renvoyer la réponse
+      await disponibilite.load('creneaux')
+      await disponibilite.load('doctor')
+
+      return response.created(disponibilite)
+    } catch (error: any) {
+      console.error(error)
+      return response.status(500).send({
+        message: 'Erreur lors de la création de la disponibilité.',
+        error: error.message,
+      })
     }
   }
-
-  return allCreneaux
-}
-
-   
 
   // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
   public async getByDoctor({ params, response }: HttpContextContract) {
@@ -210,7 +179,6 @@ private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTi
         message: 'Disponibilité mise à jour avec succès',
         disponibilite, // retourne aussi l'objet mis à jour
       })
-      
     } catch (error: any) {
       console.error(error)
       return response.status(404).send({
@@ -233,5 +201,38 @@ private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTi
         error: error.message,
       })
     }
+  }
+
+  // Fonction pour générer les créneaux en fonction des heures exactes
+  private generateCreneaux(
+    heureDebut: string,
+    heureFin: string,
+    dateDebut: DateTime | null,
+    dateFin: DateTime | null,
+    idDisponibilite: string
+  ) {
+    const allCreneaux = []
+    const start = dateDebut ?? DateTime.now()
+    const end = dateFin ?? start.plus({ years: 1 }) // Un an de créneaux
+
+    const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
+    const fin = DateTime.fromFormat(heureFin, 'HH:mm')
+
+    if (!debut.isValid || !fin.isValid) {
+      throw new Error('Format des heures invalide.')
+    }
+
+    // Boucle pour chaque jour entre start et end
+    for (let day = start; day <= end; day = day.plus({ days: 1 })) {
+      // Créer un seul créneau par jour
+      allCreneaux.push({
+        id_disponibilite: idDisponibilite,
+        heure_debut: debut.toFormat('HH:mm'),
+        heure_fin: fin.toFormat('HH:mm'),
+        disponible: true,
+      })
+    }
+
+    return allCreneaux
   }
 }
