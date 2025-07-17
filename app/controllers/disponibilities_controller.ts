@@ -112,12 +112,17 @@ export default class DisponibiliteController {
       const disponibilites = await Disponibilite.query()
         .where('idDoctor', params.id)
         .preload('creneaux')
+        .preload('doctor', (doctorQuery) => {
+          doctorQuery.select(['id', 'first_name']) // charge juste ce qu'on veut
+        })
         .orderBy('dateDebut', 'desc')
+  
       return response.ok(disponibilites)
     } catch (error) {
       return response.status(500).send({ message: 'Erreur serveur', error: error.message })
     }
   }
+  
 
   // ➤ Détails d'une disponibilité
   public async show({ params, response }: HttpContextContract) {
