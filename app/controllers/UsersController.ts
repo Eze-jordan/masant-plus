@@ -219,6 +219,8 @@ export default class UsersController {
     }
   
   
+    
+  
 
     public async destroy({ params, response }: HttpContextContract) {
       try {

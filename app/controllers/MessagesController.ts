@@ -17,9 +17,9 @@ export default class MessagesController {
       'roleReceiver',
       'message',
     ])
-
+  
     console.log('Create message request received:', { idDiscussion, idUserSender, idUserReceiver, roleReceiver, message })
-
+  
     try {
       const sender = await User.find(idUserSender)
       console.log('Sender found:', sender)
@@ -27,9 +27,9 @@ export default class MessagesController {
         console.log('Expéditeur non trouvé')
         return response.status(404).send({ message: 'Expéditeur non trouvé.' })
       }
-
+  
       let discussion: Discussion | null = null
-
+  
       if (idDiscussion) {
         discussion = await Discussion.find(idDiscussion)
         console.log('Discussion trouvée par idDiscussion:', discussion)
@@ -44,10 +44,10 @@ export default class MessagesController {
           console.log('Destinataire non trouvé')
           return response.status(404).send({ message: 'Destinataire non trouvé.' })
         }
-
+  
         let idDoctor: string
         let idPatient: string
-
+  
         if (roleReceiver === 'doctor') {
           idDoctor = idUserReceiver
           idPatient = idUserSender
@@ -55,14 +55,14 @@ export default class MessagesController {
           idDoctor = idUserSender
           idPatient = idUserReceiver
         }
-
+  
         discussion = await Discussion.query()
           .where('idDoctor', idDoctor)
           .andWhere('idPatient', idPatient)
           .first()
-
+  
         console.log('Discussion trouvée par doctor/patient:', discussion)
-
+  
         if (!discussion) {
           discussion = await Discussion.create({
             idDoctor,
@@ -72,30 +72,30 @@ export default class MessagesController {
           console.log('Nouvelle discussion créée:', discussion)
         }
       }
-
+  
       const newMessage = await Message.create({
         idDiscussion: discussion.id,
         idUserSender,
         idUserReceiver,
         message,
       })
-
+  
       // Charger l'expéditeur et le destinataire
       await newMessage.load('sender')
       await newMessage.load('receiver')
-
+  
       console.log('Nouveau message créé:', newMessage)
-
+  
       // Créer la notification pour le destinataire
       const notification = await Notification.create({
         idUser: idUserReceiver,
         titre: 'Nouveau message reçu',
-        description: `Vous avez reçu un nouveau message de ${sender.email || 'un utilisateur'}.`,
+        description: `Vous avez reçu un nouveau message de ${newMessage.sender?.email || 'un utilisateur'} ${newMessage.sender?.last_name || ''}.`,
         isRead: false,
       })
-
+  
       console.log('Notification créée:', notification)
-
+  
       return response.created({
         message: 'Message envoyé avec succès.',
         data: {
@@ -115,6 +115,7 @@ export default class MessagesController {
       })
     }
   }
+  
 
   public async getByUser({ params, response }: HttpContextContract) {
     const userId = params.userId

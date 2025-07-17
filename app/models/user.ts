@@ -147,11 +147,7 @@ export class Docteur extends User {
   @column()
   public declare specialisation?: string
 
-  @column()
-  public declare about?: string
-
-  @column()
-  public declare years_experience?: string
+  
 }
 
 export class Patient extends User {
