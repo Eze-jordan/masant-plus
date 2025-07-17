@@ -64,9 +64,9 @@ export default class DemandeDocteurController {
       return response.badRequest({ message: 'Déjà validée' })
     }
     // Création du rôle docteur si besoin
-    let role = await Role.findBy('label', 'docteur')
+    let role = await Role.findBy('label', 'doctor')
     if (!role) {
-      role = await Role.create({ label: 'docteur' })
+      role = await Role.create({ label: 'doctor' })
     }
     
     const password = generateRandomPassword(12)
