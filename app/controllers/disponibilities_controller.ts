@@ -41,7 +41,7 @@ export default class DisponibiliteController {
     }
 
     try {
-      // Vérifier que l'utilisateur a bien le rôle "doctor"
+      // Vérification du rôle de l'utilisateur
       const user = await User.query()
         .where('id', data.idDoctor)
         .preload('role')
@@ -53,13 +53,13 @@ export default class DisponibiliteController {
         })
       }
 
-      // Vérification des heures de début et fin
-      if (!data.heureDebut || !data.heureFin) {
-        return response.status(400).send({
-          message: 'heureDebut et heureFin sont obligatoires.',
-        })
+      // Validation des heures de début et de fin
+      const { debut, fin, valid } = this.validateHeures(data.heureDebut, data.heureFin)
+      if (!valid) {
+        return response.status(400).send({ message: 'Format des heures invalide.' })
       }
 
+      // Validation des dates
       const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
       const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
 
@@ -73,8 +73,8 @@ export default class DisponibiliteController {
       // Créer la disponibilité
       const disponibilite = await Disponibilite.create({
         idDoctor: data.idDoctor,
-        heureDebut: data.heureDebut,
-        heureFin: data.heureFin,
+        heureDebut: debut,
+        heureFin: fin,
         dateDebut,
         dateFin,
         actif: data.actif ?? true,
@@ -82,8 +82,8 @@ export default class DisponibiliteController {
 
       // Créer les créneaux pour la période spécifiée
       const allCreneaux = this.generateCreneaux(
-        data.heureDebut,
-        data.heureFin,
+        debut,
+        fin,
         dateDebut,
         dateFin,
         disponibilite.id
@@ -169,7 +169,7 @@ export default class DisponibiliteController {
         disponibilite.dateFin = parsed
       }
 
-      // IMPORTANT : vérifie que "actif" est bien défini dans la requête
+      // Vérification de l'attribut 'actif'
       if (typeof data.actif !== 'undefined') {
         disponibilite.actif = data.actif
       }
@@ -222,9 +222,8 @@ export default class DisponibiliteController {
       throw new Error('Format des heures invalide.')
     }
 
-    // Boucle pour chaque jour entre start et end
+    // Créer un créneau pour chaque jour entre start et end
     for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-      // Créer un seul créneau par jour
       allCreneaux.push({
         id_disponibilite: idDisponibilite,
         heure_debut: debut.toFormat('HH:mm'),
@@ -234,5 +233,17 @@ export default class DisponibiliteController {
     }
 
     return allCreneaux
+  }
+
+  // Fonction pour valider les heures
+  private validateHeures(heureDebut: string, heureFin: string) {
+    const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
+    const fin = DateTime.fromFormat(heureFin, 'HH:mm')
+
+    if (!debut.isValid || !fin.isValid || debut >= fin) {
+      return { valid: false, debut: '', fin: '' }
+    }
+
+    return { valid: true, debut: debut.toFormat('HH:mm'), fin: fin.toFormat('HH:mm') }
   }
 }
