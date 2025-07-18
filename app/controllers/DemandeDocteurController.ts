@@ -18,26 +18,30 @@ export default class DemandeDocteurController {
   // Enregistrer une nouvelle demande
   public async store({ request, response }: HttpContextContract) {
     const data = request.only([
-      'firstName', 
-      'lastName', 
-      'email', 
-      'phone', 
-      'licenseNumber', 
+      'firstName',
+      'lastName',
+      'email',
+      'phone',
+      'licenseNumber',
       'specialisation'
     ])
   
-    // Create the doctor request (demande)
+    // Vérifier si une demande existe déjà avec cet email
+    const existing = await DemandeDocteur.query().where('email', data.email).first()
+    if (existing) {
+      return response.badRequest({ message: 'Une demande avec cet email existe déjà.' })
+    }
+  
+    // Créer la demande
     const demande = await DemandeDocteur.create({ ...data, status: 'pending' })
   
-    // Log the email that will be sent
-    console.log(`Sending email to: ${demande.firstName}`)
+    console.log(`Envoi d'email à: ${demande.firstName}`)
   
-    // Send the email after creating the demande
-    await MailFordoctor.sendApprovalEmail( demande.firstName ,demande.email)
+    await MailFordoctor.sendApprovalEmail(demande.firstName, demande.email)
   
-    // Return the response
     return response.created(demande)
   }
+  
 
   // Lister toutes les demandes (admin)
   public async index({ response }: HttpContextContract) {
