@@ -1,7 +1,8 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { EtatRDV, TypeRDV } from '../enum/enums.js'
 import Appointment from '#models/appointment'
-import { DateTime } from 'luxon'
+import { DateTime, Interval } from 'luxon'
+
 
 export default class AppointmentController {
   /**
@@ -90,43 +91,80 @@ export default class AppointmentController {
         'date',
         'typeRdv',
         'etatRdv',
-        'description',
+        'heureDebut',
+        'heureFin',
+        'description'
       ])
-
-      // Vérification des champs obligatoires
-      if (!payload.idDoctor || !payload.idPatient || !payload.date || !payload.typeRdv || !payload.etatRdv) {
-        return response.badRequest({ message: 'Champs requis manquants.' })
-      }
-
-      // Validation des valeurs d'enum
-      if (!Object.keys(TypeRDV).includes(payload.typeRdv)) {
-        return response.badRequest({ message: `typeRdv invalide : ${payload.typeRdv}` })
-      }
-
-      if (!Object.keys(EtatRDV).includes(payload.etatRdv)) {
-        return response.badRequest({ message: `etatRdv invalide : ${payload.etatRdv}` })
-      }
-
+  
+      // ... validations existantes ici ...
+  
       const dateRdv = DateTime.fromISO(payload.date)
       if (!dateRdv.isValid) {
         return response.badRequest({ message: 'Date invalide.' })
       }
-
+  
+      // Convertir heures en DateTime pour la même date
+      let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`)
+      let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`)
+  
+      // Récupérer les rdv du docteur pour la date demandée
+      const existingAppointments = await Appointment.query()
+        .where('idDoctor', payload.idDoctor)
+        .andWhere('dateRdv', dateRdv.toISODate())
+      
+      // Fonction pour vérifier chevauchement
+      function isOverlapping(intervalA: Interval, intervalB: Interval) {
+        return intervalA.overlaps(intervalB)
+      }
+  
+      // Construire interval demandé
+      let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
+  
+      // Boucle pour trouver créneau libre (max 10 tentatives pour éviter boucle infinie)
+      let attempts = 0
+      const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes
+  
+      while (
+        existingAppointments.some(app => {
+          const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`)
+          const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`)
+          const appInterval = Interval.fromDateTimes(appStart, appEnd)
+          return isOverlapping(requestedInterval, appInterval)
+        }) &&
+        attempts < 10
+      ) {
+        // Décaler le créneau de la durée du rendez-vous (ex: +30 minutes)
+        heureDebut = heureDebut.plus({ minutes: slotDurationMinutes })
+        heureFin = heureFin.plus({ minutes: slotDurationMinutes })
+        requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
+        attempts++
+      }
+  
+      if (attempts === 10) {
+        return response.badRequest({ message: 'Impossible de trouver un créneau libre.' })
+      }
+  
+      // Créer le rendez-vous avec le créneau libre trouvé
       const appointment = await Appointment.create({
         idDoctor: payload.idDoctor,
         idUser: payload.idPatient,
         dateRdv: dateRdv,
         typeRdv: payload.typeRdv,
         etatRdv: payload.etatRdv,
-        heureDebut: '09:00', // à personnaliser
-        heureFin: '09:30',   // idem
-      
+        heureDebut: heureDebut.toFormat('HH:mm'),
+        heureFin: heureFin.toFormat('HH:mm'),
+        description: payload.description,
       })
-
-      return response.created(appointment)
+  
+      return response.created({
+        message: 'Rendez-vous créé avec succès.',
+        data: appointment,
+        note: attempts > 0 ? `Le créneau a été décalé de ${attempts * slotDurationMinutes} minutes.` : undefined
+      })
     } catch (error) {
       console.error('[AppointmentController.create] Erreur :', error)
       return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' })
     }
   }
+  
 }

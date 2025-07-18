@@ -32,6 +32,11 @@ export default class Appointment extends BaseModel {
   @column()
   public heureFin!: string
 
+
+  @column()
+public description?: string
+
+
   @column()
   public typeRdv!: keyof typeof TypeRDV
 
