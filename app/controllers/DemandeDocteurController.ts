@@ -5,9 +5,9 @@ import { Docteur } from '../models/user.js'
 import Role from '../models/role.js'
 import { Status } from '../enum/enums.js'
 import MailFordoctor from '#services/MailFordoctor'
-import WelcomeMailService from '#services/WelcomeMailService'
+import mail_approve from '#services/mail_approve'
 function generateRandomPassword(length = 12) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?'
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let password = ''
   for (let i = 0; i < length; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length))
@@ -74,7 +74,7 @@ export default class DemandeDocteurController {
     const fullName = `${demande.firstName} ${demande.lastName}`
     
     // Envoyer l'email avant la création du docteur
-    await WelcomeMailService.sendAccountInfo(demande.email!, fullName, password)
+    await mail_approve.sendAccountInfo(demande.email!, fullName, password)
     console.log(`Email envoyé à: ${demande.email} avant la création du compte`)
 
     // Création du compte docteur

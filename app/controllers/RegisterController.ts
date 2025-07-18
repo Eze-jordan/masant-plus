@@ -117,7 +117,6 @@ export default class RegisterController {
       await WelcomeMailService.sendAccountInfo(
         validatedData.email,
         `${validatedData.first_name} ${validatedData.last_name}`,
-        validatedData.password as string,
       )
   
       // Création de l'utilisateur
@@ -184,7 +183,6 @@ export default class RegisterController {
       await WelcomeMailService.sendAccountInfo(
         validatedData.email,
         `${validatedData.first_name} ${validatedData.last_name}`,
-        validatedData.password as string,
       )
   
       // Création de l'utilisateur administrateur
