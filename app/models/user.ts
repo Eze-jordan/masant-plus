@@ -48,6 +48,19 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public last_name?: string
 
 
+  @column.date()
+public dateNaissance?: DateTime   // ✅ nouvelle colonne
+
+@column()
+public about?: string             // ✅ nouvelle colonne
+
+@column()
+public groupeSanguin?: string 
+
+@column()
+public anneeExperience?: number
+
+
   @column()
   public declare address?: string // Ajout de la déclaration pour éviter les erreurs
 
