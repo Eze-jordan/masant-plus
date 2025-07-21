@@ -32,44 +32,44 @@ export default class DisponibiliteController {
       'date_debut',
       'date_fin',
       'actif',
-    ])
-
+    ]);
+  
     if (!data.idDoctor) {
       return response.status(400).send({
         message: 'idDoctor est obligatoire.',
-      })
+      });
     }
-
+  
     try {
       // Vérification du rôle de l'utilisateur
       const user = await User.query()
         .where('id', data.idDoctor)
         .preload('role')
-        .firstOrFail()
-
+        .firstOrFail();
+  
       if (!user.role || user.role.label !== 'doctor') {
         return response.status(403).send({
           message: 'L\'utilisateur n\'a pas le rôle "Doctor".',
-        })
+        });
       }
-
+  
       // Validation des heures de début et de fin
-      const { debut, fin, valid } = this.validateHeures(data.heureDebut, data.heureFin)
+      const { debut, fin, valid } = this.validateHeures(data.heureDebut, data.heureFin);
       if (!valid) {
-        return response.status(400).send({ message: 'Format des heures invalide.' })
+        return response.status(400).send({ message: 'Format des heures invalide.' });
       }
-
+  
       // Validation des dates
-      const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
-      const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
-
+      const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null;
+      const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null;
+  
       if (dateDebut && !dateDebut.isValid) {
-        return response.badRequest({ message: 'La date_debut est invalide.' })
+        return response.badRequest({ message: 'La date_debut est invalide.' });
       }
       if (dateFin && !dateFin.isValid) {
-        return response.badRequest({ message: 'La date_fin est invalide.' })
+        return response.badRequest({ message: 'La date_fin est invalide.' });
       }
-
+  
       // Créer la disponibilité
       const disponibilite = await Disponibilite.create({
         idDoctor: data.idDoctor,
@@ -78,8 +78,8 @@ export default class DisponibiliteController {
         dateDebut,
         dateFin,
         actif: data.actif ?? true,
-      })
-
+      });
+  
       // Créer les créneaux pour la période spécifiée
       const allCreneaux = this.generateCreneaux(
         debut,
@@ -87,24 +87,27 @@ export default class DisponibiliteController {
         dateDebut,
         dateFin,
         disponibilite.id
-      )
-
-      // Insérer tous les créneaux en une seule requête
-      await Creneau.createMany(allCreneaux)
-
+      );
+  
+      // Insérer les créneaux un par un
+      for (const creneau of allCreneaux) {
+        await Creneau.create(creneau);
+      }
+  
       // Précharger les relations avant de renvoyer la réponse
-      await disponibilite.load('creneaux')
-      await disponibilite.load('doctor')
-
-      return response.created(disponibilite)
+      await disponibilite.load('creneaux');
+      await disponibilite.load('doctor');
+  
+      return response.created(disponibilite);
     } catch (error: any) {
-      console.error(error)
+      console.error(error);
       return response.status(500).send({
         message: 'Erreur lors de la création de la disponibilité.',
         error: error.message,
-      })
+      });
     }
   }
+  
 
   // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
   public async getByDoctor({ params, response }: HttpContextContract) {
