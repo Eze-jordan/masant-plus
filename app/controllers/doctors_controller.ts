@@ -62,6 +62,7 @@ export default class DoctorsController {
     return response.json({
       first_name: doctor.first_name || 'Dr Inconnu',
       last_name : doctor.last_name  || 'Dr Inconnu' ,
+      profileImage: doctor.profileImage,
       specialisation: doctor.specialisation || 'Spécialité inconnue',
       matricule: doctor.license_number || 'Matricule inconnu',
     })

@@ -8,6 +8,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
 const DemandeController =new DemandeDocteurController()
+const patientsend  =new  sendinginfopatients_controller()
 import { throttle } from '#start/limiter'
 import RegisterController from '#controllers/RegisterController'
 import AuthController from '#controllers/auth_controller'
@@ -46,6 +47,7 @@ import DemandeDocteurController from '#controllers/DemandeDocteurController';
 import doctor_displays_controller from '#controllers/doctor_displays_controller';
 import specialities_controller from '#controllers/specialities_controller';
 import DisponibilitesdoctorController from '#controllers/DisponibilitesdoctorController';
+import sendinginfopatients_controller from '#controllers/sendinginfopatients_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -2723,7 +2725,19 @@ router.post('/disponibilites', async (ctx) => {
   })
 }).middleware([throttle])
 
-// Route PUT /disponibilites/:id (Met à jour une disponibilité par ID)
+
+router.get('/patients/:id', async (ctx) => {
+  console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
+  
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patientsend.show(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route PUT /disponibilites/:id (Met à jour une disponibilité par ID) /patients/:id'
+
 router.put('/disponibilites/:id', async (ctx) => {
   console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
   
@@ -3282,6 +3296,16 @@ router.get('/appointments/doctor', async (ctx) => {
     })
   })
 })
+
+router.get('/disponibilites/doctor/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await disponibilityuser.show(ctx)
+    })
+  })
+})
+
+
 
 router.post('/appointments', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
