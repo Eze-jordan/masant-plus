@@ -95,56 +95,65 @@ export default class AppointmentController {
         'heureFin',
         'description'
       ])
-  
-      // ... validations existantes ici ...
-  
+
       const dateRdv = DateTime.fromISO(payload.date)
       if (!dateRdv.isValid) {
         return response.badRequest({ message: 'Date invalide.' })
       }
-  
+
       // Convertir heures en DateTime pour la même date
       let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`)
       let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`)
-  
+
+      if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
+        return response.badRequest({ message: 'Heures invalides ou fin avant début.' })
+      }
+
+      const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes
+
       // Récupérer les rdv du docteur pour la date demandée
       const existingAppointments = await Appointment.query()
         .where('idDoctor', payload.idDoctor)
         .andWhere('dateRdv', dateRdv.toISODate())
-      
+
       // Fonction pour vérifier chevauchement
       function isOverlapping(intervalA: Interval, intervalB: Interval) {
         return intervalA.overlaps(intervalB)
       }
-  
+
       // Construire interval demandé
       let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
-  
-      // Boucle pour trouver créneau libre (max 10 tentatives pour éviter boucle infinie)
+
+      // Vérifier chevauchement initial
+      let hasOverlap = existingAppointments.some(app => {
+        const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`)
+        const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`)
+        const appInterval = Interval.fromDateTimes(appStart, appEnd)
+        return isOverlapping(requestedInterval, appInterval)
+      })
+
+      // Si conflit, essayer de décaler jusqu'à 10 fois
       let attempts = 0
-      const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes
-  
-      while (
-        existingAppointments.some(app => {
+      while (hasOverlap && attempts < 10) {
+        heureDebut = heureDebut.plus({ minutes: slotDurationMinutes })
+        heureFin = heureFin.plus({ minutes: slotDurationMinutes })
+        requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
+
+        hasOverlap = existingAppointments.some(app => {
           const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`)
           const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`)
           const appInterval = Interval.fromDateTimes(appStart, appEnd)
           return isOverlapping(requestedInterval, appInterval)
-        }) &&
-        attempts < 10
-      ) {
-        // Décaler le créneau de la durée du rendez-vous (ex: +30 minutes)
-        heureDebut = heureDebut.plus({ minutes: slotDurationMinutes })
-        heureFin = heureFin.plus({ minutes: slotDurationMinutes })
-        requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
+        })
+
         attempts++
       }
-  
-      if (attempts === 10) {
+
+      if (hasOverlap) {
         return response.badRequest({ message: 'Impossible de trouver un créneau libre.' })
       }
-  
-      // Créer le rendez-vous avec le créneau libre trouvé
+
+      // Créer le rendez-vous avec le créneau trouvé
       const appointment = await Appointment.create({
         idDoctor: payload.idDoctor,
         idUser: payload.idPatient,
@@ -155,7 +164,7 @@ export default class AppointmentController {
         heureFin: heureFin.toFormat('HH:mm'),
         description: payload.description,
       })
-  
+
       return response.created({
         message: 'Rendez-vous créé avec succès.',
         data: appointment,
