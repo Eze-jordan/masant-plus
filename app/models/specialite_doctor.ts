@@ -1,8 +1,8 @@
-import { BaseModel, belongsTo, column, beforeCreate } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, beforeCreate } from '@adonisjs/lucid/orm'
+import { randomUUID } from 'node:crypto'
 import Specialite from './specialite.js'
 import User from './user.js'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import { randomUUID } from 'node:crypto'
 
 export default class SpecialiteDoctor extends BaseModel {
   @column({ isPrimary: true })
@@ -13,15 +13,15 @@ export default class SpecialiteDoctor extends BaseModel {
     specialiteDoctor.id = randomUUID()
   }
 
-  @column()
-  public idSpecialite!: string
+  @column({ columnName: 'specialite_id' }) // 👈 match DB column
+  public specialiteId!: string
 
-  @column()
-  public idDoctor!: string
+  @column({ columnName: 'doctor_id' }) // 👈 match DB column
+  public doctorId!: string
 
-  @belongsTo(() => Specialite, { foreignKey: 'idSpecialite' })
+  @belongsTo(() => Specialite, { foreignKey: 'specialiteId' })
   public specialite!: BelongsTo<typeof Specialite>
 
-  @belongsTo(() => User, { foreignKey: 'idDoctor' })
+  @belongsTo(() => User, { foreignKey: 'doctorId' })
   public doctor!: BelongsTo<typeof User>
 }

@@ -4,7 +4,7 @@ import type { ManyToMany } from '@adonisjs/lucid/types/relations'
 
 export default class Specialite extends BaseModel {
   @column({ isPrimary: true })
-  public id!: string // changer en string pour UUID
+  public id!: string
 
   @column()
   public label!: string
@@ -15,10 +15,13 @@ export default class Specialite extends BaseModel {
   @column()
   public icon?: string
 
+  @column()
+  public color?: string 
+
   @manyToMany(() => User, {
     pivotTable: 'specialite_doctors',
-    pivotForeignKey: 'idSpecialite',      // doit matcher la colonne dans la table pivot
-    pivotRelatedForeignKey: 'idDoctor',    // idem ici
+    pivotForeignKey: 'specialite_id',        // 👈 match DB
+    pivotRelatedForeignKey: 'doctor_id',     // 👈 match DB
   })
   public doctors!: ManyToMany<typeof User>
 }
