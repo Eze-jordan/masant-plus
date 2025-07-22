@@ -4,22 +4,30 @@ import { Docteur } from '#models/user'
 export default class SpecialiteController {
   public async getAllSpecialties({ response }: HttpContextContract) {
     try {
-      // Récupérer toutes les spécialisations non nulles des docteurs
+      // Récupérer tous les docteurs avec une spécialisation définie
       const doctors = await Docteur.query()
         .where('type', 'doctor')
-        .whereNotNull('specialisation') // Filtrer ceux qui ont une spécialisation
+        .whereNotNull('specialisation')
 
-      // Extraire la liste des spécialisations
-      const specialisations = doctors
-        .map((doc) => doc.specialisation)
-        .filter((spec): spec is string => !!spec) // Retire les null/undefined
+      // Regrouper les docteurs par spécialisation avec un comptage
+      const specialityCounts: Record<string, number> = {}
 
-      // Supprimer les doublons
-      const uniqueSpecialisations = [...new Set(specialisations)]
+      doctors.forEach((doctor) => {
+        const spec = doctor.specialisation
+        if (spec) {
+          specialityCounts[spec] = (specialityCounts[spec] || 0) + 1
+        }
+      })
+
+      // Transformer l'objet en tableau [{ specialisation, total }]
+      const specialities = Object.entries(specialityCounts).map(([specialisation, total]) => ({
+        specialisation,
+        total,
+      }))
 
       return response.status(200).send({
         message: 'Liste des spécialisations récupérée avec succès.',
-        specialities: uniqueSpecialisations,
+        specialities,
       })
     } catch (error) {
       console.error('[SpecialiteController] Erreur lors de la récupération des spécialisations:', error)
