@@ -175,5 +175,60 @@ export default class AppointmentController {
       return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' })
     }
   }
+  /**
+ * Récupérer les rendez-vous à venir d’un patient
+ */
+public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
+  try {
+    const idPatient = request.param('id') // ✅ récupérer depuis les paramètres de route
+
+    if (!idPatient) {
+      return response.badRequest({ message: 'idPatient est requis.' })
+    }
+    const today = DateTime.now().startOf('day')
+
+    const appointments = await Appointment.query()
+      .where('idUser', idPatient)
+      .andWhere('dateRdv', '>=', today.toISODate())
+      .orderBy('dateRdv', 'asc')
+      .preload('doctor') // si tu veux les infos du médecin
+
+    const result = appointments.map((appointment) => {
+      const dateIso = appointment.dateRdv.toISODate()
+      const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`)
+      const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`)
+
+      return {
+        id: appointment.id,
+        date: appointment.dateRdv.toISODate(),
+        heureDebut: appointment.heureDebut,
+        heureFin: appointment.heureFin,
+        dateDebut: dateDebut.toISO(),
+        dateFin: dateFin.toISO(),
+        typeRdv: appointment.typeRdv,
+        etatRdv: appointment.etatRdv,
+        description: appointment.description,
+        doctor: appointment.doctor ? {
+          id: appointment.doctor.id,
+          nom: appointment.doctor.first_name,
+          prenom: appointment.doctor.last_name,
+          email: appointment.doctor.email
+        } : null
+      }
+    })
+
+    return response.ok({
+      message: 'Rendez-vous à venir récupérés avec succès.',
+      appointments: result
+    })
+  } catch (error) {
+    console.error('[getUpcomingAppointmentsForPatient] Erreur :', error)
+    return response.internalServerError({
+      message: 'Erreur serveur lors de la récupération des rendez-vous.',
+      error: error.message
+    })
+  }
+}
+
   
 }
