@@ -3305,6 +3305,15 @@ router.get('/appointments/doctor', async (ctx) => {
   })
 })
 
+
+router.get('/appointments/patient/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentController.getUpcomingAppointmentsForPatient(ctx)
+    })
+  })
+})
+//
 router.get('/disponibilites/doctor/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
