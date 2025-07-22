@@ -47,8 +47,8 @@ export default class AssociateSpecialites {
         if (!exists) {
           // Crée la relation dans la table pivot
           await SpecialiteDoctor.create({
-            idDoctor: doctor.id,
-            idSpecialite: specialite.id,
+            doctorId: doctor.id,
+            specialiteId: specialite.id,
           })
           console.log(`[AssociateSpecialites] Docteur ${doctor.email} associé à la spécialité ${specialite.label}`)
         }
