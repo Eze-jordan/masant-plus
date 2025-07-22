@@ -6,6 +6,8 @@ import Role from '../models/role.js'
 import { Status } from '../enum/enums.js'
 import MailFordoctor from '#services/MailFordoctor'
 import mail_approve from '#services/mail_approve'
+import SpecialiteDoctor from '#models/specialite_doctor'
+import Specialite from '#models/specialite'
 function generateRandomPassword(length = 12) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let password = ''
@@ -60,29 +62,30 @@ export default class DemandeDocteurController {
 
   // Valider une demande et créer le compte docteur
   public async approve({ params, response }: HttpContextContract) {
+    // 1. Récupérer la demande
     const demande = await DemandeDocteur.find(params.id)
     if (!demande) {
       return response.notFound({ message: 'Demande non trouvée' })
     }
+  
+    // 2. Empêcher les validations multiples
     if (demande.status === 'approved') {
-      return response.badRequest({ message: 'Déjà validée' })
+      return response.badRequest({ message: 'La demande a déjà été validée.' })
     }
-    // Création du rôle docteur si besoin
-    let role = await Role.findBy('label', 'doctor')
-    if (!role) {
-      role = await Role.create({ label: 'doctor' })
-    }
-    
+  
+    // 3. Vérifier ou créer le rôle "doctor"
+    const role = await Role.firstOrCreate({ label: 'doctor' })
+  
+    // 4. Générer un mot de passe et préparer le nom complet
     const password = generateRandomPassword(12)
-    // Créer un message avec les informations de l'utilisateur
     const fullName = `${demande.firstName} ${demande.lastName}`
-    
-    // Envoyer l'email avant la création du docteur
+  
+    // 5. Envoyer les infos du compte par mail
     await mail_approve.sendAccountInfo(demande.email!, fullName, password)
-    console.log(`Email envoyé à: ${demande.email} avant la création du compte`)
-
-    // Création du compte docteur
-    const docteur = await Docteur.create({
+    console.log(`📩 Email envoyé à : ${demande.email}`)
+  
+    // 6. Créer le compte docteur
+    await Docteur.create({
       first_name: demande.firstName,
       last_name: demande.lastName,
       email: demande.email,
@@ -90,19 +93,45 @@ export default class DemandeDocteurController {
       license_number: demande.licenseNumber,
       specialisation: demande.specialisation,
       roleId: role.id,
-      password: password,
+      password,
       accountStatus: Status.ACTIVE,
-      type: 'doctor' // Assurez-vous que ce champ est bien défini
+      type: 'doctor',
     })
-
-    // Mettre à jour le statut de la demande
+  
+    // 7. Récupérer le docteur créé par son email unique
+    const docteurFromDb = await Docteur.query().where('email', demande.email).first()
+  
+    if (!docteurFromDb) {
+      return response.internalServerError({ message: 'Erreur lors de la création du compte docteur' })
+    }
+  
+    // 8. Associer une spécialité si renseignée
+    if (demande.specialisation) {
+      const specialite = await Specialite.firstOrCreate(
+        { label: demande.specialisation },
+        { label: demande.specialisation }
+      )
+  
+      await SpecialiteDoctor.create({
+        doctorId: docteurFromDb.id,
+        specialiteId: specialite.id,
+      })
+    }
+  
+    // 9. Marquer la demande comme approuvée
     demande.status = 'approved'
     await demande.save()
-
-    // Log avant l'envoi du mail
-    console.log(`Demande de ${fullName} approuvée et le compte docteur créé.`)
-    return response.ok({ message: 'Demande validée et compte docteur créé', docteur })
+  
+    // 10. Réponse OK
+    console.log(`✅ Demande approuvée pour : ${fullName}`)
+    return response.ok({
+      message: 'Demande validée et compte docteur créé',
+      docteur: docteurFromDb.serialize(),
+    })
   }
+  
+  
+  
 
   // Refuser une demande
   public async reject({ params, response }: HttpContextContract) {
@@ -115,4 +144,5 @@ export default class DemandeDocteurController {
     return response.ok({ message: 'Demande refusée' })
   }
 }
+ 
 
