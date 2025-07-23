@@ -6,6 +6,15 @@ export default class SpecialiteController {
     const data = request.only(['label', 'description', 'icon', 'color'])
 
     try {
+      // Vérifier si le label existe déjà (insensible à la casse)
+      const existing = await Specialite.query()
+        .whereRaw('LOWER(label) = ?', [data.label.toLowerCase()])
+        .first()
+
+      if (existing) {
+        return response.conflict({ message: 'Une spécialité avec ce label existe déjà.' })
+      }
+
       const specialite = await Specialite.create(data)
       return response.created({ message: 'Spécialité créée', specialite })
     } catch (error) {
@@ -13,7 +22,6 @@ export default class SpecialiteController {
     }
   }
 
-  // Optionnel : liste toutes les spécialités
   public async index({ response }: HttpContextContract) {
     const specialites = await Specialite.all()
     return response.ok(specialites)
