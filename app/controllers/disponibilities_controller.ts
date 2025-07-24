@@ -120,11 +120,26 @@ export default class DisponibiliteController {
         })
         .orderBy('dateDebut', 'desc')
   
-      return response.ok(disponibilites)
+      // Transformation de la réponse en tableau
+      const result = disponibilites.map((disponibilite) => {
+        return {
+          id: disponibilite.id,
+          doctorId: disponibilite.idDoctor,
+          doctorFirstName: disponibilite.doctor.first_name,
+          creneaux: disponibilite.creneaux.map((creneau) => ({
+            id: creneau.id,
+            startDate: creneau.heureDebut,
+            endDate: creneau.heureFin
+          })),
+        }
+      });
+  
+      return response.ok(result)
     } catch (error) {
       return response.status(500).send({ message: 'Erreur serveur', error: error.message })
     }
   }
+  
   
 
   // ➤ Détails d'une disponibilité
