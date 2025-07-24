@@ -26,90 +26,79 @@ export default class DisponibiliteController {
   // ➤ Créer une disponibilité avec créneaux générés automatiquement
   public async store({ request, response }: HttpContextContract) {
     const payload = request.body()
-  
-    // S'assurer que c'est toujours un tableau à traiter
-    const disponibilites = Array.isArray(payload) ? payload : [payload]
-  
+    const entries = Array.isArray(payload) ? payload : [payload]
     const results = []
+    const erreurs: any[] = []
   
-    for (const data of disponibilites) {
-      if (!data.idDoctor) {
-        return response.status(400).send({
-          message: 'idDoctor est obligatoire pour chaque disponibilité.',
+    for (const entry of entries) {
+      const { idDoctor, date_debut, date_fin, creneaux, actif = true } = entry
+  
+      if (!idDoctor || !date_debut || !Array.isArray(creneaux) || creneaux.length === 0) {
+        erreurs.push({
+          entry,
+          message: 'idDoctor, date_debut et au moins un créneau sont requis.'
         })
+        continue
       }
   
       try {
-        // Vérification du rôle du médecin
-        const user = await User.query()
-          .where('id', data.idDoctor)
-          .preload('role')
-          .firstOrFail()
-  
+        const user = await User.query().where('id', idDoctor).preload('role').firstOrFail()
         if (!user.role || user.role.label !== 'doctor') {
-          return response.status(403).send({
-            message: `L'utilisateur ${data.idDoctor} n'a pas le rôle 'Doctor'.`,
+          erreurs.push({ entry, message: 'Le rôle doit être "Doctor"' })
+          continue
+        }
+  
+        const dateDebut = DateTime.fromISO(date_debut)
+        const dateFin = date_fin ? DateTime.fromISO(date_fin) : dateDebut
+  
+        if (!dateDebut.isValid || !dateFin.isValid) {
+          erreurs.push({ entry, message: 'Dates invalides.' })
+          continue
+        }
+  
+        // ➤ Une disponibilité pour chaque créneau
+        for (const { heureDebut, heureFin } of creneaux) {
+          const { debut, fin, valid } = this.validateHeures(heureDebut, heureFin)
+  
+          if (!valid) {
+            erreurs.push({ entry, message: `Heure invalide : ${heureDebut} - ${heureFin}` })
+            continue
+          }
+  
+          const disponibilite = await Disponibilite.create({
+            idDoctor,
+            heureDebut: debut,
+            heureFin: fin,
+            dateDebut,
+            dateFin,
+            actif
           })
+  
+          const generated = this.generateCreneaux(debut, fin, dateDebut, dateFin, disponibilite.id)
+          for (const creneau of generated) {
+            await Creneau.create(creneau)
+          }
+  
+          await disponibilite.load('creneaux')
+          await disponibilite.load('doctor')
+          results.push(disponibilite)
         }
   
-        // Validation des heures
-        const { debut, fin, valid } = this.validateHeures(data.heureDebut, data.heureFin)
-        if (!valid) {
-          return response.status(400).send({ message: 'Format des heures invalide.' })
-        }
-  
-        // Validation des dates
-        const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
-        const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
-  
-        if (dateDebut && !dateDebut.isValid) {
-          return response.badRequest({ message: 'La date_debut est invalide.' })
-        }
-        if (dateFin && !dateFin.isValid) {
-          return response.badRequest({ message: 'La date_fin est invalide.' })
-        }
-  
-        // Création de la disponibilité
-        const disponibilite = await Disponibilite.create({
-          idDoctor: data.idDoctor,
-          heureDebut: debut,
-          heureFin: fin,
-          dateDebut,
-          dateFin,
-          actif: data.actif ?? true,
-        })
-  
-        // Génération des créneaux
-        const creneaux = this.generateCreneaux(
-          debut,
-          fin,
-          dateDebut,
-          dateFin,
-          disponibilite.id
-        )
-  
-        for (const creneau of creneaux) {
-          await Creneau.create(creneau)
-        }
-  
-        await disponibilite.load('creneaux')
-        await disponibilite.load('doctor')
-  
-        results.push(disponibilite)
       } catch (error: any) {
         console.error('Erreur lors de la création :', error)
-        return response.status(500).send({
-          message: 'Erreur lors de la création de la disponibilité.',
-          error: error.message,
-        })
+        erreurs.push({ entry, message: error.message })
       }
     }
   
     return response.created({
-      message: 'Disponibilité(s) créée(s) avec succès.',
-      data: Array.isArray(payload) ? results : results[0],
+      message: 'Disponibilités traitées.',
+      total: results.length,
+      erreurs: erreurs.length > 0 ? erreurs : undefined,
+      data: Array.isArray(payload) ? results : results[0]
     })
   }
+  
+  
   
   
   
