@@ -110,15 +110,48 @@ export default class DisponibiliteController {
         .where('idDoctor', params.id)
         .preload('creneaux')
         .preload('doctor', (doctorQuery) => {
-          doctorQuery.select(['id', 'first_name']) // charge juste ce qu'on veut
+          doctorQuery.select(['id', 'first_name'])
         })
         .orderBy('dateDebut', 'desc')
   
-      return response.ok(disponibilites)
+      // Groupement par dateDebut (format ISO date)
+      const groupedByDate: Record<string, any> = {}
+
+      disponibilites.forEach(dispo => {
+        if (!dispo.dateDebut) {
+          // Defensive: skip if dateDebut is null or undefined
+          return
+        }
+        const dateKey = dispo.dateDebut.toISODate() // 'YYYY-MM-DD'
+        if (dateKey === null) {
+          // Defensive: skip if toISODate() returns null (shouldn't happen)
+          return
+        }
+        if (!groupedByDate[dateKey]) {
+          groupedByDate[dateKey] = {
+            date_debut: dateKey,
+            idDoctor: dispo.idDoctor,
+            doctor: dispo.doctor,
+            creneaux: []
+          }
+        }
+        // On concatène les créneaux
+        groupedByDate[dateKey].creneaux.push(...dispo.creneaux.map(c => ({
+          heureDebut: c.heureDebut,
+          heureFin: c.heureFin,
+          id: c.id // si besoin d'id du créneau
+        })))
+      })
+  
+      // Transformer l'objet en tableau
+      const result = Object.values(groupedByDate)
+  
+      return response.ok(result)
     } catch (error) {
       return response.status(500).send({ message: 'Erreur serveur', error: error.message })
     }
   }
+  
   
 
   // ➤ Détails d'une disponibilité
