@@ -178,20 +178,30 @@ export default class AppointmentController {
   /**
  * Récupérer les rendez-vous à venir d’un patient
  */
-public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
+ /**
+   * Récupérer tous les rendez-vous pour un patient donné (sans filtre de date)
+  
+ public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
   try {
-    const idPatient = request.param('id') // ✅ récupérer depuis les paramètres de route
+    const idUser = request.param('id')
 
-    if (!idPatient) {
-      return response.badRequest({ message: 'idPatient est requis.' })
+    console.log('ID utilisateur reçu:', idUser)
+
+    if (!idUser) {
+      return response.badRequest({ message: 'id utilisateur est requis.' })
     }
-    const today = DateTime.now().startOf('day')
 
     const appointments = await Appointment.query()
-      .where('idUser', idPatient)
-      .andWhere('dateRdv', '>=', today.toISODate())
+      .where('id_user', idUser) // Assure-toi que c’est bien 'id_user' dans ta base
       .orderBy('dateRdv', 'asc')
-      .preload('doctor') // si tu veux les infos du médecin
+      .orderBy('heureDebut', 'asc')
+      .preload('patient')
+      .preload('doctor')
+      .preload('paiements')
+      .preload('prescription')
+      .preload('review')
+
+    console.log('Nombre de rendez-vous trouvés:', appointments.length)
 
     const result = appointments.map((appointment) => {
       const dateIso = appointment.dateRdv.toISODate()
@@ -200,35 +210,96 @@ public async getUpcomingAppointmentsForPatient({ request, response }: HttpContex
 
       return {
         id: appointment.id,
-        date: appointment.dateRdv.toISODate(),
-        heureDebut: appointment.heureDebut,
-        heureFin: appointment.heureFin,
-        dateDebut: dateDebut.toISO(),
-        dateFin: dateFin.toISO(),
         typeRdv: appointment.typeRdv,
         etatRdv: appointment.etatRdv,
-        description: appointment.description,
-        doctor: appointment.doctor ? {
-          id: appointment.doctor.id,
-          nom: appointment.doctor.first_name,
-          prenom: appointment.doctor.last_name,
-          email: appointment.doctor.email
-        } : null
+        prenomPatient: appointment.patient?.first_name ?? null,
+        nomPatient: appointment.patient?.last_name ?? null,
+        paiements: appointment.paiements ?? [],
+        prescription: appointment.prescription ?? null,
+        review: appointment.review ?? [],
+        dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
+        dateFin: dateFin.isValid ? dateFin.toISO() : null,
+        doctor: appointment.doctor
+          ? {
+              id: appointment.doctor.id,
+              nom: appointment.doctor.first_name,
+              prenom: appointment.doctor.last_name,
+              email: appointment.doctor.email,
+            }
+          : null,
       }
     })
 
     return response.ok({
-      message: 'Rendez-vous à venir récupérés avec succès.',
-      appointments: result
+      message: 'Tous les rendez-vous récupérés avec succès.',
+      appointments: result,
     })
   } catch (error) {
-    console.error('[getUpcomingAppointmentsForPatient] Erreur :', error)
+    console.error('[getAppointmentsForUser] Erreur :', error)
     return response.internalServerError({
       message: 'Erreur serveur lors de la récupération des rendez-vous.',
-      error: error.message
+      error: error.message,
+    })
+  }
+}
+   */
+public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
+  try {
+    const idUser = request.param('id')  // Récupérer l'id passé en paramètre d'URL
+
+    if (!idUser) {
+      return response.badRequest({ message: 'id utilisateur est requis.' })
+    }
+
+    const appointments = await Appointment.query()
+      .where('id_user', idUser)  // Filtrer uniquement les rendez-vous liés à cet id
+      .orderBy('dateRdv', 'asc')
+      .orderBy('heureDebut', 'asc')
+      .preload('patient')
+      .preload('doctor')
+      .preload('paiements')
+      .preload('prescription')
+      .preload('review')
+
+    const result = appointments.map((appointment) => {
+      const dateIso = appointment.dateRdv.toISODate()
+      const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`)
+      const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`)
+
+      return {
+        id: appointment.id,
+        typeRdv: appointment.typeRdv,
+        etatRdv: appointment.etatRdv,
+        idPatient: appointment.patient?.id ?? null,
+        prenomPatient: appointment.patient?.first_name ?? null,
+        nomPatient: appointment.patient?.last_name ?? null,
+        paiements: appointment.paiements ?? [],
+        prescription: appointment.prescription ?? null,
+        review: appointment.review ?? [],
+        dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
+        dateFin: dateFin.isValid ? dateFin.toISO() : null,
+        doctor: appointment.doctor
+          ? {
+              id: appointment.doctor.id,
+              nom: appointment.doctor.first_name,
+              prenom: appointment.doctor.last_name,
+              email: appointment.doctor.email,
+            }
+          : null,
+      }
+    })
+
+    return response.ok({
+      message: `Rendez-vous récupérés pour l'utilisateur ${idUser}.`,
+      appointments: result,
+    })
+  } catch (error) {
+    console.error('[getAppointmentsByUserId] Erreur :', error)
+    return response.internalServerError({
+      message: 'Erreur serveur lors de la récupération des rendez-vous.',
+      error: error.message,
     })
   }
 }
 
-  
 }
