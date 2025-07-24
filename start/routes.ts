@@ -3313,6 +3313,8 @@ router.get('/appointments/patient/:id', async (ctx) => {
     })
   })
 })
+
+
 //
 router.get('/disponibilites/doctor/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
