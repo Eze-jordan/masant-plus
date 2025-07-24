@@ -83,6 +83,7 @@ export default class AppointmentController {
   /**
    * Créer un nouveau rendez-vous
    */
+
   public async create({ request, response }: HttpContextContract) {
     try {
       const payload = request.only([
@@ -94,66 +95,51 @@ export default class AppointmentController {
         'heureDebut',
         'heureFin',
         'description'
-      ])
-
-      const dateRdv = DateTime.fromISO(payload.date)
+      ]);
+  
+      // Vérification de la validité de la date
+      const dateRdv = DateTime.fromISO(payload.date);
       if (!dateRdv.isValid) {
-        return response.badRequest({ message: 'Date invalide.' })
+        return response.badRequest({ message: 'Date invalide.' });
       }
-
-      // Convertir heures en DateTime pour la même date
-      let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`)
-      let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`)
-
+  
+      // Convertir les heures en DateTime pour la même date
+      let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`);
+      let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`);
+  
       if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
-        return response.badRequest({ message: 'Heures invalides ou fin avant début.' })
+        return response.badRequest({ message: 'Heures invalides ou fin avant début.' });
       }
-
-      const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes
-
-      // Récupérer les rdv du docteur pour la date demandée
+  
+      const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes;
+  
+      // Récupérer les rendez-vous existants du docteur pour la date demandée
       const existingAppointments = await Appointment.query()
         .where('idDoctor', payload.idDoctor)
-        .andWhere('dateRdv', dateRdv.toISODate())
-
-      // Fonction pour vérifier chevauchement
+        .andWhere('dateRdv', dateRdv.toISODate());
+  
+      // Fonction pour vérifier si deux intervalles se chevauchent
       function isOverlapping(intervalA: Interval, intervalB: Interval) {
-        return intervalA.overlaps(intervalB)
+        return intervalA.overlaps(intervalB);
       }
-
-      // Construire interval demandé
-      let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
-
-      // Vérifier chevauchement initial
+  
+      // Construire l'intervalle demandé
+      let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin);
+  
+      // Vérifier chevauchement avec les rendez-vous existants
       let hasOverlap = existingAppointments.some(app => {
-        const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`)
-        const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`)
-        const appInterval = Interval.fromDateTimes(appStart, appEnd)
-        return isOverlapping(requestedInterval, appInterval)
-      })
-
-      // Si conflit, essayer de décaler jusqu'à 10 fois
-      let attempts = 0
-      while (hasOverlap && attempts < 10) {
-        heureDebut = heureDebut.plus({ minutes: slotDurationMinutes })
-        heureFin = heureFin.plus({ minutes: slotDurationMinutes })
-        requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
-
-        hasOverlap = existingAppointments.some(app => {
-          const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`)
-          const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`)
-          const appInterval = Interval.fromDateTimes(appStart, appEnd)
-          return isOverlapping(requestedInterval, appInterval)
-        })
-
-        attempts++
-      }
-
+        const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`);
+        const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`);
+        const appInterval = Interval.fromDateTimes(appStart, appEnd);
+        return isOverlapping(requestedInterval, appInterval);
+      });
+  
+      // Si un chevauchement est trouvé, renvoyer une erreur
       if (hasOverlap) {
-        return response.badRequest({ message: 'Impossible de trouver un créneau libre.' })
+        return response.badRequest({ message: 'Le créneau est déjà occupé.' });
       }
-
-      // Créer le rendez-vous avec le créneau trouvé
+  
+      // Créer le rendez-vous avec les horaires valides
       const appointment = await Appointment.create({
         idDoctor: payload.idDoctor,
         idUser: payload.idPatient,
@@ -163,18 +149,19 @@ export default class AppointmentController {
         heureDebut: heureDebut.toFormat('HH:mm'),
         heureFin: heureFin.toFormat('HH:mm'),
         description: payload.description,
-      })
-
+      });
+  
       return response.created({
         message: 'Rendez-vous créé avec succès.',
-        data: appointment,
-        note: attempts > 0 ? `Le créneau a été décalé de ${attempts * slotDurationMinutes} minutes.` : undefined
-      })
+        data: appointment
+      });
+  
     } catch (error) {
-      console.error('[AppointmentController.create] Erreur :', error)
-      return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' })
+      console.error('[AppointmentController.create] Erreur :', error);
+      return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' });
     }
   }
+  
   /**
  * Récupérer les rendez-vous à venir d’un patient
  */
