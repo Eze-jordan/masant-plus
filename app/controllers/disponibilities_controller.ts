@@ -25,88 +25,93 @@ export default class DisponibiliteController {
 
   // ➤ Créer une disponibilité avec créneaux générés automatiquement
   public async store({ request, response }: HttpContextContract) {
-    const data = request.only([
-      'idDoctor',
-      'heureDebut',
-      'heureFin',
-      'date_debut',
-      'date_fin',
-      'actif',
-    ]);
+    const payload = request.body()
   
-    if (!data.idDoctor) {
-      return response.status(400).send({
-        message: 'idDoctor est obligatoire.',
-      });
+    // S'assurer que c'est toujours un tableau à traiter
+    const disponibilites = Array.isArray(payload) ? payload : [payload]
+  
+    const results = []
+  
+    for (const data of disponibilites) {
+      if (!data.idDoctor) {
+        return response.status(400).send({
+          message: 'idDoctor est obligatoire pour chaque disponibilité.',
+        })
+      }
+  
+      try {
+        // Vérification du rôle du médecin
+        const user = await User.query()
+          .where('id', data.idDoctor)
+          .preload('role')
+          .firstOrFail()
+  
+        if (!user.role || user.role.label !== 'doctor') {
+          return response.status(403).send({
+            message: `L'utilisateur ${data.idDoctor} n'a pas le rôle 'Doctor'.`,
+          })
+        }
+  
+        // Validation des heures
+        const { debut, fin, valid } = this.validateHeures(data.heureDebut, data.heureFin)
+        if (!valid) {
+          return response.status(400).send({ message: 'Format des heures invalide.' })
+        }
+  
+        // Validation des dates
+        const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
+        const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
+  
+        if (dateDebut && !dateDebut.isValid) {
+          return response.badRequest({ message: 'La date_debut est invalide.' })
+        }
+        if (dateFin && !dateFin.isValid) {
+          return response.badRequest({ message: 'La date_fin est invalide.' })
+        }
+  
+        // Création de la disponibilité
+        const disponibilite = await Disponibilite.create({
+          idDoctor: data.idDoctor,
+          heureDebut: debut,
+          heureFin: fin,
+          dateDebut,
+          dateFin,
+          actif: data.actif ?? true,
+        })
+  
+        // Génération des créneaux
+        const creneaux = this.generateCreneaux(
+          debut,
+          fin,
+          dateDebut,
+          dateFin,
+          disponibilite.id
+        )
+  
+        for (const creneau of creneaux) {
+          await Creneau.create(creneau)
+        }
+  
+        await disponibilite.load('creneaux')
+        await disponibilite.load('doctor')
+  
+        results.push(disponibilite)
+      } catch (error: any) {
+        console.error('Erreur lors de la création :', error)
+        return response.status(500).send({
+          message: 'Erreur lors de la création de la disponibilité.',
+          error: error.message,
+        })
+      }
     }
   
-    try {
-      // Vérification du rôle de l'utilisateur
-      const user = await User.query()
-        .where('id', data.idDoctor)
-        .preload('role')
-        .firstOrFail();
-  
-      if (!user.role || user.role.label !== 'doctor') {
-        return response.status(403).send({
-          message: 'L\'utilisateur n\'a pas le rôle "Doctor".',
-        });
-      }
-  
-      // Validation des heures de début et de fin
-      const { debut, fin, valid } = this.validateHeures(data.heureDebut, data.heureFin);
-      if (!valid) {
-        return response.status(400).send({ message: 'Format des heures invalide.' });
-      }
-  
-      // Validation des dates
-      const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null;
-      const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null;
-  
-      if (dateDebut && !dateDebut.isValid) {
-        return response.badRequest({ message: 'La date_debut est invalide.' });
-      }
-      if (dateFin && !dateFin.isValid) {
-        return response.badRequest({ message: 'La date_fin est invalide.' });
-      }
-  
-      // Créer la disponibilité
-      const disponibilite = await Disponibilite.create({
-        idDoctor: data.idDoctor,
-        heureDebut: debut,
-        heureFin: fin,
-        dateDebut,
-        dateFin,
-        actif: data.actif ?? true,
-      });
-  
-      // Créer les créneaux pour la période spécifiée
-      const allCreneaux = this.generateCreneaux(
-        debut,
-        fin,
-        dateDebut,
-        dateFin,
-        disponibilite.id
-      );
-  
-      // Insérer les créneaux un par un
-      for (const creneau of allCreneaux) {
-        await Creneau.create(creneau);
-      }
-  
-      // Précharger les relations avant de renvoyer la réponse
-      await disponibilite.load('creneaux');
-      await disponibilite.load('doctor');
-  
-      return response.created(disponibilite);
-    } catch (error: any) {
-      console.error(error);
-      return response.status(500).send({
-        message: 'Erreur lors de la création de la disponibilité.',
-        error: error.message,
-      });
-    }
+    return response.created({
+      message: 'Disponibilité(s) créée(s) avec succès.',
+      data: Array.isArray(payload) ? results : results[0],
+    })
   }
+  
+  
   
 
   // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
