@@ -112,7 +112,7 @@ export default class AppointmentController {
       }
   
       const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes;
-  
+     console.log(slotDurationMinutes)
       // Récupérer les rendez-vous existants du docteur pour la date demandée
       const existingAppointments = await Appointment.query()
         .where('idDoctor', payload.idDoctor)
