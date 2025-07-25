@@ -3313,9 +3313,15 @@ router.get('/appointments/patient/:id', async (ctx) => {
     })
   })
 })
+router.put('/appointments/cancel/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentController.cancel(ctx)
+    })
+  })
+})
 
-
-//
+//cancel
 router.get('/disponibilites/doctor/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {

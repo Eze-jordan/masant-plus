@@ -288,5 +288,43 @@ public async getUpcomingAppointmentsForPatient({ request, response }: HttpContex
     })
   }
 }
+/**
+ * Annuler un rendez-vous (par le médecin ou le patient)
+ * Ex: PUT /appointments/:id/cancel
+ */
+public async cancel({ params, response }: HttpContextContract) {
+  try {
+    const appointmentId = params.id
+
+    if (!appointmentId) {
+      return response.badRequest({ message: 'ID du rendez-vous requis.' })
+    }
+
+    const appointment = await Appointment.find(appointmentId)
+
+    if (!appointment) {
+      return response.notFound({ message: 'Rendez-vous non trouvé.' })
+    }
+
+    if (appointment.etatRdv === 'ANNULE') {
+      return response.badRequest({ message: 'Ce rendez-vous est déjà annulé.' })
+    }
+
+    appointment.etatRdv = 'ANNULE' // Utilise bien la valeur du champ dans ton enum EtatRDV
+    await appointment.save()
+
+    return response.ok({
+      message: 'Rendez-vous annulé avec succès.',
+      data: appointment
+    })
+
+  } catch (error) {
+    console.error('[cancel] Erreur :', error)
+    return response.internalServerError({
+      message: 'Erreur serveur lors de l’annulation du rendez-vous.',
+      error: error.message
+    })
+  }
+}
 
 }
