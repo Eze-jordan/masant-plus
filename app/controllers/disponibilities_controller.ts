@@ -110,47 +110,46 @@ export default class DisponibiliteController {
         .where('idDoctor', params.id)
         .preload('creneaux')
         .preload('doctor', (doctorQuery) => {
-          doctorQuery.select(['id', 'first_name'])
+          doctorQuery.select(['id', 'first_name', 'type'])
         })
         .orderBy('dateDebut', 'desc')
   
-      // Groupement par dateDebut (format ISO date)
       const groupedByDate: Record<string, any> = {}
-
-      disponibilites.forEach(dispo => {
-        if (!dispo.dateDebut) {
-          // Defensive: skip if dateDebut is null or undefined
-          return
-        }
-        const dateKey = dispo.dateDebut.toISODate() // 'YYYY-MM-DD'
-        if (dateKey === null) {
-          // Defensive: skip if toISODate() returns null (shouldn't happen)
-          return
-        }
+  
+      for (const dispo of disponibilites) {
+        if (!dispo.dateDebut) continue
+  
+        const dateKey = dispo.dateDebut.toISODate()
+        if (!dateKey) continue
+  
         if (!groupedByDate[dateKey]) {
           groupedByDate[dateKey] = {
             date_debut: dateKey,
+            date_fin: dispo.dateFin?.toISODate() ?? null,
             idDoctor: dispo.idDoctor,
             doctor: dispo.doctor,
             creneaux: []
           }
         }
-        // On concatène les créneaux
-        groupedByDate[dateKey].creneaux.push(...dispo.creneaux.map(c => ({
-          heureDebut: c.heureDebut,
-          heureFin: c.heureFin,
-          id: c.id // si besoin d'id du créneau
-        })))
-      })
   
-      // Transformer l'objet en tableau
+        groupedByDate[dateKey].creneaux.push(
+          ...dispo.creneaux.map(c => ({
+            id: c.id,
+            heureDebut: c.heureDebut,
+            heureFin: c.heureFin
+          }))
+        )
+      }
+  
       const result = Object.values(groupedByDate)
-  
       return response.ok(result)
+  
     } catch (error) {
+      console.error(error)
       return response.status(500).send({ message: 'Erreur serveur', error: error.message })
     }
   }
+  
   
   
 
