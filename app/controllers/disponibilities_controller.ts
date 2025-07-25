@@ -105,10 +105,11 @@ export default class DisponibiliteController {
 
   // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
 
+
   public async getByDoctor({ params, response }: HttpContextContract) {
     try {
-      const now = DateTime.local() // Heure actuelle
-  
+      const now = DateTime.local()
+
       const disponibilites = await Disponibilite.query()
         .where('idDoctor', params.id)
         .preload('creneaux')
@@ -116,35 +117,35 @@ export default class DisponibiliteController {
           doctorQuery.select(['id', 'first_name', 'type'])
         })
         .orderBy('dateDebut', 'asc')
-  
+
       const groupedByDate: Record<string, any> = {}
-  
+
       for (const dispo of disponibilites) {
         if (!dispo.dateDebut) continue
-  
-        const dateKey = dispo.dateDebut.toISODate()
+
+        const dateDebut = dispo.dateDebut
+        const dateKey = dateDebut.toISODate()
         if (!dateKey) continue
-  
-        // Ne pas afficher les disponibilités totalement dans le passé
-        const isToday = dispo.dateDebut.hasSame(now, 'day')
-        const isFuture = dispo.dateDebut > now
-  
-        // Sauter la disponibilité si elle est aujourd'hui mais tous ses créneaux sont passés
-        let filteredCreneaux = dispo.creneaux
-  
+
+        const isToday = dateDebut.hasSame(now, 'day')
+        const isFuture = dateDebut > now
+
+        // ✅ Cast explicite : dire à TS que c’est bien un tableau
+        const creneaux = dispo.creneaux as unknown as Creneau[]
+        let filteredCreneaux = creneaux
+
         if (isToday) {
-          filteredCreneaux = dispo.creneaux.filter(c => {
+          filteredCreneaux = creneaux.filter(c => {
             const [hour, minute] = c.heureDebut.split(':').map(Number)
-            const creneauTime = dispo.dateDebut.set({ hour, minute })
+            const creneauTime = dateDebut.set({ hour, minute })
             return creneauTime > now
           })
         } else if (!isFuture) {
-          continue // Disponibilité complètement passée
+          continue
         }
-  
-        // Sauter si aucun créneau restant
+
         if (filteredCreneaux.length === 0) continue
-  
+
         if (!groupedByDate[dateKey]) {
           groupedByDate[dateKey] = {
             date_debut: dateKey,
@@ -154,7 +155,7 @@ export default class DisponibiliteController {
             creneaux: []
           }
         }
-  
+
         groupedByDate[dateKey].creneaux.push(
           ...filteredCreneaux.map(c => ({
             id: c.id,
@@ -163,15 +164,17 @@ export default class DisponibiliteController {
           }))
         )
       }
-  
+
       const result = Object.values(groupedByDate)
       return response.ok(result)
-  
+
     } catch (error) {
       console.error(error)
       return response.status(500).send({ message: 'Erreur serveur', error: error.message })
     }
   }
+  
+  
   
   
   
