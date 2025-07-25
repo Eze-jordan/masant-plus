@@ -104,15 +104,18 @@ export default class DisponibiliteController {
   
 
   // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
+
   public async getByDoctor({ params, response }: HttpContextContract) {
     try {
+      const now = DateTime.local() // Heure actuelle
+  
       const disponibilites = await Disponibilite.query()
         .where('idDoctor', params.id)
         .preload('creneaux')
         .preload('doctor', (doctorQuery) => {
           doctorQuery.select(['id', 'first_name', 'type'])
         })
-        .orderBy('dateDebut', 'desc')
+        .orderBy('dateDebut', 'asc')
   
       const groupedByDate: Record<string, any> = {}
   
@@ -121,6 +124,26 @@ export default class DisponibiliteController {
   
         const dateKey = dispo.dateDebut.toISODate()
         if (!dateKey) continue
+  
+        // Ne pas afficher les disponibilités totalement dans le passé
+        const isToday = dispo.dateDebut.hasSame(now, 'day')
+        const isFuture = dispo.dateDebut > now
+  
+        // Sauter la disponibilité si elle est aujourd'hui mais tous ses créneaux sont passés
+        let filteredCreneaux = dispo.creneaux
+  
+        if (isToday) {
+          filteredCreneaux = dispo.creneaux.filter(c => {
+            const [hour, minute] = c.heureDebut.split(':').map(Number)
+            const creneauTime = dispo.dateDebut.set({ hour, minute })
+            return creneauTime > now
+          })
+        } else if (!isFuture) {
+          continue // Disponibilité complètement passée
+        }
+  
+        // Sauter si aucun créneau restant
+        if (filteredCreneaux.length === 0) continue
   
         if (!groupedByDate[dateKey]) {
           groupedByDate[dateKey] = {
@@ -133,7 +156,7 @@ export default class DisponibiliteController {
         }
   
         groupedByDate[dateKey].creneaux.push(
-          ...dispo.creneaux.map(c => ({
+          ...filteredCreneaux.map(c => ({
             id: c.id,
             heureDebut: c.heureDebut,
             heureFin: c.heureFin
