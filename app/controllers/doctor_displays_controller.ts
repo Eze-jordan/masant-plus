@@ -9,15 +9,16 @@ export default class UserController {
       const doctors = await Docteur.query()
         .preload('feedbacks')
         .preload('likesReceived', (likeQuery) => {
-          likeQuery.preload('user')  // ⬅️ Précharge l'utilisateur qui a liké
+          likeQuery.preload('user');
         })
         .preload('disponibilites')
         .preload('appointmentsAsDoctor')
         .where('type', 'doctor')
+        .where('account_status', 'ACTIVE') // ✅ Ajout du filtre sur le statut
         .orderBy('last_name', 'asc');
   
       if (!doctors.length) {
-        return response.status(404).json({ message: 'Aucun médecin trouvé' });
+        return response.status(404).json({ message: 'Aucun médecin actif trouvé' });
       }
   
       const doctorsInfo = doctors.map(doctor => {
@@ -38,8 +39,8 @@ export default class UserController {
           likesSent: doctor.likesSent?.map(like => like.id) || [],
           likesReceived: doctor.likesReceived?.map(like => ({
             likeId: like.id,
-            userId: like.user?.id, // ⬅️ Ici on récupère l'ID de l'utilisateur qui a liké
-            userEmail: like.user?.email, // Optionnel : infos supplémentaires
+            userId: like.user?.id,
+            userEmail: like.user?.email,
           })) || [],
           disponibilites: doctor.disponibilites?.map(dispo => dispo.dateDebut) || [],
           appointments: doctor.appointmentsAsDoctor?.map(app => app.dateRdv) || [],
@@ -54,5 +55,4 @@ export default class UserController {
     }
   }
   
-
 }
