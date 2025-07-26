@@ -11,6 +11,7 @@ const DemandeController =new DemandeDocteurController()
 const patientsend  =new  sendinginfopatients_controller()
 const doctorSpecialty  =new  SpecialiteController()
 import { throttle } from '#start/limiter'
+const patients  =new  PatientController()
 import RegisterController from '#controllers/RegisterController'
 import AuthController from '#controllers/auth_controller'
 import PatientsController from '#controllers/patients_controller'
@@ -3321,7 +3322,14 @@ router.put('/appointments/cancel/:id', async (ctx) => {
   })
 })
 
-//cancel
+router.get('/paiment/patient/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await patients.show(ctx)
+    })
+  })
+})
+//
 router.get('/disponibilites/doctor/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
