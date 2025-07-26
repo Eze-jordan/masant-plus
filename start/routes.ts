@@ -37,6 +37,8 @@ import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
+import PatientdetailsController from '#controllers/PatientdetailsController';
+const Patientdetails   =  new    PatientdetailsController()
 const patient   =  new    PatientController()
 const specialty  =  new  specialities_controller()
 import update_users_controller from '#controllers/update_users_controller'
@@ -2856,7 +2858,15 @@ router.get('/patientsuser/:id', async (ctx) => {
   })
 }).middleware([throttle])
 
-// Consultations count route
+router.get('/patient/details/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return Patientdetails.show(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Patientdetails
 
 
 router.get('/consultations/:userId', async (ctx) => {
