@@ -1,13 +1,13 @@
 import Role from '#models/role'
 import User from '#models/user'
+import Appointment from '#models/appointment'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class PatientdetailsController {
-
   // Méthode pour récupérer un patient par son id, mais seulement ses informations personnelles
   public async show({ response, params }: HttpContextContract) {
     try {
-      // Trouver le rôle "patient" (même si on récupère un patient par ID, on peut vouloir vérifier le rôle)
+      // Trouver le rôle "patient"
       const patientRole = await Role.findByOrFail('label', 'patient');
 
       // Récupérer le patient avec l'ID spécifié mais ne charger que ses informations personnelles
@@ -23,8 +23,16 @@ export default class PatientdetailsController {
         return response.notFound({ message: 'Patient non trouvé' });
       }
 
-      // Retourner le patient avec ses informations personnelles
-      return response.ok(patient);
+      // Récupérer les rendez-vous du patient et les informations du docteur associé
+      const appointments = await Appointment
+        .query()
+        .where('idUser', patient.id) // Filtrer les rendez-vous pour ce patient
+        .preload('doctor') // Charger les informations du docteur associé à chaque rendez-vous
+        .orderBy('dateRdv', 'desc'); // Optionnel : trier par date (les plus récents en premier)
+
+      // Retourner le patient avec ses informations personnelles et ses consultations
+      return response.ok({ patient, appointments });
+      
     } catch (error) {
       console.error('Erreur Patient show:', error);
       return response.internalServerError({ message: 'Erreur serveur, impossible de récupérer le patient' });

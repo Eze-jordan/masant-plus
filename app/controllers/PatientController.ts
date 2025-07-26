@@ -4,7 +4,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class PatientsController {
 
-    public async index({ response }: HttpContextContract) {
+    public async show({ response }: HttpContextContract) {
       try {
         const patientRole = await Role.findByOrFail('label', 'patient');
   
