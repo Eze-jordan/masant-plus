@@ -109,7 +109,8 @@ export default class DisponibiliteController {
   public async getByDoctor({ params, response }: HttpContextContract) {
     try {
       const now = DateTime.local()
-
+  
+      // Récupérer toutes les disponibilités
       const disponibilites = await Disponibilite.query()
         .where('idDoctor', params.id)
         .preload('creneaux')
@@ -117,35 +118,42 @@ export default class DisponibiliteController {
           doctorQuery.select(['id', 'first_name', 'type'])
         })
         .orderBy('dateDebut', 'asc')
-
+  
       const groupedByDate: Record<string, any> = {}
-
+  
       for (const dispo of disponibilites) {
         if (!dispo.dateDebut) continue
-
+  
         const dateDebut = dispo.dateDebut
         const dateKey = dateDebut.toISODate()
         if (!dateKey) continue
-
+  
+        // Vérifier si la date est aujourd'hui ou dans le futur
         const isToday = dateDebut.hasSame(now, 'day')
         const isFuture = dateDebut > now
-
+  
         // ✅ Cast explicite : dire à TS que c’est bien un tableau
         const creneaux = dispo.creneaux as unknown as Creneau[]
         let filteredCreneaux = creneaux
-
+  
+        // Si c'est aujourd'hui, on filtre les créneaux passés
         if (isToday) {
           filteredCreneaux = creneaux.filter(c => {
             const [hour, minute] = c.heureDebut.split(':').map(Number)
             const creneauTime = dateDebut.set({ hour, minute })
+  
+            // Garder seulement les créneaux à venir (dans le futur)
             return creneauTime > now
           })
         } else if (!isFuture) {
+          // Si la date est dans le passé, on ignore
           continue
         }
-
+  
+        // Si on n'a pas de créneaux filtrés, on passe à la prochaine disponibilité
         if (filteredCreneaux.length === 0) continue
-
+  
+        // Regrouper les créneaux par date
         if (!groupedByDate[dateKey]) {
           groupedByDate[dateKey] = {
             date_debut: dateKey,
@@ -155,7 +163,8 @@ export default class DisponibiliteController {
             creneaux: []
           }
         }
-
+  
+        // Ajouter les créneaux filtrés au groupe correspondant
         groupedByDate[dateKey].creneaux.push(
           ...filteredCreneaux.map(c => ({
             id: c.id,
@@ -164,15 +173,16 @@ export default class DisponibiliteController {
           }))
         )
       }
-
+  
       const result = Object.values(groupedByDate)
       return response.ok(result)
-
+  
     } catch (error) {
       console.error(error)
       return response.status(500).send({ message: 'Erreur serveur', error: error.message })
     }
   }
+  
   
   
   
