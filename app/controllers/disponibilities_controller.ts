@@ -99,6 +99,56 @@ export default class DisponibiliteController {
   }
   
   
+  private generateCreneaux(
+    heureDebut: string,
+    heureFin: string,
+    dateDebut: DateTime | null,
+    dateFin: DateTime | null,
+    idDisponibilite: string
+  ) {
+    const allCreneaux = []
+  
+    const startDate = dateDebut ?? DateTime.now()
+    const endDate = dateFin ?? startDate
+  
+    const heureDebutTime = DateTime.fromFormat(heureDebut, 'HH:mm')
+    const heureFinTime = DateTime.fromFormat(heureFin, 'HH:mm')
+  
+    if (!heureDebutTime.isValid || !heureFinTime.isValid || heureDebutTime >= heureFinTime) {
+      throw new Error('Heures invalides.')
+    }
+  
+    // On génère pour chaque jour entre dateDebut et dateFin
+    for (let currentDay = startDate.startOf('day'); currentDay <= endDate.startOf('day'); currentDay = currentDay.plus({ days: 1 })) {
+      let currentSlotStart = currentDay.set({
+        hour: heureDebutTime.hour,
+        minute: heureDebutTime.minute
+      })
+  
+      const slotEndLimit = currentDay.set({
+        hour: heureFinTime.hour,
+        minute: heureFinTime.minute
+      })
+  
+      // Tant qu'on peut créer un créneau de 15 minutes
+      while (currentSlotStart.plus({ minutes: 15 }) <= slotEndLimit) {
+        const currentSlotEnd = currentSlotStart.plus({ minutes: 15 })
+  
+        allCreneaux.push({
+          id_disponibilite: idDisponibilite,
+          heure_debut: currentSlotStart.toFormat('HH:mm'),
+          heure_fin: currentSlotEnd.toFormat('HH:mm'),
+          disponible: true,
+        })
+  
+        // On avance de 15 minutes
+        currentSlotStart = currentSlotEnd
+      }
+    }
+  
+    return allCreneaux
+  }
+  
   
   
   
@@ -274,36 +324,7 @@ export default class DisponibiliteController {
   }
 
   // Fonction pour générer les créneaux en fonction des heures exactes
-  private generateCreneaux(
-    heureDebut: string,
-    heureFin: string,
-    dateDebut: DateTime | null,
-    dateFin: DateTime | null,
-    idDisponibilite: string
-  ) {
-    const allCreneaux = []
-    const start = dateDebut ?? DateTime.now()
-    const end = dateFin ?? start.plus({ years: 1 }) // Un an de créneaux
 
-    const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
-    const fin = DateTime.fromFormat(heureFin, 'HH:mm')
-
-    if (!debut.isValid || !fin.isValid) {
-      throw new Error('Format des heures invalide.')
-    }
-
-    // Créer un créneau pour chaque jour entre start et end
-    for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-      allCreneaux.push({
-        id_disponibilite: idDisponibilite,
-        heure_debut: debut.toFormat('HH:mm'),
-        heure_fin: fin.toFormat('HH:mm'),
-        disponible: true,
-      })
-    }
-
-    return allCreneaux
-  }
 
   // Fonction pour valider les heures
   private validateHeures(heureDebut: string, heureFin: string) {

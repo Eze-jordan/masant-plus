@@ -3307,6 +3307,13 @@ router.get('/lives', async (ctx) => {
   });
 });
 
+router.post('/appointments', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentController.create(ctx)
+    })
+  })
+})
 
 router.get('/appointments/doctor', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
@@ -3350,13 +3357,6 @@ router.get('/disponibilites/doctor/:id', async (ctx) => {
 
 
 
-router.post('/appointments', async (ctx) => {
-  await onlyFrontend.handle(ctx, async () => {
-    await appKeyGuard.handle(ctx, async () => {
-      await appointmentController.create(ctx)
-    })
-  })
-})
 
 router.get('/', async ({ inertia }) => {
   return inertia.render('home') // => resources/js/Pages/auth/login.tsx

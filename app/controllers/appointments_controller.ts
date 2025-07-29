@@ -84,8 +84,10 @@ export default class AppointmentController {
    * Créer un nouveau rendez-vous
    */
 
+
   public async create({ request, response }: HttpContextContract) {
     try {
+      // Extraction des données de la requête
       const payload = request.only([
         'idDoctor',
         'idPatient',
@@ -107,12 +109,15 @@ export default class AppointmentController {
       let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`);
       let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`);
   
+      // Vérification de la validité des heures et si l'heure de fin est après l'heure de début
       if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
         return response.badRequest({ message: 'Heures invalides ou fin avant début.' });
       }
   
+      // Calcul de la durée du créneau en minutes
       const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes;
-     console.log(slotDurationMinutes)
+      console.log(slotDurationMinutes);
+  
       // Récupérer les rendez-vous existants du docteur pour la date demandée
       const existingAppointments = await Appointment.query()
         .where('idDoctor', payload.idDoctor)
@@ -123,10 +128,10 @@ export default class AppointmentController {
         return intervalA.overlaps(intervalB);
       }
   
-      // Construire l'intervalle demandé
+      // Construire l'intervalle du rendez-vous demandé
       let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin);
   
-      // Vérifier chevauchement avec les rendez-vous existants
+      // Vérifier si le créneau demandé chevauche un rendez-vous existant
       let hasOverlap = existingAppointments.some(app => {
         const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`);
         const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`);
@@ -139,24 +144,32 @@ export default class AppointmentController {
         return response.badRequest({ message: 'Le créneau est déjà occupé.' });
       }
   
-      // Créer le rendez-vous avec les horaires valides
+      // Définir les états valides
+      const validStates = ['PENDING', 'CONFIRMED', 'CANCELLED'];
+  
+      // Si l'état n'est pas valide, on le définit par défaut à "PENDING"
+      const etatRdv = validStates.includes(payload.etatRdv) ? payload.etatRdv : 'PENDING';
+  
+      // Créer le rendez-vous avec les horaires et l'état validés
       const appointment = await Appointment.create({
         idDoctor: payload.idDoctor,
         idUser: payload.idPatient,
         dateRdv: dateRdv,
         typeRdv: payload.typeRdv,
-        etatRdv: payload.etatRdv,
+        etatRdv: etatRdv,  // Utilisation de l'état validé
         heureDebut: heureDebut.toFormat('HH:mm'),
         heureFin: heureFin.toFormat('HH:mm'),
         description: payload.description,
       });
   
+      // Retourner la réponse avec succès et les informations du rendez-vous créé
       return response.created({
         message: 'Rendez-vous créé avec succès.',
         data: appointment
       });
   
     } catch (error) {
+      // En cas d'erreur serveur, retourner une réponse d'erreur
       console.error('[AppointmentController.create] Erreur :', error);
       return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' });
     }
