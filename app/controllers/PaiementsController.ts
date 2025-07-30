@@ -4,6 +4,7 @@ import { DateTime } from 'luxon'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { StatusPaiement } from '../enum/enums.js'
 import { CreateInvoice, GetInvoice, MakePushUSSD } from '#services/ebilling'
+import Appointment from '#models/appointment'
 
 export default class PaiementsController {
   /**
@@ -62,7 +63,7 @@ export default class PaiementsController {
       'short_description',
       'external_reference',
       'description',
-      'expiry_period', 
+      'expiry_period',
       'payment_system_name',
       'idUser',
       'idAppointment',
@@ -72,6 +73,7 @@ export default class PaiementsController {
       // 1. Détection du mode de paiement (basé sur le numéro)
       const modeLabel = this.detectPaymentLabel(payer_msisdn)
       let modePaiement = await ModePaiement.query().where('label', modeLabel).first()
+  
       if (!modePaiement) {
         modePaiement = await ModePaiement.create({ label: modeLabel })
       }
@@ -89,18 +91,30 @@ export default class PaiementsController {
   
       const bill_id = invoice?.e_bill?.bill_id ?? null
   
-      // 3. Enregistrement du paiement, même si le push échoue
+      // Déterminer si la facture est déjà payée (si applicable)
+      const isPaid = invoice?.e_bill?.status === 'PAYE' // à adapter selon l'API eBilling
+  
+      // 3. Création du paiement avec le bon statut
       const paiement = await Paiement.create({
-        idUser: idUser,
-        idAppointment: idAppointment,
+        idUser,
+        idAppointment,
         montant: amount,
-        statut: StatusPaiement.EN_ATTENTE,
+        statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.EN_ATTENTE,
         datePaiement: DateTime.now(),
         modeId: modePaiement.id,
         numeroTelephone: payer_msisdn,
       })
   
-      // 4. Envoi du push USSD (optionnel)
+      // 4. Si payé immédiatement → mise à jour du rendez-vous
+      if (isPaid) {
+        const appointment = await Appointment.find(idAppointment)
+        if (appointment) {
+          appointment.etatRdv = 'CONFIRME'
+          await appointment.save()
+        }
+      }
+  
+      // 5. Envoi du push USSD (optionnel)
       let ussdResponse = null
       try {
         if (bill_id) {
@@ -111,11 +125,13 @@ export default class PaiementsController {
         }
       } catch (pushError) {
         console.error('Erreur lors de l\'envoi du push USSD :', pushError)
-        // Le paiement est enregistré, donc on ne bloque pas la réponse ici
       }
   
+      // 6. Réponse finale
       return response.created({
-        message: 'Paiement enregistré. Facture créée et push tenté.',
+        message: isPaid
+          ? 'Paiement confirmé. Rendez-vous mis à jour.'
+          : 'Paiement enregistré. Facture créée et push tenté.',
         bill_id,
         paiement,
         invoice,
@@ -123,7 +139,10 @@ export default class PaiementsController {
       })
     } catch (error: any) {
       console.error('Erreur traitement Mobile Money:', error)
-      return response.status(500).send({ message: 'Erreur traitement Mobile Money.', error: error.message })
+      return response.status(500).send({
+        message: 'Erreur lors du traitement Mobile Money.',
+        error: error.message,
+      })
     }
   }
   

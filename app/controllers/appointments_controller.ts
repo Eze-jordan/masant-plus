@@ -66,6 +66,7 @@ export default class AppointmentController {
           nomPatient: appointment.patient?.first_name ?? null,
           prenomPatient: appointment.patient?.last_name ?? null,
           paiements: appointment.paiements,
+          description : appointment.description,
           prescription: appointment.prescription,
           review: appointment.review,
           dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
