@@ -94,7 +94,6 @@ export default class UsersController {
       phone: vine.string().trim().mobile().maxLength(20).optional(),
       weight: vine.string().optional(),  // POIDS en string si tu veux, sinon number
       groupeSanguin: vine.string().trim().maxLength(10).optional(),
-      dateNaissance: vine.string().optional(),  // Format 'DD/MM/YYYY' attendu côté client
       address: vine.string().trim().maxLength(255).optional(),
       specialisation: vine.string().trim().maxLength(100).optional(),
       about: vine.string().trim().optional(),
