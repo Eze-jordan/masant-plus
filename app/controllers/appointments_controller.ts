@@ -165,8 +165,10 @@ export default class AppointmentController {
       // Retourner la réponse avec succès et les informations du rendez-vous créé
       return response.created({
         message: 'Rendez-vous créé avec succès.',
+        id: appointment.id,              // ✅ ici
         data: appointment
       });
+      
   
     } catch (error) {
       // En cas d'erreur serveur, retourner une réponse d'erreur
