@@ -234,10 +234,16 @@ export default class RegisterController {
       address: vine.string().trim().maxLength(255).optional(),
       specialisation: vine.string().trim().maxLength(100).optional(),
       about: vine.string().trim().optional(),
+  
+      weight: vine.string().optional(),  // Poids en string (ex: '70')
+      groupeSanguin: vine.string().trim().maxLength(10).optional(),
+      dateNaissance: vine.string().optional(),  // Format attendu 'DD/MM/YYYY'
+  
       accountStatus: vine.enum(Object.values(Status) as [Status, ...Status[]]).optional(),
       yearsExperience: vine.string().trim().optional(),
       availability: vine.string().trim().optional(),
       specialty: vine.string().trim().optional(),
+  
       profileImage: vine
         .file({
           size: '2mb',
@@ -313,9 +319,8 @@ export default class RegisterController {
       ) {
         try {
           if (typeof user.email === 'string' && user.email.trim() !== '') {
-  
             console.log('Email avec mot de passe envoyé à:', user.email)
-            // Envoie de l'email réel ici (facultatif)
+            // Envoi email d’activation ici si besoin
           } else {
             console.error('Erreur : email utilisateur manquant ou invalide')
           }
@@ -339,6 +344,7 @@ export default class RegisterController {
       })
     }
   }
+  
   public async update(ctx: HttpContextContract) {
     const { request, response, params, inertia } = ctx
 
