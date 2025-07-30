@@ -51,7 +51,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
 public weight!: string // josue le poids na aps encore et dans la migration si tu ajoutes quelque jours n oublie pas de migrate la le poids 
 
   @column()
-public dateNaissance;: DateTime   // ✅ nouvelle colonne
+public dateNaissance?: DateTime   // ✅ nouvelle colonne
 
 @column()
 public about?: string             // ✅ nouvelle colonne
