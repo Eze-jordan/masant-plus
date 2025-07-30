@@ -39,6 +39,7 @@ export default class PaiementsController {
     }
   }
 
+  
   /**
    * Crée une facture Mobile Money via eBilling + push USSD, puis enregistre le paiement
    */
@@ -61,7 +62,7 @@ export default class PaiementsController {
       'short_description',
       'external_reference',
       'description',
-      'expiry_period',
+      'expiry_period', 
       'payment_system_name',
       'idUser',
       'idAppointment',
