@@ -3358,9 +3358,10 @@ router.get('/disponibilites/doctor/:id', async (ctx) => {
 
 
 
-router.get('/', async ({ inertia }) => {
-  return inertia.render('home') // => resources/js/Pages/auth/login.tsx
+router.get('/', async ({ inertia,  }) => {
+  return inertia.render('home')
 })
+
 
 router.get('/auth', async ({ inertia }) => {
   return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
