@@ -62,7 +62,7 @@ export default class AppointmentController {
           id: appointment.id,
           typeRdv: appointment.typeRdv,
           etatRdv: appointment.etatRdv,
-          
+          idPatient :  appointment.patient?.id ?? null,
           nomPatient: appointment.patient?.first_name ?? null,
           prenomPatient: appointment.patient?.last_name ?? null,
           paiements: appointment.paiements,
