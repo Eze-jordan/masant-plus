@@ -1,3 +1,4 @@
+import Prescription from '#models/prescription'
 import Role from '#models/role'
 import User from '#models/user'
 import Appointment from '#models/appointment'
@@ -14,7 +15,7 @@ export default class PatientdetailsController {
       const patient = await User
         .query()
         .where('role_id', patientRole.id) // Vérifier que c'est bien un patient
-        .andWhere('id', params.id) // Filtrer par ID
+        .where('id', params.id) // Filtrer par ID
         .select('id', 'first_name', 'last_name', 'email', 'phone', 'dateNaissance', 'about', 'groupeSanguin', 'anneeExperience', 'address', 'profileImage')  // Sélectionner uniquement les infos personnelles
         .first(); // Assurer qu'il n'y a qu'un seul patient avec cet ID
 
@@ -30,9 +31,15 @@ export default class PatientdetailsController {
         .preload('doctor') // Charger les informations du docteur associé à chaque rendez-vous
         .orderBy('dateRdv', 'desc'); // Optionnel : trier par date (les plus récents en premier)
 
-      // Retourner le patient avec ses informations personnelles et ses consultations
-      return response.ok({ patient, appointments });
-      
+      // Récupérer les prescriptions du patient via ses rendez-vous
+      const prescriptions = await Prescription
+        .query()
+        .whereIn('idAppointment', appointments.map(appointment => appointment.id)) // Filtrer les prescriptions par rendez-vous
+        .orderBy('createdAt', 'desc'); // Optionnel : trier par date de création de la prescription
+
+      // Retourner le patient avec ses informations personnelles, ses rendez-vous et ses prescriptions
+      return response.ok({ patient, appointments, prescriptions });
+
     } catch (error) {
       console.error('Erreur Patient show:', error);
       return response.internalServerError({ message: 'Erreur serveur, impossible de récupérer le patient' });
