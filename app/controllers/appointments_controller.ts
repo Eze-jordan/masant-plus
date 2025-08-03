@@ -248,25 +248,26 @@ export default class AppointmentController {
    */
 public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
   try {
-    const idUser = request.param('id');  // ID du médecin ou utilisateur
+    const idDoctor = request.param('id');
 
-    if (!idUser) {
+    if (!idDoctor) {
       return response.badRequest({ message: 'id utilisateur est requis.' });
     }
 
-    // Filtrer uniquement les rendez-vous libres ou non confirmés
+    const now = DateTime.local();
+
     const disponibilites = await Appointment.query()
-      .where('idUser', idUser)  // Utilisation du bon nom de colonne 'idUser'
+      .where('idDoctor', idDoctor)
+      .andWhere('dateRdv', '>=', now.toISODate()) // On ne veut que les dates futures
       .andWhere((query) => {
         query
-          .whereNull('etatRdv')          // Rendez-vous sans état
-          .orWhere('etatRdv', 'PENDING')   // Rendez-vous "libre"
-          .orWhereNull('idUser');        // Rendez-vous sans patient (idUser null)
+          .whereNull('idUser')                  // pas encore pris
+          .orWhere('etatRdv', EtatRDV.PENDING)  // en attente
+          .orWhereNull('etatRdv');              // état inconnu (legacy)
       })
       .orderBy('dateRdv', 'asc')
       .orderBy('heureDebut', 'asc');
 
-    // Transformation des résultats
     const result = disponibilites.map((appointment) => {
       const dateIso = appointment.dateRdv.toISODate();
       const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`);
@@ -275,14 +276,14 @@ public async getUpcomingAppointmentsForPatient({ request, response }: HttpContex
       return {
         id: appointment.id,
         typeRdv: appointment.typeRdv,
-        etatRdv: appointment.etatRdv ?? 'PENDING',  // Si etatRdv est null, utiliser 'libre'
+        etatRdv: appointment.etatRdv ?? 'PENDING',
         dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
         dateFin: dateFin.isValid ? dateFin.toISO() : null,
       };
     });
 
     return response.ok({
-      message: `Disponibilités non prises pour l'utilisateur ${idUser}.`,
+      message: `Créneaux libres à venir pour le docteur ${idDoctor}.`,
       disponibilites: result,
     });
   } catch (error) {
@@ -293,6 +294,7 @@ public async getUpcomingAppointmentsForPatient({ request, response }: HttpContex
     });
   }
 }
+
 
 /**
  * Annuler un rendez-vous (par le médecin ou le patient)

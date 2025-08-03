@@ -7,6 +7,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
+const medicament =new   MedicamentFrancesController()
 const DemandeController =new DemandeDocteurController()
 const patientsend  =new  sendinginfopatients_controller()
 const doctorSpecialty  =new  SpecialiteController()
@@ -53,6 +54,8 @@ import specialities_controller from '#controllers/specialities_controller';
 import DisponibilitesdoctorController from '#controllers/DisponibilitesdoctorController';
 import sendinginfopatients_controller from '#controllers/sendinginfopatients_controller';
 import SpecialiteController from '#controllers/SpecialiteController';
+import MedicamentFrancesController from '#controllers/medicament_frances_controller';
+import  Scheduler from '#controllers/sendeondeController';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -78,6 +81,13 @@ const appKeyGuard = new AppKeyGuard()
 const registerController = new RegisterController()
 const passwordResetController = new PasswordResetController()
 // Upload route sécurisée et filtrée
+function scheduler() {
+  console.log('Scheduler appelé à', new Date().toLocaleTimeString())
+  Scheduler.run()
+}
+
+// Appelle toutes les 5 secondes (5000 ms)
+setInterval(scheduler, 60000)
 
 
 
@@ -2522,7 +2532,15 @@ router.get('/paiements/gains-mois/:userId', async (ctx) => {
     })
   })
 }).middleware([throttle])
+///
 
+router.post('/scrape', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return medicament.scrapeMedicament(ctx)
+    })
+  })
+}).middleware([throttle])
 router.post('/upload/image', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
