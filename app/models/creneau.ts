@@ -31,6 +31,11 @@ export default class Creneau extends BaseModel {
   @column.dateTime({ autoCreate: true })
 public createdAt!: DateTime
 
+
+@column()
+public isUsed: boolean = false
+
+
 @column.dateTime({ autoCreate: true, autoUpdate: true })
 public updatedAt!: DateTime
 

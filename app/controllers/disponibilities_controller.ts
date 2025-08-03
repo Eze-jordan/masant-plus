@@ -155,15 +155,16 @@ export default class DisponibiliteController {
 
   // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
 
-
   public async getByDoctor({ params, response }: HttpContextContract) {
     try {
       const now = DateTime.local()
   
-      // Récupérer toutes les disponibilités
+      // Récupérer toutes les disponibilités avec uniquement les créneaux non utilisés
       const disponibilites = await Disponibilite.query()
         .where('idDoctor', params.id)
-        .preload('creneaux')
+        .preload('creneaux', (query) => {
+          query.where('is_used', false)  // Filtrer ici les créneaux utilisés
+        })
         .preload('doctor', (doctorQuery) => {
           doctorQuery.select(['id', 'first_name', 'type'])
         })
@@ -182,8 +183,9 @@ export default class DisponibiliteController {
         const isToday = dateDebut.hasSame(now, 'day')
         const isFuture = dateDebut > now
   
-        // ✅ Cast explicite : dire à TS que c’est bien un tableau
+        // Cast explicite : dire à TS que c’est bien un tableau
         const creneaux = dispo.creneaux as unknown as Creneau[]
+  
         let filteredCreneaux = creneaux
   
         // Si c'est aujourd'hui, on filtre les créneaux passés
@@ -233,12 +235,6 @@ export default class DisponibiliteController {
     }
   }
   
-  
-  
-  
-  
-  
-
   // ➤ Détails d'une disponibilité
   public async show({ params, response }: HttpContextContract) {
     try {
