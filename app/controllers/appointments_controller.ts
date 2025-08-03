@@ -2,6 +2,7 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { EtatRDV, TypeRDV } from '../enum/enums.js'
 import Appointment from '#models/appointment'
 import { DateTime, Interval } from 'luxon'
+import Creneau from '#models/creneau'
 
 
 export default class AppointmentController {
@@ -11,75 +12,79 @@ export default class AppointmentController {
   public async getAppointmentsForDoctor({ request, response }: HttpContextContract) {
     try {
       const idDoctor = request.input('idDoctor')
-
+  
       if (!idDoctor) {
         return response.badRequest({ message: 'idDoctor est requis.' })
       }
-
+  
       const filterType = request.input('typeRdv') as keyof typeof TypeRDV | undefined
       const filterEtat = request.input('etatRdv') as keyof typeof EtatRDV | undefined
-
-      // Filtres optionnels
-
+  
       // Validation des filtres
       if (filterType && !Object.keys(TypeRDV).includes(filterType)) {
         return response.badRequest({ message: `typeRdv invalide : ${filterType}` })
       }
-
+  
       if (filterEtat && !Object.keys(EtatRDV).includes(filterEtat)) {
         return response.badRequest({ message: `etatRdv invalide : ${filterEtat}` })
       }
-
+  
       // Construction de la requête
       const query = Appointment.query().where('idDoctor', idDoctor)
-
+  
       if (filterType) {
         query.andWhere('typeRdv', filterType)
       }
-
+  
       if (filterEtat) {
         query.andWhere('etatRdv', filterEtat)
       }
-
+  
       // Chargement des relations
       const appointments = await query
         .preload('patient') 
         .preload('paiements')
         .preload('prescription')
         .preload('review')
-
+  
       // Transformation des données
       const result = appointments.map((appointment) => {
-        const dateIso = appointment.dateRdv.toISODate() // ex: "2025-07-04"
+        const dateIso = appointment.dateRdv.toISODate() // ex: "2025-08-01"
         const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`, { zone: 'local' })
         const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`, { zone: 'local' })
-
-        console.log('dateRdv:', appointment.dateRdv.toISO())
-        console.log('heureDebut:', appointment.heureDebut)
-        console.log('dateDebut:', dateDebut.toISO(), 'valid:', dateDebut.isValid)
-
+  
         return {
           id: appointment.id,
           typeRdv: appointment.typeRdv,
           etatRdv: appointment.etatRdv,
-          idPatient :  appointment.patient?.id ?? null,
+          idPatient: appointment.patient?.id ?? null,
           nomPatient: appointment.patient?.first_name ?? null,
           prenomPatient: appointment.patient?.last_name ?? null,
           paiements: appointment.paiements,
-          description : appointment.description,
+          description: appointment.description,
           prescription: appointment.prescription,
           review: appointment.review,
           dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
           dateFin: dateFin.isValid ? dateFin.toISO() : null,
         }
       })
-
+  
+      // ✅ Tri chronologique par dateDebut
+      result.sort((a, b) => {
+        const dateA = a.dateDebut ? DateTime.fromISO(a.dateDebut) : DateTime.invalid('Invalid')
+        const dateB = b.dateDebut ? DateTime.fromISO(b.dateDebut) : DateTime.invalid('Invalid')
+        return dateA.toMillis() - dateB.toMillis()
+      })
+  
       return response.ok(result)
     } catch (error) {
       console.error('[getAppointmentsForDoctor] Erreur :', error)
-      return response.internalServerError({ message: 'Erreur serveur lors de la récupération des rendez-vous.' })
+      return response.internalServerError({
+        message: 'Erreur serveur lors de la récupération des rendez-vous.'
+      })
     }
   }
+  
 
   /**
    * Créer un nouveau rendez-vous
@@ -97,41 +102,38 @@ export default class AppointmentController {
         'etatRdv',
         'heureDebut',
         'heureFin',
-        'description'
+        'description',
+        'idCreneau' // Assurez-vous d'inclure 'idCreneau' ici
       ]);
-  
+
       // Vérification de la validité de la date
       const dateRdv = DateTime.fromISO(payload.date);
       if (!dateRdv.isValid) {
         return response.badRequest({ message: 'Date invalide.' });
       }
-  
+
       // Convertir les heures en DateTime pour la même date
       let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`);
       let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`);
-  
+
       // Vérification de la validité des heures et si l'heure de fin est après l'heure de début
       if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
         return response.badRequest({ message: 'Heures invalides ou fin avant début.' });
       }
-  
-      // Calcul de la durée du créneau en minutes
-      const slotDurationMinutes = heureFin.diff(heureDebut, 'minutes').minutes;
-      console.log(slotDurationMinutes);
-  
-      // Récupérer les rendez-vous existants du docteur pour la date demandée
+
+      // Vérification des conflits de rendez-vous existants
       const existingAppointments = await Appointment.query()
         .where('idDoctor', payload.idDoctor)
         .andWhere('dateRdv', dateRdv.toISODate());
-  
+
       // Fonction pour vérifier si deux intervalles se chevauchent
       function isOverlapping(intervalA: Interval, intervalB: Interval) {
         return intervalA.overlaps(intervalB);
       }
-  
+
       // Construire l'intervalle du rendez-vous demandé
       let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin);
-  
+
       // Vérifier si le créneau demandé chevauche un rendez-vous existant
       let hasOverlap = existingAppointments.some(app => {
         const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`);
@@ -139,18 +141,18 @@ export default class AppointmentController {
         const appInterval = Interval.fromDateTimes(appStart, appEnd);
         return isOverlapping(requestedInterval, appInterval);
       });
-  
+
       // Si un chevauchement est trouvé, renvoyer une erreur
       if (hasOverlap) {
         return response.badRequest({ message: 'Le créneau est déjà occupé.' });
       }
-  
+
       // Définir les états valides
       const validStates = ['PENDING', 'CONFIRMED', 'CANCELLED'];
-  
+
       // Si l'état n'est pas valide, on le définit par défaut à "PENDING"
       const etatRdv = validStates.includes(payload.etatRdv) ? payload.etatRdv : 'PENDING';
-  
+
       // Créer le rendez-vous avec les horaires et l'état validés
       const appointment = await Appointment.create({
         idDoctor: payload.idDoctor,
@@ -162,22 +164,40 @@ export default class AppointmentController {
         heureFin: heureFin.toFormat('HH:mm'),
         description: payload.description,
       });
-  
+
+      // Si un ID de créneau est fourni, on le met à jour
+      if (payload.idCreneau) {
+        try {
+          const creneau = await Creneau.findOrFail(payload.idCreneau);
+
+          if (creneau.isUsed) {
+            console.warn(`Le créneau ${payload.idCreneau} est déjà marqué comme utilisé.`);
+          } else {
+            // Marquer le créneau comme utilisé
+            creneau.isUsed = true;
+            await creneau.save();
+            console.log(`Créneau ${payload.idCreneau} mis à jour avec succès.`);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour du créneau :', error);
+        }
+      }
+
       // Retourner la réponse avec succès et les informations du rendez-vous créé
       return response.created({
         message: 'Rendez-vous créé avec succès.',
-        id: appointment.id,              // ✅ ici
-        data: appointment
+        id: appointment.id,  // ID du rendez-vous créé
+        data: appointment,    // Détails du rendez-vous
       });
-      
-  
+
     } catch (error) {
-      // En cas d'erreur serveur, retourner une réponse d'erreur
       console.error('[AppointmentController.create] Erreur :', error);
-      return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' });
+      return response.internalServerError({ 
+        message: 'Erreur serveur lors de la création du rendez-vous.',
+        error: error.message 
+      });
     }
   }
-  
   /**
  * Récupérer les rendez-vous à venir d’un patient
  */
