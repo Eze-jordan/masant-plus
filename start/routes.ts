@@ -44,6 +44,7 @@ import PatientdetailsController from '#controllers/PatientdetailsController';
 const Patientdetails   =  new    PatientdetailsController()
 const patient   =  new    PatientController()
 const specialty  =  new  specialities_controller()
+const patientlistingdoctors  =  new  PatientlistingDoctorsController()
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
@@ -58,6 +59,7 @@ import SpecialiteController from '#controllers/SpecialiteController';
 import MedicamentFrancesController from '#controllers/medicament_frances_controller';
 import  Scheduler from '#controllers/sendeondeController';
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
+import PatientlistingDoctorsController from '#controllers/patientlisting_doctors_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -2986,10 +2988,27 @@ router.post('/doctorspecialty', async (ctx) => {
 }).middleware([throttle])
 
 
+
 router.get('/patients/count/:userId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return patientsController.index(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/patients/listing-doctors/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patientlistingdoctors.getDoctorsByPatient(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/patients/listing-resource/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patientlistingdoctors.getRessourcesByPatient(ctx)
     })
   })
 }).middleware([throttle])
