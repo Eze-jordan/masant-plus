@@ -158,65 +158,57 @@ export default class DisponibiliteController {
   public async getByDoctor({ params, response }: HttpContextContract) {
     try {
       const now = DateTime.local()
-  
-      // Récupérer toutes les disponibilités avec uniquement les créneaux non utilisés
+
+      // Récupérer toutes les disponibilités du médecin (actives ET inactives)
       const disponibilites = await Disponibilite.query()
         .where('idDoctor', params.id)
         .preload('creneaux', (query) => {
-          query.where('is_used', false)  // Filtrer ici les créneaux utilisés
+          query.where('is_used', false)
         })
         .preload('doctor', (doctorQuery) => {
           doctorQuery.select(['id', 'first_name', 'type'])
         })
         .orderBy('dateDebut', 'asc')
-  
+
       const groupedByDate: Record<string, any> = {}
-  
+
       for (const dispo of disponibilites) {
         if (!dispo.dateDebut) continue
-  
+
         const dateDebut = dispo.dateDebut
         const dateKey = dateDebut.toISODate()
         if (!dateKey) continue
-  
-        // Vérifier si la date est aujourd'hui ou dans le futur
+
         const isToday = dateDebut.hasSame(now, 'day')
         const isFuture = dateDebut > now
-  
-        // Cast explicite : dire à TS que c’est bien un tableau
+
         const creneaux = dispo.creneaux as unknown as Creneau[]
-  
+
         let filteredCreneaux = creneaux
-  
-        // Si c'est aujourd'hui, on filtre les créneaux passés
+
         if (isToday) {
           filteredCreneaux = creneaux.filter(c => {
             const [hour, minute] = c.heureDebut.split(':').map(Number)
             const creneauTime = dateDebut.set({ hour, minute })
-  
-            // Garder seulement les créneaux à venir (dans le futur)
             return creneauTime > now
           })
         } else if (!isFuture) {
-          // Si la date est dans le passé, on ignore
           continue
         }
-  
-        // Si on n'a pas de créneaux filtrés, on passe à la prochaine disponibilité
+
         if (filteredCreneaux.length === 0) continue
-  
-        // Regrouper les créneaux par date
+
         if (!groupedByDate[dateKey]) {
           groupedByDate[dateKey] = {
             date_debut: dateKey,
             date_fin: dispo.dateFin?.toISODate() ?? null,
             idDoctor: dispo.idDoctor,
             doctor: dispo.doctor,
+            actif: dispo.actif, // ← inclure actif ici
             creneaux: []
           }
         }
-  
-        // Ajouter les créneaux filtrés au groupe correspondant
+
         groupedByDate[dateKey].creneaux.push(
           ...filteredCreneaux.map(c => ({
             id: c.id,
@@ -225,16 +217,18 @@ export default class DisponibiliteController {
           }))
         )
       }
-  
+
       const result = Object.values(groupedByDate)
       return response.ok(result)
-  
+
     } catch (error) {
       console.error(error)
-      return response.status(500).send({ message: 'Erreur serveur', error: error.message })
+      return response.status(500).send({
+        message: 'Erreur serveur',
+        error: error.message
+      })
     }
   }
-  
   // ➤ Détails d'une disponibilité
   public async show({ params, response }: HttpContextContract) {
     try {
@@ -261,14 +255,14 @@ export default class DisponibiliteController {
       'date_fin',
       'actif',
     ])
-
+  
     try {
       const disponibilite = await Disponibilite.findOrFail(params.id)
-
+  
       disponibilite.idDoctor = data.idDoctor ?? disponibilite.idDoctor
       disponibilite.heureDebut = data.heureDebut ?? disponibilite.heureDebut
       disponibilite.heureFin = data.heureFin ?? disponibilite.heureFin
-
+  
       if (data.date_debut) {
         const parsed = DateTime.fromISO(data.date_debut)
         if (!parsed.isValid) {
@@ -276,7 +270,7 @@ export default class DisponibiliteController {
         }
         disponibilite.dateDebut = parsed
       }
-
+  
       if (data.date_fin) {
         const parsed = DateTime.fromISO(data.date_fin)
         if (!parsed.isValid) {
@@ -284,16 +278,16 @@ export default class DisponibiliteController {
         }
         disponibilite.dateFin = parsed
       }
-
-      // Vérification de l'attribut 'actif'
+  
+      // Forcer le champ actif à un booléen
       if (typeof data.actif !== 'undefined') {
-        disponibilite.actif = data.actif
+        disponibilite.actif = data.actif === true || data.actif === 'true'
       }
-
+  
       await disponibilite.save()
       return response.ok({
         message: 'Disponibilité mise à jour avec succès',
-        disponibilite, // retourne aussi l'objet mis à jour
+        disponibilite,
       })
     } catch (error: any) {
       console.error(error)
@@ -303,6 +297,7 @@ export default class DisponibiliteController {
       })
     }
   }
+  
 
   // ➤ Supprimer une disponibilité
   public async destroy({ params, response }: HttpContextContract) {
