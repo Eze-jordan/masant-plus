@@ -7,7 +7,9 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
+import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
 const medicament =new   MedicamentFrancesController()
+const userinfo  =new  pourcentage_comptes_controller()
 const DemandeController =new DemandeDocteurController()
 const patientsend  =new  sendinginfopatients_controller()
 const doctorSpecialty  =new  SpecialiteController()
@@ -45,7 +47,6 @@ const specialty  =  new  specialities_controller()
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
-import Paiement from '#models/paiement';
 import PatientController from '#controllers/PatientController';
 import verify_emails_controller from '#controllers/verify_emails_controller';
 import DemandeDocteurController from '#controllers/DemandeDocteurController';
@@ -56,6 +57,7 @@ import sendinginfopatients_controller from '#controllers/sendinginfopatients_con
 import SpecialiteController from '#controllers/SpecialiteController';
 import MedicamentFrancesController from '#controllers/medicament_frances_controller';
 import  Scheduler from '#controllers/sendeondeController';
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -2578,6 +2580,63 @@ router.post('/upload/image', async (ctx) => {
     })
   })
 })
+
+
+
+router.post('/upload/document', async (ctx: HttpContextContract) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const { request, response } = ctx
+
+      // Accepter les fichiers PDF et Word, avec une limite de 5MB
+      const file = request.file('File', {
+        size: '5mb', // Limite la taille du fichier à 5MB
+        extnames: ['pdf', 'doc', 'docx'],
+      })
+
+      // Vérifier si un fichier a été fourni
+      if (!file || !file.tmpPath) {
+        return response.badRequest({ message: 'Aucun fichier fourni.' })
+      }
+
+      // Validation de l'extension du fichier
+      if (!['pdf', 'doc', 'docx'].includes(file.extname)) {
+        return response.badRequest({ message: 'Le fichier doit être un PDF ou un document Word.' })
+      }
+
+      try {
+        // Générer un nom unique pour le fichier
+        const fileName = `${cuid()}.${file.extname}`
+
+        // Lire le fichier en mémoire
+        const fileBuffer = await fs.readFile(file.tmpPath)
+
+        // Upload vers S3
+        await drive.use('s3').put(`uploads/profile/${fileName}`, fileBuffer)
+
+        // Construire l'URL publique en fonction de la configuration S3
+        const s3BaseUrl = process.env.S3_ENDPOINT?.replace(/\/$/, '') || ''
+        const bucket = process.env.S3_BUCKET || ''
+        
+        // URL publique du fichier téléchargé
+        console.log(bucket)
+        const publicUrl = `${s3BaseUrl}/masanteplus/uploads/profile/${fileName}`
+
+        // Réponse avec l'URL du fichier
+        return response.created({
+          message: 'Document envoyé avec succès',
+          url: publicUrl,
+        })
+      } catch (error) {
+        // Gestion des erreurs lors du téléchargement
+        console.error(error)
+        return response.internalServerError({ message: "Erreur lors de l'envoi du document" })
+      }
+    })
+  })
+})
+
+
 router.get('/get-url', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -2628,6 +2687,72 @@ router.get('/get-url', async (ctx) => {
 });
 
 
+router.get('/get-docs', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+      const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+      const region = process.env.AWS_REGION;
+      const endpoint = process.env.S3_ENDPOINT;
+      const bucket = process.env.S3_BUCKET;
+      const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true';
+
+      if (!accessKeyId || !secretAccessKey || !region || !endpoint || !bucket) {
+        ctx.response.status(500).json({ message: 'Configuration AWS incomplète.' });
+        return;
+      }
+
+      try {
+        const s3 = new S3Client({
+          region,
+          credentials: {
+            accessKeyId,
+            secretAccessKey,
+          },
+          endpoint,
+          forcePathStyle,
+        });
+
+        // Liste tous les fichiers dans le bucket
+        const listCommand = new ListObjectsV2Command({
+          Bucket: bucket,
+        });
+
+        const data = await s3.send(listCommand);
+
+        // Filtrer les fichiers ayant l'extension .doc
+        const docFiles = data.Contents?.filter(file => file.Key?.endsWith('.doc') || file.Key?.endsWith('.docx'));
+
+        if (docFiles && docFiles.length === 0) {
+          ctx.response.status(404).json({ message: 'Aucun fichier .doc trouvé.' });
+          return;
+        }
+
+        // Générer des URLs signées pour chaque fichier .doc
+        const signedUrls = [];
+        for (let file of docFiles || []) {
+          const command = new GetObjectCommand({
+            Bucket: bucket,
+            Key: file.Key,
+          });
+
+          const url = await getSignedUrl(s3, command, { expiresIn: 604800 }); // 7 jours
+          signedUrls.push({
+            fileName: file.Key,
+            url,
+          });
+        }
+
+        // Retourner les URLs signées
+        ctx.response.status(200).json(signedUrls);
+      } catch (error) {
+        console.error(error);
+        ctx.response.status(500).json({ message: "Erreur lors de la récupération des fichiers." });
+      }
+    });
+  });
+});
+
 
 
 router.get('/docs', async ({ view }) => {
@@ -2667,6 +2792,15 @@ router.get('/users/:id', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       console.log('[GET /users/:id] Avant appel controller show')
       return user.show(ctx)  // Méthode pour récupérer l'utilisateur
+    })
+  })
+}).middleware([throttle])
+
+router.get('/users/:id/info', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /users/:id/info] Avant appel controller show')
+      return userinfo.show(ctx)  // Méthode pour récupérer l'utilisateur
     })
   })
 }).middleware([throttle])
@@ -3442,106 +3576,7 @@ router.get('/csrf-check', async ({ response }) => {
 })
 
 
-router.get('/dashboard', async ({ request, response, inertia }) => {
-  const token = request.cookie('token');
 
-  if (!token) {
-    return response.redirect('/login');
-  }
-
-  try {
-    // ✅ Vérification du JWT
-    const payload = verifyJwtToken(token) as { id: string; email: string };
-    const currentUser = await User.query().where('id', payload.id).preload('role').first();
-
-    if (!currentUser) {
-      return response.redirect('/login');
-    }
-
-    // ✅ Charger tous les utilisateurs avec leur rôle
-    const users = await User.query().preload('role');
-
-    // ✅ Filtrage des patients et docteurs
-    const patients = users.filter((u) => u.role && u.role.label.toLowerCase() === 'patient');
-    const doctors = users.filter(
-      (u) => u.role && ['doctor', 'medecin'].includes(u.role.label.toLowerCase())
-    );
-
-    // ✅ Statistiques docteurs
-    const totalDoctors = doctors.length;
-    const activeDoctors = doctors.filter(
-      (u) => u.accountStatus?.toLowerCase() === 'active'
-    ).length;
-    const inactiveDoctors = totalDoctors - activeDoctors;
-    const doctorPercentActive = totalDoctors
-      ? Math.round((activeDoctors / totalDoctors) * 100)
-      : 0;
-
-    // ✅ Statistiques patients
-    const totalPatients = patients.length;
-    const activePatients = patients.filter(
-      (p) => p.accountStatus?.toLowerCase() === 'active'
-    ).length;
-    const inactivePatients = totalPatients - activePatients;
-    const patientPercentActive = totalPatients
-      ? Math.round((activePatients / totalPatients) * 100)
-      : 0;
-
-    // ✅ Récupérer tous les paiements validés et calculer la somme
-    const totalPaiements = await Paiement.query()
-      .where('statut', 'valide') // tu peux enlever ce filtre si tu veux TOUT
-      .sum('montant as total');
-
-    const montantTotalPlateforme = totalPaiements[0].$extras.total || 0;
-
-    // ✅ Version "safe" des utilisateurs (sans mot de passe ou infos sensibles)
-    const safeUsers = users.map((user) => ({
-      id: user.id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      phone: user.phone,
-      specialty: user.specialites, 
-      accountStatus: user.accountStatus,
-      profileImage: user.profileImage,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      role: user.role ? user.role.label : null,
-    }));
-
-    // ✅ Rendu Inertia
-    return inertia.render('dashboard/dashboard', {
-      user: {
-        id: currentUser.id,
-        firstName: currentUser.first_name,
-        lastName: currentUser.last_name,
-        email: currentUser.email,
-        phone: currentUser.phone,
-      
-        accountStatus: currentUser.accountStatus,
-        profileImage: currentUser.profileImage,
-        createdAt: currentUser.createdAt,
-        updatedAt: currentUser.updatedAt,
-        role: currentUser.role ? currentUser.role.label : null,
-      },
-      users: safeUsers,
-      stats: {
-        totalPatients,
-        activePatients,
-        inactivePatients,
-        percentActive: patientPercentActive,
-        totalDoctors,
-        activeDoctors,
-        inactiveDoctors,
-        percentDoctorsActive: doctorPercentActive,
-        montantTotalPlateforme, // 💰 Montant total envoyé au frontend
-      },
-    });
-  } catch (error: any) {
-    console.error('[Dashboard] Erreur JWT :', error.message);
-    return response.redirect('/login');
-  }
-});
 
 
 
