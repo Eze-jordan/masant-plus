@@ -60,6 +60,10 @@ public about?: string             // ✅ nouvelle colonne
 public groupeSanguin?: string 
 
 @column()
+public genre?: string
+
+
+@column()
 public anneeExperience?: number
 
 
