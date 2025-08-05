@@ -8,7 +8,7 @@
       "~/*": ["src/*"]
     }
   },
-  "exclude": [ "start/**/*.ts", "node_modules", "build"]
+  "exclude": ["./inertia/**/*", "start/**/*.ts", "node_modules", "build"]
 
   
 }
