@@ -3544,34 +3544,10 @@ router.get('/', async ({ inertia,  }) => {
 })
 
 
-router.get('/auth', async ({ inertia }) => {
-  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
-})
-
-router.get('/register', async ({ inertia }) => {
-  return inertia.render('auth/register') // assure-toi que ce composant existe
-})
-
-router.get('/login', async ({ inertia }) => {
-  return inertia.render('auth/login') // correspond à resources/js/Pages/auth/login.tsx
-})
 
 
 
 
-
-router.get('/auth/rest-password', async ({ inertia }) => {
-  return inertia.render('auth/rest-password')
-})
-
-// routes.ts
-router.get('/logins', async ({ inertia }) => {
-  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
-})
-
-router.get('/registers', async ({ inertia }) => {
-  return inertia.render('auth/register') // assure-toi que ce composant existe
-})
 
 
 
@@ -3621,10 +3597,7 @@ router.get('/404', async ({ inertia }) => {
 
 
 
-// Route fallback - doit être la dernière route
-router.get('*', async ({ inertia }) => {
-  return inertia.render('errors/not_found', { status: 404 })
-})
+
 
 
 router.get('/doctor', async ({ inertia }) => {
