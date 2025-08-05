@@ -2538,10 +2538,10 @@ router.get('/paiements/gains-mois/:userId', async (ctx) => {
 }).middleware([throttle])
 ///
 
-router.post('/scrape', async (ctx) => {
+router.post('/medicament', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      return medicament.scrapeMedicament(ctx)
+      return medicament.store(ctx)
     })
   })
 }).middleware([throttle])
