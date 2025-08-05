@@ -2861,7 +2861,17 @@ router.get('/disponibilites', async (ctx) => {
   })
 }).middleware([throttle])
 
-// Route GET /disponibilites/:id (Affiche une disponibilité spécifique par ID)
+router.get('/disponibilites/:id/creneaux', async (ctx) => {
+  console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
+  
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return  disponibilityuser.createCreneaux(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route GET //disponibilites/:id/creneaux (Affiche une disponibilité spécifique par ID)
 router.get('/disponibilites/:id', async (ctx) => {
   console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
   
