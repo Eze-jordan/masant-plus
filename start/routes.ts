@@ -3594,11 +3594,27 @@ router.get('/404', async ({ inertia }) => {
   return inertia.render('errors/not_found')
 })
 
+// Routes d'authentification
+router.get('/auth', async ({ inertia }) => {
+  return inertia.render('auth/login')
+})
 
+router.get('/register', async ({ inertia }) => {
+  return inertia.render('auth/register')
+})
 
+router.get('/login', async ({ inertia }) => {
+  return inertia.render('auth/login')
+})
 
+router.get('/auth/rest-password', async ({ inertia }) => {
+  return inertia.render('auth/rest-password')
+})
 
-
+// Route fallback - doit être la dernière route
+router.get('*', async ({ inertia }) => {
+  return inertia.render('errors/not_found', { status: 404 })
+})
 
 router.get('/doctor', async ({ inertia }) => {
   return inertia.render('/dashboard/docteurs')
