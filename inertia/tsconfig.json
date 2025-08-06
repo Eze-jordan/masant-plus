@@ -1,12 +1,21 @@
 {
-  "extends": "@adonisjs/tsconfig/tsconfig.client.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "moduleResolution": "bundler",
     "module": "ESNext",
+    "target": "ESNext",
     "jsx": "react-jsx",
-    "paths": {
-      "~/*": ["./*"],
-    },
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true
   },
-  "include": ["./**/*.ts", "./**/*.tsx"],
+  "include": [
+    "**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
