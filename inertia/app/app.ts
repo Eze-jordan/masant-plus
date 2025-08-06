@@ -2,8 +2,9 @@
 /// <reference path="../../config/inertia.ts" />
 
 import '../css/app.css';
-import { hydrateRoot } from 'react-dom/client'
-import { createInertiaApp } from '@inertiajs/react';
+import { createApp, h } from 'vue'
+import type { DefineComponent } from 'vue'
+import { createInertiaApp } from '@inertiajs/vue3'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 
 const appName = import.meta.env.VITE_APP_NAME || 'AdonisJS'
@@ -15,14 +16,16 @@ createInertiaApp({
 
   resolve: (name) => {
     return resolvePageComponent(
-      `../pages/${name}.tsx`,
-      import.meta.glob('../pages/**/*.tsx'),
+      `../pages/${name}.vue`,
+      import.meta.glob<DefineComponent>('../pages/**/*.vue'),
     )
   },
 
-  setup({ el, App, props }) {
+  setup({ el, App, props, plugin }) {
     
-    hydrateRoot(el, <App {...props} />)
+    createApp({ render: () => h(App, props) })
     
+      .use(plugin)
+      .mount(el)
   },
-});
+})
