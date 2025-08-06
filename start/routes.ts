@@ -3598,9 +3598,6 @@ router.get('/auth/rest-password', async ({ inertia }) => {
 })
 
 // Route fallback - doit être la dernière route
-router.get('*', async ({ inertia }) => {
-  return inertia.render('errors/not_found', { status: 404 })
-})
 
 router.get('/doctor', async ({ inertia }) => {
   return inertia.render('/dashboard/docteurs')
