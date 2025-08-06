@@ -7,8 +7,10 @@
   "scripts": {
     "start": "node build/bin/server.js",
     "build": "node ace build",
+    "build:production": "node scripts/build-simple.js",
     "dev": "node ace serve --hmr",
     "test": "node ace test",
+    "check:ssr": "node scripts/check-ssr.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
