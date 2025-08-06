@@ -9,9 +9,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [
-    // Single adonisjs plugin declaration
+    // AdonisJS plugin
     adonisjs({
-      entrypoints: ['inertia/app/app.tsx'], // Use .tsx if using React
+      entrypoints: ['inertia/app/app.tsx'],
       reload: ['resources/views/**/*.edge']
     }),
 
@@ -24,9 +24,7 @@ export default defineConfig({
     }),
 
     // React plugin
-    react(),
-    inertia({ ssr: { enabled: true, entrypoint: 'inertia/app/ssr.tsx' } }),
-    adonisjs({ entrypoints: ['inertia/app/app.tsx'], reload: ['resources/views/**/*.edge'] })
+    react()
   ],
   css: {
     postcss: {
@@ -40,6 +38,20 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '~/': `${getDirname(import.meta.url)}/inertia/`
+    }
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        app: 'inertia/app/app.tsx',
+        ssr: 'inertia/app/ssr.tsx'
+      },
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          inertia: ['@inertiajs/react']
+        }
+      }
     }
   }
 })
