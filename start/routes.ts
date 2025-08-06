@@ -3537,20 +3537,6 @@ router.get('/disponibilites/doctor/:id', async (ctx) => {
 })
 
 
-
-
-router.get('/', async ({ inertia,  }) => {
-  return inertia.render('home')
-})
-
-
-
-
-
-
-
-
-
 router.post('/logins', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3711,5 +3697,18 @@ router.get('/doctorDisponibilities', async (ctx) => {
     })
   })
 }).middleware([throttle])
+
+router.get('/medicaments', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return medicament.index(ctx)
+    })
+  })
+}).middleware([throttle])
+router.on('/').renderInertia('home')
+
+
+
+
 
 
