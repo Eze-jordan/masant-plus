@@ -6,6 +6,7 @@ import autoprefixer from 'autoprefixer'
 import path from 'path'
 import tailwindcss from '@tailwindcss/postcss'
 import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [
@@ -24,7 +25,10 @@ export default defineConfig({
     }),
 
     // React plugin
-    react()
+    react(),
+    inertia({ ssr: { enabled: false } }),
+    vue(),
+    adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] })
   ],
   css: {
     postcss: {
@@ -55,6 +59,10 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', '@inertiajs/react']
+    include: ['react', 'react-dom', '@inertiajs/react'],
+    exclude: ['@adonisjs/core']
+  },
+  define: {
+    'process.env.NODE_ENV': '"production"'
   }
 })

@@ -3703,28 +3703,9 @@ router.get('/medicaments', async (ctx) => {
   })
 }).middleware([throttle])
 // Route d'accueil avec le contrôleur home
-router.get('/', async (ctx) => {
-  const controller = new (await import('#controllers/home_controller')).default()
-  return await controller.home(ctx)
-})
+router.on('/').renderInertia('home')
 
 
-// Route pour vérifier le statut SSR
-router.get('/ssr-status', async (ctx) => {
-  const controller = new (await import('#controllers/ssr_status_controller')).default()
-  return await controller.status(ctx)
-})
-
-// Routes de test
-router.get('/test', async (ctx) => {
-  const controller = new (await import('#controllers/test_controller')).default()
-  return await controller.test(ctx)
-})
-
-router.get('/home-test', async (ctx) => {
-  const controller = new (await import('#controllers/test_controller')).default()
-  return await controller.homeTest(ctx)
-})
 
 
 
