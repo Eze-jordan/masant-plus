@@ -14,17 +14,19 @@ export default defineConfig({
       entrypoints: ['inertia/app/app.tsx'], // Use .tsx if using React
       reload: ['resources/views/**/*.edge']
     }),
-    
+
     // Inertia plugin with SSR
     inertia({
-      ssr: { 
-        enabled: true, 
-        entrypoint: 'inertia/app/ssr.tsx' 
+      ssr: {
+        enabled: true,
+        entrypoint: 'inertia/app/ssr.tsx'
       }
     }),
-    
+
     // React plugin
-    react()
+    react(),
+    inertia({ ssr: { enabled: true, entrypoint: 'inertia/app/ssr.tsx' } }),
+    adonisjs({ entrypoints: ['inertia/app/app.tsx'], reload: ['resources/views/**/*.edge'] })
   ],
   css: {
     postcss: {
