@@ -8,6 +8,7 @@ import path from 'path'
 
 // Import Tailwind CSS as a PostCSS plugin
 import tailwindcss from '@tailwindcss/postcss'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [
@@ -17,7 +18,10 @@ export default defineConfig({
       reload: ['resources/views/**/*.edge'],
     }),
     inertia({ ssr: { enabled: false } }),
-    adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] })
+    adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] }),
+    inertia({ ssr: { enabled: true, entrypoint: 'inertia/app/ssr.tsx' } }),
+    react(),
+    adonisjs({ entrypoints: ['inertia/app/app.tsx'], reload: ['resources/views/**/*.edge'] })
   ],
   css: {
     postcss: {
