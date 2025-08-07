@@ -136,9 +136,9 @@ public async createCreneaux({ params, request, response }: HttpContextContract) 
   }
 
   try {
-    // Récupérer la disponibilité existante par son ID (pas de nouvelle création ici)
+    // Récupérer la disponibilité existante par son ID
     const disponibilite = await Disponibilite.findOrFail(params.id);
-
+    
     // Valider les horaires
     const { debut, fin, valid } = this.validateHeures(heureDebut, heureFin);
     if (!valid) {
@@ -151,7 +151,7 @@ public async createCreneaux({ params, request, response }: HttpContextContract) 
     // Créer chaque créneau
     for (const creneau of creneaux) {
       await Creneau.create({
-        idDisponibilite: disponibilite.id,  // Lier la disponibilité avec le créneau
+        idDisponibilite: disponibilite.id, // Utiliser l'ID de la disponibilité existante
         heureDebut: creneau.heureDebut ?? '',
         heureFin: creneau.heureFin ?? '',
         disponible: creneau.disponible,
@@ -170,11 +170,14 @@ public async createCreneaux({ params, request, response }: HttpContextContract) 
       creneauxCount: creneaux.length,
     });
   } catch (error: any) {
+    if (error.code === 'E_ROW_NOT_FOUND') {
+      return response.status(404).send({ message: 'Disponibilité introuvable.' });
+    }
     console.error(error);
     return response.status(500).send({ message: error.message });
   }
 }
-  
+
 
 
 
