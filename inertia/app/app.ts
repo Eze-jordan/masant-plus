@@ -2,7 +2,7 @@
 /// <reference path="../../config/inertia.ts" />
 
 import '../css/app.css';
-import { createApp, h } from 'vue'
+import { createSSRApp, h } from 'vue'
 import type { DefineComponent } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
@@ -23,7 +23,7 @@ createInertiaApp({
 
   setup({ el, App, props, plugin }) {
     
-    createApp({ render: () => h(App, props) })
+    createSSRApp({ render: () => h(App, props) })
     
       .use(plugin)
       .mount(el)
