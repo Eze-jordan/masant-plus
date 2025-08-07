@@ -6,14 +6,14 @@ import { EtatRDV } from '../enum/enums.js';
 import Appointment from '#models/appointment';
 
 export default class sendeondeController {
-  
+
   public static async run() {
     try {
       console.log('Démarrage de l\'envoi des rappels...');
       const now = DateTime.local();
       const todayStart = now.startOf('day');
       const todayEnd = now.endOf('day');
-      
+
       // Récupérer les rendez-vous d'aujourd'hui
       const upcomingAppointments = await Appointment.query()
         .whereBetween('dateRdv', [todayStart.toISO(), todayEnd.toISO()])
@@ -34,7 +34,7 @@ export default class sendeondeController {
       for (const appointment of upcomingAppointments) {
         await this.processAppointmentReminder(appointment, now);
       }
-      
+
       console.log('Rappels envoyés avec succès.');
     } catch (error) {
       console.error('Erreur lors de l\'envoi des rappels:', error);
@@ -42,11 +42,14 @@ export default class sendeondeController {
     }
   }
 
-  private static async processAppointmentReminder(appointment: Appointment, now: DateTime<true>,) {
-    const { patient, doctor } = appointment;
+  private static async processAppointmentReminder(appointment: Appointment, now: DateTime) {
+    const { patient, doctor,  } = appointment;
+    console.log(now)
     const reminderMessage = `Rappel: Votre rendez-vous avec Dr. ${doctor.first_name} ${doctor.last_name} est prévu aujourd'hui à ${appointment.heureDebut}.`;
 
     try {
+      console.log(`Envoi de rappel pour RDV ID ${appointment.id}...`);
+
       // Envoi des notifications push
       await Promise.all([
         patient.expoPushToken ? this.sendPushNotification(patient.expoPushToken, reminderMessage) : Promise.resolve(),
@@ -58,6 +61,8 @@ export default class sendeondeController {
         { idUser: patient.id, description: reminderMessage },
         { idUser: doctor.id, description: reminderMessage }
       ]);
+
+      console.log(`Rappel envoyé pour le RDV ID ${appointment.id}`);
 
     } catch (error) {
       console.error(`Erreur sur le RDV ${appointment.id}:`, error);
@@ -72,22 +77,28 @@ export default class sendeondeController {
       body: message,
     };
 
-    const response = await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(notificationPayload),
-    });
+    try {
+      const response = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(notificationPayload),
+      });
 
-    const data: any = await response.json();
-    if (data && data.errors) {
-      throw new Error(JSON.stringify(data.errors));
+      const data: any = await response.json();
+      if (data && data.errors) {
+        throw new Error(JSON.stringify(data.errors));
+      }
+      console.log('Notification envoyée avec succès.');
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de la notification push:', error);
+      throw error; // Rethrow pour capturer dans le bloc try-catch principal
     }
-    return data;
+  }
 }
- }
 
 class Scheduler {
   private static readonly JOB_KEY = 'reminder_job:last_execution';
@@ -101,11 +112,14 @@ class Scheduler {
         const lastExec = await redis.get(this.JOB_KEY);
         if (lastExec) {
           console.log('Dernière exécution:', lastExec);
+        } else {
+          console.log('Aucune exécution précédente trouvée.');
         }
 
+        // Exécution des rappels
         await sendeondeController.run();
         await redis.set(this.JOB_KEY, new Date().toISOString());
-        
+
         console.log('[%s] Job terminé avec succès', new Date().toISOString());
       } catch (error) {
         console.error('Échec du job de rappel:', error);
