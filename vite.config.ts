@@ -9,7 +9,7 @@ import autoprefixer from 'autoprefixer'
 import tailwindcss from '@tailwindcss/postcss'
 
 export default defineConfig({
-  plugins: [inertia({ ssr: { enabled: false } }), vue(), adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] })],
+  plugins: [inertia({ ssr: { enabled: true , entrypoint: 'inertia/app/app.ts', } }), vue(), adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] })],
   css: {
     postcss: {
       plugins: [
