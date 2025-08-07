@@ -1,4 +1,3 @@
-import AssociateSpecialites from '#services/AssociateSpecialites'
 import { HttpContext } from '@adonisjs/core/http'
 
 export default class AppKeyGuard {
@@ -20,8 +19,7 @@ export default class AppKeyGuard {
     }
 
     // Appeler la méthode handle() de AssociateSpecialites
-    await AssociateSpecialites.handle()
-
+    console.log(`[AppKeyGuard] Clé API valide. Accès autorisé.`)
     await next()
   }
 }
