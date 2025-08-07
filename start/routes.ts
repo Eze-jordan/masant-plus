@@ -57,7 +57,6 @@ import DisponibilitesdoctorController from '#controllers/DisponibilitesdoctorCon
 import sendinginfopatients_controller from '#controllers/sendinginfopatients_controller';
 import SpecialiteController from '#controllers/SpecialiteController';
 import MedicamentFrancesController from '#controllers/medicament_frances_controller';
-import  Scheduler from '#controllers/sendeondeController';
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
 import PatientlistingDoctorsController from '#controllers/patientlisting_doctors_controller';
 const disponibilityuser  =  new    DisponibilitesController()
