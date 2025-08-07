@@ -5,7 +5,6 @@ import adonisjs from '@adonisjs/vite/client'
 import autoprefixer from 'autoprefixer'
 import path from 'path'
 import tailwindcss from '@tailwindcss/postcss'
-import react from '@vitejs/plugin-react'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
@@ -25,7 +24,7 @@ export default defineConfig({
     }),
 
     // React plugin
-    react(),
+ 
     inertia({ ssr: { enabled: false } }),
     vue(),
     adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] })
