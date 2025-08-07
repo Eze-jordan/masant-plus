@@ -4,23 +4,22 @@ import inertia from '@adonisjs/inertia/client'
 import vue from '@vitejs/plugin-vue'
 import adonisjs from '@adonisjs/vite/client'
 import autoprefixer from 'autoprefixer'
-
-// Import Tailwind CSS as a PostCSS plugin
 import tailwindcss from '@tailwindcss/postcss'
 
+// Configuration SSR
 export default defineConfig({
   plugins: [
     inertia({
       ssr: {
         enabled: true,
-        entrypoint: 'inertia/app/app.ts',
-      }
+        entrypoint: 'inertia/app/app.ts', // Assure-toi que le point d'entrée SSR est correct
+      },
     }),
     vue(),
     adonisjs({
       entrypoints: ['inertia/app/app.ts'],
       reload: ['resources/views/**/*.edge'],
-    })
+    }),
   ],
   css: {
     postcss: {
@@ -37,9 +36,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'public/assets',   // Vérifie le répertoire de sortie
-    manifest: true,             // Génère le fichier manifest.json
+    manifest: true,
     rollupOptions: {
       input: 'inertia/app/app.ts',
-    }
-  }
+    },
+    ssr: true,                  // Active SSR dans Vite
+    ssrManifest: true,  
+     }       // Génère le manifeste SSR},
 })
