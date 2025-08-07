@@ -9,16 +9,17 @@ const inertiaConfig = defineConfig({
 
   /**
    * Data that should be shared with all rendered pages
-   
+   */
   sharedData: {
-   user: (ctx) => ctx.inertia.always(() => ctx.auth.user),
+    // user: (ctx) => ctx.inertia.always(() => ctx.auth.user),
   },
-*/
+
   /**
    * Options for the server-side rendering
    */
   ssr: {
     enabled: false,
+    entrypoint: 'inertia/app/ssr.ts'
   }
 })
 

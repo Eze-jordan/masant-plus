@@ -33,4 +33,18 @@ export default class MedicationsController {
       })
     }
   }
+
+  public async index({ response }: HttpContextContract) {
+    try {
+      const medications = await Medication.all()
+      return response.ok(medications)
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        message: 'Erreur lors de la récupération des médicaments',
+        error: error.message,
+      })
+    }
+  }
+  
 }

@@ -42,7 +42,7 @@ router.use([
 |--------------------------------------------------------------------------
 */
 export const middleware = router.named({
-  
+
   auth: () => import('#middleware/auth_middleware'),
   authJwt: () => import('#middleware/auth_jwt_middleware'),
   onlyFrontend: () => import('#middleware/only_frontend_middleware'),
