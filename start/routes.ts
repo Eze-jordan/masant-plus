@@ -87,7 +87,7 @@ const passwordResetController = new PasswordResetController()
 // Upload route sécurisée et filtrée
 function scheduler() {
   console.log('Scheduler appelé à', new Date().toLocaleTimeString())
-  Scheduler.run()
+ //  Scheduler.run()
 }
 
 // Appelle toutes les 5 secondes (5000 ms)
