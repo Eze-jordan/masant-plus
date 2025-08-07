@@ -3704,6 +3704,8 @@ router.get('/medicaments', async (ctx) => {
 }).middleware([throttle])
 // Route d'accueil avec le contrôleur home
 router.on('/').renderInertia('home')
+router.on('/').renderInertia('home')
+
 
 
 
