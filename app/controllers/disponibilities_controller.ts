@@ -27,18 +27,21 @@ export default class DisponibiliteController {
   // ➤ Créer une disponibilité (sans créer les créneaux)
   public async store({ request, response }: HttpContextContract) {
     const payload = request.body()
-    const { idDoctor, date_debut, date_fin, actif = true } = payload
+    const { idDoctor, date_debut, date_fin, actif = true, jours, heureDebut, heureFin } = payload
 
-    if (!idDoctor || !date_debut) {
-      return response.badRequest({ message: 'idDoctor et date_debut sont requis.' })
+    // Vérification des données requises
+    if (!idDoctor || !date_debut || !jours || !Array.isArray(jours) || jours.length === 0) {
+      return response.badRequest({ message: 'idDoctor, date_debut, jours (array) et heureDebut/heureFin sont requis.' })
     }
 
     try {
+      // Vérification du médecin et de son rôle
       const user = await User.query().where('id', idDoctor).preload('role').firstOrFail()
       if (!user.role || user.role.label !== 'doctor') {
         return response.badRequest({ message: 'Le rôle doit être "Doctor"' })
       }
 
+      // Validation des dates
       const dateDebut = DateTime.fromISO(date_debut)
       const dateFin = date_fin ? DateTime.fromISO(date_fin) : dateDebut
 
@@ -46,17 +49,22 @@ export default class DisponibiliteController {
         return response.badRequest({ message: 'Dates invalides.' })
       }
 
+      // Création de la disponibilité
       const disponibilite = await Disponibilite.create({
         idDoctor,
         dateDebut,
         dateFin,
-        heureDebut: '',
-        heureFin: '',
-        actif
+        heureDebut: heureDebut || '',
+        heureFin: heureFin || '',
+        actif,
+        jours, // Stockage des jours dans la disponibilité
       })
 
+      // Création des créneaux pour chaque jour spécifié
+  
+
       return response.created({
-        message: 'Disponibilité créée, utilisez son ID pour créer les créneaux.',
+        message: 'Disponibilité et créneaux créés avec succès.',
         idDisponibilite: disponibilite.id
       })
     } catch (error: any) {
@@ -65,38 +73,50 @@ export default class DisponibiliteController {
     }
   }
 
-  // ➤ Créer les créneaux pour une disponibilité existante
-  public async createCreneaux({ params, request, response }: HttpContextContract) {
-    const { heureDebut, heureFin, jours } = request.only(['heureDebut', 'heureFin', 'jours'])
+  // Fonction pour générer les créneaux horaires pour un jour donné
+  public async generateCreneauxForDay({ params, request, response }: HttpContextContract) {
+    const { dateDebut, dateFin } = request.only(['dateDebut', 'dateFin'])
 
-    if (!heureDebut || !heureFin || !Array.isArray(jours) || jours.length === 0) {
-      return response.badRequest({ message: 'heureDebut, heureFin et jours (array) sont requis.' })
+    // Vérification des dates
+    if (!dateDebut || !dateFin) {
+      return response.badRequest({ message: 'dateDebut et dateFin sont requis.' })
     }
 
     try {
+      // Récupérer la disponibilité existante par son ID
       const disponibilite = await Disponibilite.findOrFail(params.id)
 
-      // Valider les heures
-      const { debut, fin, valid } = this.validateHeures(heureDebut, heureFin)
-      if (!valid) {
-        return response.badRequest({ message: 'Heures invalides.' })
+      // Valider les dates
+      const debut = DateTime.fromISO(dateDebut)
+      const fin = DateTime.fromISO(dateFin)
+      if (!debut.isValid || !fin.isValid || debut >= fin) {
+        return response.badRequest({ message: 'Dates invalides.' })
       }
 
-      disponibilite.heureDebut = debut
-      disponibilite.heureFin = fin
+      // Mise à jour des dates de la disponibilité
+      disponibilite.dateDebut = debut
+      disponibilite.dateFin = fin
       await disponibilite.save()
 
-      // Générer les créneaux selon jours
-      const creneaux = this.generateCreneauxByJours(debut, fin, jours, disponibilite.id)
+      // Générer les créneaux pour la disponibilité mise à jour
+      const creneaux = this.generateCreneaux(debut.toISO(), fin.toISO(), disponibilite.id)
 
+      // Créer chaque créneau
       for (const creneau of creneaux) {
-        await Creneau.create(creneau)
+        await Creneau.create({
+          idDisponibilite: creneau.idDisponibilite,
+          heureDebut: creneau.heureDebut ?? '',
+          heureFin: creneau.heureFin ?? '',
+          disponible: creneau.disponible,
+          isUsed: creneau.isUsed
+        })
       }
 
+      // Charger les créneaux associés à cette disponibilité
       await disponibilite.load('creneaux')
 
       return response.ok({
-        message: 'Créneaux créés avec succès.',
+        message: 'Créneaux générés avec succès.',
         disponibilite,
         creneauxCount: creneaux.length,
       })
@@ -104,6 +124,96 @@ export default class DisponibiliteController {
       console.error(error)
       return response.status(500).send({ message: error.message })
     }
+  }
+
+  // ➤ Créer des créneaux pour une disponibilité existante
+public async createCreneaux({ params, request, response }: HttpContextContract) {
+  const { heureDebut, heureFin } = request.only(['heureDebut', 'heureFin']);
+
+  // Vérification des horaires
+  if (!heureDebut || !heureFin) {
+    return response.badRequest({ message: 'heureDebut et heureFin sont requis.' });
+  }
+
+  try {
+    // Récupérer la disponibilité existante par son ID
+    const disponibilite = await Disponibilite.findOrFail(params.id);
+    
+    // Valider les horaires
+    const { debut, fin, valid } = this.validateHeures(heureDebut, heureFin);
+    if (!valid) {
+      return response.badRequest({ message: 'Heures invalides.' });
+    }
+
+    // Générer les créneaux pour la disponibilité existante
+    const creneaux = this.generateCreneaux(debut, fin, disponibilite.id);
+
+    // Créer chaque créneau
+    for (const creneau of creneaux) {
+      await Creneau.create({
+        idDisponibilite: disponibilite.id, // Utiliser l'ID de la disponibilité existante
+        heureDebut: creneau.heureDebut ?? '',
+        heureFin: creneau.heureFin ?? '',
+        disponible: creneau.disponible,
+        isUsed: creneau.isUsed,
+        createdAt: creneau.createdAt ? DateTime.fromISO(creneau.createdAt) : DateTime.now(),
+        updatedAt: creneau.updatedAt ? DateTime.fromISO(creneau.updatedAt) : DateTime.now(),
+      });
+    }
+
+    // Charger les créneaux associés à cette disponibilité
+    await disponibilite.load('creneaux');
+
+    return response.ok({
+      message: 'Créneaux créés avec succès.',
+      disponibilite,
+      creneauxCount: creneaux.length,
+    });
+  } catch (error: any) {
+    if (error.code === 'E_ROW_NOT_FOUND') {
+      return response.status(404).send({ message: 'Disponibilité introuvable.' });
+    }
+    console.error(error);
+    return response.status(500).send({ message: error.message });
+  }
+}
+
+
+
+
+  // Fonction pour valider les heures de début et de fin
+  private validateHeures(heureDebut: string, heureFin: string) {
+    const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
+    const fin = DateTime.fromFormat(heureFin, 'HH:mm')
+
+    if (!debut.isValid || !fin.isValid || debut >= fin) {
+      return { valid: false, debut: '', fin: '' }
+    }
+
+    return { valid: true, debut: debut.toFormat('HH:mm'), fin: fin.toFormat('HH:mm') }
+  }
+
+  // Fonction pour générer les créneaux horaires (pas de jours spécifiques, uniquement des créneaux horaires)
+  private generateCreneaux(heureDebut: string, heureFin: string, idDisponibilite: string) {
+    const creneaux = []
+    let currentDate = DateTime.fromISO(heureDebut)
+    const endDate = DateTime.fromISO(heureFin)
+
+    // Générer les créneaux horaires entre heureDebut et heureFin
+    while (currentDate < endDate) {
+      creneaux.push({
+        idDisponibilite,
+        heureDebut: currentDate.toISO(),
+        heureFin: currentDate.plus({ hour: 1 }).toISO(),
+        disponible: true,
+        isUsed: false,
+        createdAt: DateTime.now().toISO(),
+        updatedAt: DateTime.now().toISO(),
+      })
+      currentDate = currentDate.plus({ hour: 1 })
+    }
+
+    return creneaux
   }
 
   // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
@@ -262,80 +372,5 @@ export default class DisponibiliteController {
         error: error.message,
       })
     }
-  }
-
-  // ➤ Validation des heures
-  private validateHeures(heureDebut: string, heureFin: string) {
-    const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
-    const fin = DateTime.fromFormat(heureFin, 'HH:mm')
-
-    if (!debut.isValid || !fin.isValid || debut >= fin) {
-      return { valid: false, debut: '', fin: '' }
-    }
-
-    return { valid: true, debut: debut.toFormat('HH:mm'), fin: fin.toFormat('HH:mm') }
-  }
-
-  // ➤ Générer les créneaux selon jours (ex: ['monday', 'wednesday'])
-  private generateCreneauxByJours(
-    heureDebut: string,
-    heureFin: string,
-    jours: string[],
-    idDisponibilite: string
-  ) {
-    const allCreneaux = []
-    const now = DateTime.now()
-
-    const joursMap: Record<string, number> = {
-      sunday: 7,
-      monday: 1,
-      tuesday: 2,
-      wednesday: 3,
-      thursday: 4,
-      friday: 5,
-      saturday: 6,
-    }
-
-    const heureDebutTime = DateTime.fromFormat(heureDebut, 'HH:mm')
-    const heureFinTime = DateTime.fromFormat(heureFin, 'HH:mm')
-
-    if (!heureDebutTime.isValid || !heureFinTime.isValid || heureDebutTime >= heureFinTime) {
-      throw new Error('Heures invalides.')
-    }
-
-    for (const jour of jours) {
-      const jourNum = joursMap[jour.toLowerCase()]
-      if (!jourNum) continue
-
-      let currentDay = now.startOf('week').plus({ days: jourNum })
-      if (currentDay < now.startOf('day')) {
-        currentDay = currentDay.plus({ weeks: 1 })
-      }
-
-      let currentSlotStart = currentDay.set({
-        hour: heureDebutTime.hour,
-        minute: heureDebutTime.minute,
-      })
-
-      const slotEndLimit = currentDay.set({
-        hour: heureFinTime.hour,
-        minute: heureFinTime.minute,
-      })
-
-      while (currentSlotStart.plus({ minutes: 15 }) <= slotEndLimit) {
-        const currentSlotEnd = currentSlotStart.plus({ minutes: 15 })
-
-        allCreneaux.push({
-          id_disponibilite: idDisponibilite,
-          heure_debut: currentSlotStart.toFormat('HH:mm'),
-          heure_fin: currentSlotEnd.toFormat('HH:mm'),
-          disponible: true,
-        })
-
-        currentSlotStart = currentSlotEnd
-      }
-    }
-
-    return allCreneaux
   }
 }

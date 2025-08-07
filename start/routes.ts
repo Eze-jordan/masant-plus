@@ -2853,7 +2853,7 @@ router.get('/disponibilites', async (ctx) => {
   })
 }).middleware([throttle])
 
-router.get('/disponibilites/:id/creneaux', async (ctx) => {
+router.post('/disponibilites/:id/creneaux', async (ctx) => {
   console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
   
   await onlyFrontend.handle(ctx, async () => {
@@ -3537,6 +3537,13 @@ router.post('/logins', async (ctx) => {
   })
 })
 
+router.post('/adminlogin', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await loginadmin.admin(ctx)
+    })
+  })
+})
 
 router.get('/specialities', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {

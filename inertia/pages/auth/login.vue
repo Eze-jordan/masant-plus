@@ -143,18 +143,13 @@ onMounted(() => {
   checkIfLoggedIn()
 })
 
+
 const handleLogin = async () => {
   loading.value = true
-
-  const data = {
-    email: email.value,
-    password: password.value,
-    remember_me: rememberMe.value,
-  }
+  const data = { email: email.value, password: password.value, remember_me: rememberMe.value }
 
   try {
-    // Effectuer la requête avec fetch
-    const response = await fetch('/logins', {
+    const response = await fetch('/login', {  // Assure-toi que c'est bien '/login'
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -166,20 +161,20 @@ const handleLogin = async () => {
     const result = await response.json()
 
     if (response.ok) {
-      // Si la connexion est réussie, stocke le token et redirige
-      localStorage.setItem('authToken', result.token) // ou un cookie selon ton système
-       const url = '/dashboard'
-      router.visit(url, { preserveScroll: false })
-     // Affichage du toast de succès
+      console.log('Réponse réussie:', result)
+      localStorage.setItem('authToken', result.token)
+      router.visit('/dashboard', { preserveScroll: false })
     } else {
-      alert(error.value)  // Affichage du toast d'erreur
+      console.error('Erreur de connexion:', result)
+      alert(result.error || 'Erreur de connexion. Veuillez réessayer.')
     }
   } catch (error) {
-    console.error('Erreur de connexion:', error)
-   alert('Erreur de connexion. Veuillez réessayer.') // Affichage du toast d'erreur
+    console.error('Erreur de requête:', error)
+    alert('Erreur de connexion. Veuillez réessayer.')
   } finally {
     loading.value = false
   }
 }
+
 
 </script>
