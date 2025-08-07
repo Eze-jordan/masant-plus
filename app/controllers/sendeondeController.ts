@@ -42,7 +42,7 @@ export default class sendeondeController {
     }
   }
 
-  private static async processAppointmentReminder(appointment: Appointment,) {
+  private static async processAppointmentReminder(appointment: Appointment, now: DateTime<true>,) {
     const { patient, doctor } = appointment;
     const reminderMessage = `Rappel: Votre rendez-vous avec Dr. ${doctor.first_name} ${doctor.last_name} est prévu aujourd'hui à ${appointment.heureDebut}.`;
 
