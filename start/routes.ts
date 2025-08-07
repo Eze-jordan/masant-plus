@@ -3537,44 +3537,6 @@ router.get('/disponibilites/doctor/:id', async (ctx) => {
 })
 
 
-
-
-router.get('/', async ({ inertia,  }) => {
-  return inertia.render('home')
-})
-
-
-router.get('/auth', async ({ inertia }) => {
-  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
-})
-
-router.get('/register', async ({ inertia }) => {
-  return inertia.render('auth/register') // assure-toi que ce composant existe
-})
-
-router.get('/login', async ({ inertia }) => {
-  return inertia.render('auth/login') // correspond à resources/js/Pages/auth/login.tsx
-})
-
-
-
-
-
-router.get('/auth/rest-password', async ({ inertia }) => {
-  return inertia.render('auth/rest-password')
-})
-
-// routes.ts
-router.get('/logins', async ({ inertia }) => {
-  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
-})
-
-router.get('/registers', async ({ inertia }) => {
-  return inertia.render('auth/register') // assure-toi que ce composant existe
-})
-
-
-
 router.post('/logins', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3618,14 +3580,24 @@ router.get('/404', async ({ inertia }) => {
   return inertia.render('errors/not_found')
 })
 
-
-
-
-// Route fallback - doit être la dernière route
-router.get('*', async ({ inertia }) => {
-  return inertia.render('errors/not_found', { status: 404 })
+// Routes d'authentification
+router.get('/auth', async ({ inertia }) => {
+  return inertia.render('auth/login')
 })
 
+router.get('/register', async ({ inertia }) => {
+  return inertia.render('auth/register')
+})
+
+router.get('/login', async ({ inertia }) => {
+  return inertia.render('auth/login')
+})
+
+router.get('/auth/rest-password', async ({ inertia }) => {
+  return inertia.render('auth/rest-password')
+})
+
+// Route fallback - doit être la dernière route
 
 router.get('/doctor', async ({ inertia }) => {
   return inertia.render('/dashboard/docteurs')
@@ -3723,4 +3695,12 @@ router.get('/doctorDisponibilities', async (ctx) => {
   })
 }).middleware([throttle])
 
-
+router.get('/medicaments', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return medicament.index(ctx)
+    })
+  })
+}).middleware([throttle])
+// Route d'accueil avec le contrôleur home
+router.on('/').renderInertia('home')
