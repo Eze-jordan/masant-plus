@@ -5,81 +5,70 @@ import redis from '@adonisjs/redis/services/main';
 import { EtatRDV } from '../enum/enums.js';
 import Appointment from '#models/appointment';
 
-/**
- * La classe SendReminderNotificationsJob gère l'envoi des rappels de rendez-vous
- */
 export default class sendeondeController {
-  
-  /**
-   * Méthode principale pour envoyer les notifications de rappel
-   */
+
   public static async run() {
     try {
       console.log('Démarrage de l\'envoi des rappels...');
       const now = DateTime.local();
-      
-      // Récupérer les rendez-vous dont la date de rendez-vous est proche du délai de rappel
-      const upcomingAppointments = await Appointment.query()
-        .where('dateRdv', '>=', now.toSQLDate())  // Rendez-vous à venir après maintenant
-        .where('dateRdv', '<=', now.plus({ hours: 1 }).toSQLDate())  // Rendez-vous dans l'heure
-        .where('etatRdv', EtatRDV.CONFIRME) // Seulement les rendez-vous confirmés
-        .preload('patient')                 // Charger le patient associé au rendez-vous
-        .preload('doctor');                  // Charger le docteur associé au rendez-vous
+      const todayStart = now.startOf('day');
+      const todayEnd = now.endOf('day');
 
-      // Vérifier si des rendez-vous ont été récupérés
-      console.log('Rendez-vous récupérés:', upcomingAppointments);
+      // Récupérer les rendez-vous d'aujourd'hui
+      const upcomingAppointments = await Appointment.query()
+        .whereBetween('dateRdv', [todayStart.toISO(), todayEnd.toISO()])
+        .where('heureDebut', '>=', now.toFormat('HH:mm:ss'))
+        .where('heureDebut', '<=', now.plus({ hours: 1 }).toFormat('HH:mm:ss'))
+        .where('etatRdv', EtatRDV.CONFIRME)
+        .preload('patient')
+        .preload('doctor');
+
+      console.log(`${upcomingAppointments.length} rendez-vous à rappeler.`);
 
       if (upcomingAppointments.length === 0) {
         console.log('Aucun rendez-vous à rappeler pour cette heure.');
-        return; // Si aucun rendez-vous, sortir de la méthode
+        return;
       }
 
-      // Parcourir chaque rendez-vous pour envoyer des rappels
-      for (let appointment of upcomingAppointments) {
-        const patient = appointment.patient;
-        const doctor = appointment.doctor;
-
-        // Vérifier les tokens
-        console.log('Token Expo Patient:', patient.expoPushToken);
-        console.log('Token Expo Docteur:', doctor.expoPushToken);
-
-        const reminderMessage = `Rappel: Votre rendez-vous avec Dr. ${doctor.first_name} ${doctor.last_name} est prévu le ${appointment.dateRdv.toFormat('DD/MM/YYYY')} à ${appointment.heureDebut}.`;
-
-        // Envoyer le rappel au patient si le token Expo existe
-        if (patient.expoPushToken) {
-          await this.sendPushNotification(patient.expoPushToken, reminderMessage);
-        }
-
-        // Envoyer le rappel au docteur si le token Expo existe
-        if (doctor.expoPushToken) {
-          await this.sendPushNotification(doctor.expoPushToken, reminderMessage);
-        }
-
-        // Créer une notification dans la base de données
-        console.log('Création notification patient');
-        await Notification.create({
-          idUser: patient.id,
-          description: reminderMessage,
-        });
-
-        console.log('Création notification docteur');
-        await Notification.create({
-          idUser: doctor.id,
-          description: reminderMessage,
-        });
+      // Traitement des notifications
+      for (const appointment of upcomingAppointments) {
+        await this.processAppointmentReminder(appointment, now);
       }
-      
+
       console.log('Rappels envoyés avec succès.');
     } catch (error) {
       console.error('Erreur lors de l\'envoi des rappels:', error);
+      throw error; // Propagation pour le scheduler
     }
   }
 
-  /**
-   * Envoie une notification push via Expo.
-   * @param pushToken Le token Expo de l'utilisateur
-   * @param message Le message de la notification
-   */
+  private static async processAppointmentReminder(appointment: Appointment, now: DateTime) {
+    const { patient, doctor,  } = appointment;
+    console.log(now)
+    const reminderMessage = `Rappel: Votre rendez-vous avec Dr. ${doctor.first_name} ${doctor.last_name} est prévu aujourd'hui à ${appointment.heureDebut}.`;
+
+    try {
+      console.log(`Envoi de rappel pour RDV ID ${appointment.id}...`);
+
+      // Envoi des notifications push
+      await Promise.all([
+        patient.expoPushToken ? this.sendPushNotification(patient.expoPushToken, reminderMessage) : Promise.resolve(),
+        doctor.expoPushToken ? this.sendPushNotification(doctor.expoPushToken, reminderMessage) : Promise.resolve()
+      ]);
+
+      // Création des notifications en base
+      await Notification.createMany([
+        { idUser: patient.id, description: reminderMessage },
+        { idUser: doctor.id, description: reminderMessage }
+      ]);
+
+      console.log(`Rappel envoyé pour le RDV ID ${appointment.id}`);
+
+    } catch (error) {
+      console.error(`Erreur sur le RDV ${appointment.id}:`, error);
+    }
+  }
+
   private static async sendPushNotification(pushToken: string, message: string) {
     const notificationPayload = {
       to: pushToken,
@@ -99,39 +88,46 @@ export default class sendeondeController {
       });
 
       const data: any = await response.json();
-      console.log('Réponse Expo:', data);
-
-      if (data && typeof data === 'object' && 'errors' in data) {
-        console.error('Erreur lors de l\'envoi de la notification Expo:', data.errors);
+      if (data && data.errors) {
+        throw new Error(JSON.stringify(data.errors));
       }
+      console.log('Notification envoyée avec succès.');
+      return data;
     } catch (error) {
-      console.error('Erreur lors de l\'envoi de la notification:', error);
+      console.error('Erreur lors de l\'envoi de la notification push:', error);
+      throw error; // Rethrow pour capturer dans le bloc try-catch principal
     }
   }
 }
 
-/**
- * La classe Scheduler gère la planification et l'exécution des tâches récurrentes
- */
 class Scheduler {
-  // Planifier l'exécution de la tâche toutes les heures
+  private static readonly JOB_KEY = 'reminder_job:last_execution';
+
   public static start() {
     cron.schedule('0 * * * *', async () => {
-      console.log('Exécution du job de rappel...');
+      console.log('[%s] Début du job de rappel...', new Date().toISOString());
 
       try {
-        // Ajouter des logs pour diagnostiquer
-        console.log('Démarrer l\'envoi des notifications de rappel...');
-        
-        // Exécution du job de rappel
-        await sendeondeController.run();
+        // Vérification de la dernière exécution
+        const lastExec = await redis.get(this.JOB_KEY);
+        if (lastExec) {
+          console.log('Dernière exécution:', lastExec);
+        } else {
+          console.log('Aucune exécution précédente trouvée.');
+        }
 
-        // Optionnel : Utilisation de Redis pour ajouter un flag ou une entrée dans une file d'attente pour suivre les exécutions
-        await redis.set('lastExecuted', new Date().toISOString());
+        // Exécution des rappels
+        await sendeondeController.run();
+        await redis.set(this.JOB_KEY, new Date().toISOString());
+
+        console.log('[%s] Job terminé avec succès', new Date().toISOString());
       } catch (error) {
-        console.error('Erreur lors de l\'exécution du job de rappel:', error);
+        console.error('Échec du job de rappel:', error);
+        // Ici vous pourriez ajouter une notification d'erreur
       }
     });
+
+    console.log('Scheduler démarré - vérification toutes les heures');
   }
 }
 

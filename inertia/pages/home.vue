@@ -1,524 +1,340 @@
-<template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50 overflow-x-hidden">
-    <!-- Animated Background Elements -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-sky-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse"></div>
-      <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-sky-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-    </div>
-
-    <!-- Header Section -->
-    <header class="relative z-10 bg-white/90 backdrop-blur-xl shadow-lg border-b border-white/30">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-6">
-          <!-- Logo and Brand Name -->
-          <div class="flex items-center group cursor-pointer">
-            <div class="relative">
-              <div class="absolute inset-0 bg-gradient-to-r from-[#165DFB] to-cyan-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div class="relative bg-white p-3 rounded-xl shadow-lg">
-                <Sparkles class="h-7 w-7 text-[#165DFB]" />
-              </div>
-            </div>
-            <h1 class="ml-4 text-3xl font-bold bg-gradient-to-r from-[#165DFB] to-cyan-500 bg-clip-text text-transparent">
-              ma santé plus
-            </h1>
-          </div>
-          
-          <!-- Navigation Links -->
-          <nav class="hidden md:flex space-x-10">
-            <Link href="/" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
-              <span>Accueil</span>
-              <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Link href="/about" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
-              <span>À propos</span>
-              <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Link href="/service" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
-              <span>Services</span>
-              <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Link href="/contact" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
-              <span>Contact</span>
-              <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
-            </Link>
-          </nav>
-          
-          <!-- Connexion Button -->
-          <div class="relative group">
-            <div class="absolute -inset-1 bg-gradient-to-r from-[#165DFB] to-cyan-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
-            <Link href="/login" class="relative bg-white text-[#165DFB] px-8 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-300 shadow-lg border border-[#165DFB]/20">
-              Connexion
-            </Link>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- Hero Section -->
-    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div class="text-center">
-        <!-- Animated Heart Icon -->
-        <div class="relative mb-12">
-          <div class="animate-bounce">
-            <div class="relative inline-block">
-              <div class="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-400 rounded-full blur-2xl opacity-60 animate-pulse"></div>
-              <div class="relative bg-white/95 backdrop-blur-sm p-6 rounded-full shadow-2xl border border-white/50">
-                <Heart class="h-16 w-16 text-red-500" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Hero Title -->
-        <div class="mb-8">
-          <h1 class="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Bienvenue sur 
-            <div class="relative inline-block mt-2">
-              <span class="bg-gradient-to-r from-[#165DFB] via-sky-500 to-cyan-500 bg-clip-text text-transparent animate-gradient">
-                ma santé plus
-              </span>
-              <div class="absolute -inset-2 bg-gradient-to-r from-[#165DFB]/20 via-sky-500/20 to-cyan-500/20 blur-2xl -z-10 animate-pulse"></div>
-            </div>
-          </h1>
-        </div>
-
-        <!-- Hero Description -->
-        <div class="mb-12">
-          <p class="text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed font-light">
-            Découvrez une expérience unique qui transformera votre façon de prendre soin de votre santé.
-            Rejoignez des milliers d'utilisateurs satisfaits qui ont déjà fait le choix de l'excellence.
-          </p>
-        </div>
-
-        <!-- Hero Buttons -->
-        <div class="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-          <div class="relative group">
-            <div class="absolute -inset-1 bg-gradient-to-r from-[#165DFB] to-cyan-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
-            <button @click="startJourney" class="relative bg-gradient-to-r from-[#165DFB] to-cyan-500 text-[#165DFB] px-10 py-5 rounded-2xl text-xl font-semibold hover:from-[#0F4FD9] hover:to-cyan-600 transform hover:scale-105 transition-all duration-300 shadow-2xl">
-              <span class="flex items-center">
-                Commencer maintenant
-                <Sparkles class="ml-3 h-6 w-6" />
-              </span>
-            </button>
-          </div>
-          
-          <button @click="showMoreInfo" class="relative bg-white/90 backdrop-blur-sm border-2 border-[#165DFB] text-[#165DFB] px-10 py-5 rounded-2xl text-xl font-semibold hover:bg-[#165DFB]/5 hover:scale-105 transition-all duration-300 shadow-xl">
-            En savoir plus
-          </button>
-        </div>
-
-        <!-- Trust Indicators -->
-        <div class="flex flex-wrap justify-center items-center gap-8 text-lg text-gray-600 mb-12">
-          <div class="flex items-center bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg">
-            <div class="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
-            <span class="font-medium">100% Sécurisé</span>
-          </div>
-          <div class="flex items-center bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg">
-            <div class="w-3 h-3 bg-[#165DFB] rounded-full mr-3 animate-pulse"></div>
-            <span class="font-medium">Support 24/7</span>
-          </div>
-          <div class="flex items-center bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg">
-            <div class="w-3 h-3 bg-cyan-500 rounded-full mr-3 animate-pulse"></div>
-            <span class="font-medium">Gratuit 30 jours</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Features Section -->
-      <div class="mt-24">
-        <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Pourquoi nous choisir ?</h2>
-          <p class="text-xl text-gray-600 max-w-3xl mx-auto">Des fonctionnalités pensées pour vous offrir la meilleure expérience possible</p>
-        </div>
-        
-        <div class="grid md:grid-cols-3 gap-10">
-          <!-- Feature Card 1 -->
-          <div class="group relative">
-            <div class="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 opacity-0 group-hover:opacity-100 transition duration-500 rounded-3xl blur"></div>
-            <div class="relative bg-white/90 backdrop-blur-lg p-10 rounded-3xl shadow-xl border border-white/30 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3">
-              <div class="mb-8">
-                <div class="relative inline-block">
-                  <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl blur opacity-50"></div>
-                  <div class="relative bg-gradient-to-r from-emerald-500 to-green-500 p-4 rounded-2xl">
-                    <Zap class="h-8 w-8 text-white" />
-                  </div>
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold text-gray-900 mb-6">Rapide et Efficace</h3>
-              <p class="text-gray-600 leading-relaxed text-lg">Une performance optimisée pour vous faire gagner du temps et améliorer votre productivité.</p>
-            </div>
-          </div>
-
-          <!-- Feature Card 2 -->
-          <div class="group relative">
-            <div class="absolute -inset-1 bg-gradient-to-r from-[#165DFB] to-sky-500 opacity-0 group-hover:opacity-100 transition duration-500 rounded-3xl blur"></div>
-            <div class="relative bg-white/90 backdrop-blur-lg p-10 rounded-3xl shadow-xl border border-white/30 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3">
-              <div class="mb-8">
-                <div class="relative inline-block">
-                  <div class="absolute inset-0 bg-gradient-to-r from-[#165DFB] to-sky-500 rounded-2xl blur opacity-50"></div>
-                  <div class="relative bg-gradient-to-r from-[#165DFB] to-sky-500 p-4 rounded-2xl">
-                    <Shield class="h-8 w-8 text-white" />
-                  </div>
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold text-gray-900 mb-6">Sécurisé</h3>
-              <p class="text-gray-600 leading-relaxed text-lg">Vos données sont protégées avec les dernières technologies de sécurité.</p>
-            </div>
-          </div>
-
-          <!-- Feature Card 3 -->
-          <div class="group relative">
-            <div class="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition duration-500 rounded-3xl blur"></div>
-            <div class="relative bg-white/90 backdrop-blur-lg p-10 rounded-3xl shadow-xl border border-white/30 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3">
-              <div class="mb-8">
-                <div class="relative inline-block">
-                  <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-50"></div>
-                  <div class="relative bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-2xl">
-                    <Users class="h-8 w-8 text-white" />
-                  </div>
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold text-gray-900 mb-6">Collaboratif</h3>
-              <p class="text-gray-600 leading-relaxed text-lg">Travaillez en équipe facilement avec nos outils de collaboration intégrés.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stats Section -->
-      <div class="mt-24">
-        <div class="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-12 border border-white/30">
-          <div class="absolute inset-0 bg-gradient-to-r from-[#165DFB]/5 to-cyan-500/5 rounded-3xl"></div>
-          <div class="relative">
-            <div class="text-center mb-12">
-              <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Ils nous font confiance</h2>
-              <p class="text-xl text-gray-600">Des chiffres qui parlent d'eux-mêmes</p>
-            </div>
-            <div class="grid md:grid-cols-3 gap-10 text-center">
-              <!-- Stat Card 1 -->
-              <div class="group">
-                <div class="relative p-8 rounded-3xl bg-gradient-to-br from-white/60 to-white/40 backdrop-blur-sm border border-white/30 hover:shadow-xl transition-all duration-500 transform hover:scale-105">
-                  <div class="flex items-center justify-center mb-6">
-                    <div class="relative">
-                      <div class="absolute inset-0 bg-gradient-to-r from-[#165DFB] to-sky-500 rounded-full blur opacity-50"></div>
-                      <div class="relative bg-gradient-to-r from-[#165DFB] to-sky-500 p-4 rounded-full">
-                        <Users class="h-8 w-8 text-white" />
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-                    {{ animatedUsers.toLocaleString() }}
-                  </div>
-                  <div class="text-gray-600 font-semibold text-lg">Utilisateurs actifs</div>
-                </div>
-              </div>
-
-              <!-- Stat Card 2 -->
-              <div class="group">
-                <div class="relative p-8 rounded-3xl bg-gradient-to-br from-white/60 to-white/40 backdrop-blur-sm border border-white/30 hover:shadow-xl transition-all duration-500 transform hover:scale-105">
-                  <div class="flex items-center justify-center mb-6">
-                    <div class="relative">
-                      <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full blur opacity-50"></div>
-                      <div class="relative bg-gradient-to-r from-emerald-500 to-green-500 p-4 rounded-full">
-                        <CheckCircle class="h-8 w-8 text-white" />
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-                    {{ animatedProjects.toLocaleString() }}
-                  </div>
-                  <div class="text-gray-600 font-semibold text-lg">Projets réalisés</div>
-                </div>
-              </div>
-
-              <!-- Stat Card 3 -->
-              <div class="group">
-                <div class="relative p-8 rounded-3xl bg-gradient-to-br from-white/60 to-white/40 backdrop-blur-sm border border-white/30 hover:shadow-xl transition-all duration-500 transform hover:scale-105">
-                  <div class="flex items-center justify-center mb-6">
-                    <div class="relative">
-                      <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur opacity-50"></div>
-                      <div class="relative bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full">
-                        <Heart class="h-8 w-8 text-white" />
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-                    {{ animatedSatisfaction }}%
-                  </div>
-                  <div class="text-gray-600 font-semibold text-lg">Satisfaction client</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Call-to-Action Section -->
-      <div class="mt-24">
-        <div class="relative bg-gradient-to-r from-[#165DFB] via-sky-500 to-cyan-500 rounded-3xl p-16 text-white overflow-hidden">
-          <div class="absolute inset-0 bg-black/10"></div>
-          <div class="absolute top-0 left-0 w-full h-full">
-            <div class="absolute top-12 left-12 w-24 h-24 bg-white/10 rounded-full blur-2xl animate-pulse"></div>
-            <div class="absolute bottom-12 right-12 w-36 h-36 bg-white/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-white/5 rounded-full blur-3xl animate-pulse delay-500"></div>
-          </div>
-          <div class="relative text-center">
-            <h2 class="text-4xl md:text-6xl font-bold mb-8">Prêt à commencer votre aventure ?</h2>
-            <p class="text-2xl mb-12 opacity-95 max-w-3xl mx-auto leading-relaxed">
-              Rejoignez notre communauté et découvrez tout ce que nous avons à offrir pour améliorer votre bien-être.
-            </p>
-            <div class="relative group inline-block">
-              <div class="absolute -inset-1 bg-white/40 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
-              <button @click="showWelcomeMessage" class="relative bg-white text-[#165DFB] px-12 py-6 rounded-2xl text-2xl font-bold hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-2xl">
-                <span class="flex items-center">
-                  Créer mon compte gratuitement
-                  <Heart class="ml-3 h-7 w-7 text-red-500" />
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- Footer Section -->
-    <footer class="relative z-10 bg-gray-900 text-white mt-24">
-      <div class="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900"></div>
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="grid md:grid-cols-4 gap-12">
-          <div>
-            <div class="flex items-center mb-6">
-              <div class="bg-gradient-to-r from-[#165DFB] to-cyan-500 p-3 rounded-xl mr-4">
-                <Sparkles class="h-6 w-6 text-white" />
-              </div>
-              <span class="text-2xl font-bold">ma santé plus</span>
-            </div>
-            <p class="text-gray-400 leading-relaxed text-lg">Votre partenaire de confiance pour tous vos besoins de santé et bien-être.</p>
-          </div>
-          <div>
-            <h3 class="font-bold mb-6 text-[#165DFB] text-xl">Produit</h3>
-            <ul class="space-y-4 text-gray-400">
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Fonctionnalités</Link></li>
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Tarifs</Link></li>
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Documentation</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 class="font-bold mb-6 text-sky-400 text-xl">Entreprise</h3>
-            <ul class="space-y-4 text-gray-400">
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">À propos</Link></li>
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Carrières</Link></li>
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Blog</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 class="font-bold mb-6 text-cyan-400 text-xl">Support</h3>
-            <ul class="space-y-4 text-gray-400">
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Centre d'aide</Link></li>
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Contact</Link></li>
-              <li><Link href="/login" class="hover:text-white transition-colors hover:translate-x-2 transform duration-300 inline-block text-lg">Statut</Link></li>
-            </ul>
-          </div>
-        </div>
-        <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-          <p class="text-lg">&copy; 2024 ma santé plus. Tous droits réservés.</p>
-        </div>
-      </div>
-    </footer>
-
-    <!-- Welcome Modal -->
-    <Transition name="modal">
-      <div v-if="showModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click="closeModal">
-        <div class="bg-white/95 backdrop-blur-xl rounded-3xl p-12 max-w-lg mx-4 transform transition-all shadow-2xl border border-white/30" @click.stop>
-          <div class="text-center">
-            <div class="relative mb-8">
-              <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full blur-2xl opacity-60 animate-pulse"></div>
-              <div class="relative bg-gradient-to-r from-green-100 to-emerald-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle class="h-12 w-12 text-green-600" />
-              </div>
-            </div>
-            <h3 class="text-3xl font-bold text-gray-900 mb-6">Bienvenue !</h3>
-            <p class="text-gray-600 mb-8 leading-relaxed text-lg">
-              Merci de votre intérêt pour ma santé plus. Nous sommes ravis de vous accueillir dans notre communauté !
-            </p>
-            <div class="relative group">
-              <div class="absolute -inset-1 bg-gradient-to-r from-[#165DFB] to-cyan-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
-              <button @click="closeModal" class="relative bg-gradient-to-r from-[#165DFB] to-cyan-500 text-white px-10 py-4 rounded-2xl text-xl font-semibold hover:from-[#0F4FD9] hover:to-cyan-600 transition-all duration-300 shadow-xl">
-                Parfait !
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </div>
-</template>
-
-<script setup>
-import { ref, onMounted } from 'vue'
-import { Sparkles, Heart, Zap, Shield, Users, CheckCircle } from 'lucide-vue-next'
-import { Link } from '@inertiajs/vue3'
-
-const showModal = ref(false)
-const animatedUsers = ref(0)
-const animatedProjects = ref(0)
-const animatedSatisfaction = ref(0)
-
-const startJourney = () => {
-  console.log('Starting journey...')
-}
-
-const showWelcomeMessage = () => {
-  showModal.value = true
-}
-
-const closeModal = () => {
-  showModal.value = false
-}
-
-const animateNumbers = () => {
-  const duration = 2500
-  const targetUsers = 15000
-  const targetProjects = 8500
-  const targetSatisfaction = 98
-  
-  const startTime = Date.now()
-  
-  const animate = () => {
-    const elapsed = Date.now() - startTime
-    const progress = Math.min(elapsed / duration, 1)
-    
-    // Easing function pour un effet plus fluide
-    const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-    
-    animatedUsers.value = Math.floor(targetUsers * easeOutQuart)
-    animatedProjects.value = Math.floor(targetProjects * easeOutQuart)
-    animatedSatisfaction.value = Math.floor(targetSatisfaction * easeOutQuart)
-    
-    if (progress < 1) {
-      requestAnimationFrame(animate)
-    }
-  }
-  
-  animate()
-}
-
-onMounted(() => {
-  setTimeout(animateNumbers, 800)
-})
-
-const showMoreInfo = () => {
-  console.log('Show more info...')
-}
+<script setup lang="ts">
+  import { Head } from '@inertiajs/vue3'
 </script>
 
-<style scoped>
-@keyframes bounce {
-  0%, 20%, 53%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40%, 43% {
-    transform: translateY(-30px);
-  }
-  70% {
-    transform: translateY(-15px);
-  }
-  90% {
-    transform: translateY(-4px);
-  }
-}
+<template>
+  <Head title="Homepage" />
 
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+  <div class="fixed xl:absolute left-8 right-8 top-0 bottom-0 xl:inset-0 max-w-screen-xl mx-auto before:content-[''] before:[background:repeating-linear-gradient(0deg,var(--sand-5)_0_4px,transparent_0_8px)] before:absolute before:top-0 before:left-0 before:h-full before:w-px after:content-[''] after:[background:repeating-linear-gradient(0deg,var(--sand-5)_0_4px,transparent_0_8px)] after:absolute after:top-0 after:right-0 after:h-full after:w-px"></div>
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-}
+  <div class="pt-4 h-full flex flex-col">
+    <!-- Header -->
+    <div class="grow pb-4 bg-gradient-to-b from-sand-1 to-sand-2 flex justify-center items-center">
+      <a href="https://adonisjs.com" target="_blank" class="isolate">
+        <svg class="w-16 h-16 fill-primary" viewBox="0 0 33 33">
+          <path
+            fill-rule="evenodd"
+            d="M0 16.333c0 13.173 3.16 16.333 16.333 16.333 13.173 0 16.333-3.16 16.333-16.333C32.666 3.16 29.506 0 16.333 0 3.16 0 0 3.16 0 16.333Zm6.586 3.393L11.71 8.083c.865-1.962 2.528-3.027 4.624-3.027 2.096 0 3.759 1.065 4.624 3.027l5.123 11.643c.233.566.432 1.297.432 1.93 0 2.893-2.029 4.923-4.923 4.923-.986 0-1.769-.252-2.561-.506-.812-.261-1.634-.526-2.695-.526-1.048 0-1.89.267-2.718.529-.801.253-1.59.503-2.538.503-2.894 0-4.923-2.03-4.923-4.924 0-.632.2-1.363.432-1.929Zm9.747-9.613-5.056 11.443c1.497-.699 3.227-1.032 5.056-1.032 1.763 0 3.56.333 4.99 1.032l-4.99-11.444Z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </a>
+    </div>
 
-.animate-bounce {
-  animation: bounce 2s infinite;
-}
+    <!-- Bento with documentation, Adocasts, packages and Discord -->
+    <div class="isolate mt-10 max-w-screen-xl mx-auto px-16 xl:px-8 grid grid-cols-1 xl:grid-cols-2 xl:grid-rows-3 gap-8">
+      <article class="row-span-3 relative p-6 shadow-sm hover:shadow border border-sand-7 hover:border-sand-8 rounded-2xl transition ease-in-out duration-700 group flex flex-col gap-8">
+        <div class="relative opacity-80">
+          <svg fill="none" viewBox="0 0 240 105">
+            <path fill="#F9F9F8" d="M0 4a4 4 0 0 1 4-4h232a4 4 0 0 1 4 4v101H0V4Z" />
+            <g fill="#000" fill-rule="evenodd" clip-path="url(#a)" clip-rule="evenodd">
+              <path d="M24 11.444c0 4.391 1.053 5.445 5.444 5.445s5.445-1.054 5.445-5.445c0-4.39-1.054-5.444-5.445-5.444C25.054 6 24 7.053 24 11.444Zm2.195 1.131 1.708-3.88c.288-.655.843-1.01 1.541-1.01.699 0 1.253.355 1.542 1.01l1.707 3.88c.078.189.144.433.144.644 0 .964-.676 1.64-1.64 1.64-.33 0-.59-.083-.854-.168-.271-.087-.545-.175-.899-.175-.35 0-.63.089-.906.176-.267.085-.53.168-.846.168-.964 0-1.64-.677-1.64-1.641 0-.211.066-.455.143-.644Zm3.25-3.204-1.686 3.814c.499-.233 1.075-.344 1.685-.344.588 0 1.187.111 1.664.344l-1.664-3.814Zm26.473-.678c-.378 0-.65.268-.65.64 0 .374.272.641.65.641s.651-.267.651-.64-.273-.64-.65-.64Zm-11.907 5.502c-1.009 0-1.738-.745-1.738-1.91 0-1.187.73-1.933 1.737-1.933.468 0 .814.158 1.019.468V8.86h1.05v5.25h-1.05v-.372c-.2.304-.546.456-1.019.456Zm-.667-1.91c0-.652.352-1.077.887-1.077.54 0 .887.42.887 1.071 0 .64-.346 1.056-.887 1.056-.535 0-.887-.415-.887-1.05Zm4.384-.011c0-.646.351-1.06.877-1.06.53 0 .882.414.882 1.06 0 .646-.352 1.06-.883 1.06-.525 0-.876-.414-.876-1.06Zm11.571.835c0 .194-.147.31-.52.31-.42 0-.682-.221-.682-.489h-1.05c.026.725.714 1.265 1.711 1.265.946 0 1.55-.42 1.55-1.165 0-.557-.358-.945-1.066-1.087l-.762-.152c-.23-.047-.367-.163-.367-.315 0-.226.23-.347.525-.347.42 0 .583.195.583.426h.997c-.026-.683-.562-1.203-1.56-1.203-.929 0-1.559.468-1.559 1.176 0 .64.415.93 1.035 1.06l.756.164c.247.052.41.157.41.357Zm-2.85 1.002h-1.05v-3.675h1.05v3.675Zm-4.264-3.675v.384c.268-.31.625-.468 1.066-.468.824 0 1.36.536 1.36 1.365v2.394h-1.05v-2.173c0-.446-.252-.714-.688-.714-.436 0-.688.268-.688.714v2.173h-1.05v-3.675h1.05Zm-3.58-.084c-1.119 0-1.948.809-1.948 1.922s.83 1.921 1.948 1.921c1.123 0 1.953-.808 1.953-1.921s-.83-1.922-1.953-1.922Zm-8.758.856c-.535 0-.887.425-.887 1.076 0 .636.352 1.05.887 1.05.54 0 .887-.414.887-1.055 0-.65-.346-1.07-.887-1.07Zm-1.958 1.076c0 1.166.73 1.911 1.732 1.911.478 0 .82-.152 1.024-.456v.372h1.05v-3.675h-1.05v.384c-.21-.31-.556-.468-1.024-.468-1.003 0-1.732.746-1.732 1.932Z" />
+            </g>
+            <rect width="8" height="3" x="162" y="9.944" fill="#DAD9D6" rx="1" />
+            <rect width="14" height="3" x="174" y="9.944" fill="#DAD9D6" rx="1" />
+            <rect width="10" height="3" x="192" y="9.944" fill="#DAD9D6" rx="1" />
+            <rect width="10" height="3" x="206" y="9.944" fill="#DAD9D6" rx="1" />
+            <rect width="81" height="6" x="24" y="32" fill="#DAD9D6" rx="2" />
+            <rect width="95" height="6" x="24" y="44" fill="#DAD9D6" rx="2" />
+            <rect width="16" height="5" x="24" y="60" fill="#21201C" rx="1" />
+            <path fill="#DAD9D6" d="M24 85a4 4 0 0 1 4-4h184a4 4 0 0 1 4 4v20H24V85Z" />
+            <path
+              fill="url(#b)"
+              fill-opacity=".2"
+              d="M24 85a4 4 0 0 1 4-4h184a4 4 0 0 1 4 4v20H24V85Z"
+            />
+            <defs>
+              <linearGradient
+                id="b"
+                x1="120"
+                x2="120"
+                y1="81"
+                y2="105"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stop-opacity="0" />
+                <stop offset="1" stop-color="#82827C" />
+              </linearGradient>
+              <clipPath id="a">
+                <path fill="#fff" d="M24 6h36.307v10.889H24z" />
+              </clipPath>
+            </defs>
+          </svg>
 
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient 4s ease infinite;
-}
+          <div class="absolute left-0 right-0 bottom-0 h-16 bg-gradient-to-b from-white/0 to-white"></div>
+        </div>
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
+        <div class="flex flex-row gap-4">
+          <div class="shrink-0 w-10 h-10 bg-primary/20 rounded-md flex justify-center items-center">
+            <svg class="h-6 w-6 fill-primary" viewBox="0 0 256 256">
+              <path
+                fill="currentColor"
+                d="M208 24H72a32 32 0 0 0-32 32v168a8 8 0 0 0 8 8h144a8 8 0 0 0 0-16H56a16 16 0 0 1 16-16h136a8 8 0 0 0 8-8V32a8 8 0 0 0-8-8m-88 16h48v72l-19.21-14.4a8 8 0 0 0-9.6 0L120 112Zm80 144H72a31.8 31.8 0 0 0-16 4.29V56a16 16 0 0 1 16-16h32v88a8 8 0 0 0 12.8 6.4L144 114l27.21 20.4A8 8 0 0 0 176 136a8 8 0 0 0 8-8V40h16Z"
+              />
+            </svg>
+          </div>
 
-.modal-enter-active, .modal-leave-active {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+          <div class="space-y-1">
+            <h2 class="text-lg font-semibold">
+              <a href="https://docs.adonisjs.com" target="_blank">
+                <span>Documentation</span>
+                <span class="absolute inset-0"></span>
+              </a>
+            </h2>
 
-.modal-enter-from, .modal-leave-to {
-  opacity: 0;
-  transform: scale(0.8) translateY(-50px);
-}
+            <p class="text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-700">
+              Dive into the official documentation to learn AdonisJS. Read carefully to discover
+              an unmatched set of features, best practices and developer experience. Through
+              examples, guides and API references, you'll find everything you need to build your
+              next project. From installation to deployment, we've got you covered.
+            </p>
+          </div>
+        </div>
+      </article>
 
+      <article class="relative p-6 shadow-sm hover:shadow border border-sand-7 hover:border-sand-8 rounded-2xl transition ease-in-out duration-700 group flex flex-row gap-4">
+        <div class="shrink-0 w-10 h-10 bg-primary/20 rounded-md flex justify-center items-center">
+          <svg class="h-6 w-6 fill-primary" viewBox="0 0 256 256">
+            <path
+              fill="currentColor"
+              d="m164.44 105.34-48-32A8 8 0 0 0 104 80v64a8 8 0 0 0 12.44 6.66l48-32a8 8 0 0 0 0-13.32M120 129.05V95l25.58 17ZM216 40H40a16 16 0 0 0-16 16v112a16 16 0 0 0 16 16h176a16 16 0 0 0 16-16V56a16 16 0 0 0-16-16m0 128H40V56h176zm16 40a8 8 0 0 1-8 8H32a8 8 0 0 1 0-16h192a8 8 0 0 1 8 8"
+            />
+          </svg>
+        </div>
 
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">
+            <a href="https://adocasts.com" target="_blank">
+              <span>Adocasts</span>
+              <span class="absolute inset-0"></span>
+            </a>
+          </h2>
 
-/* Smooth scrolling */
+          <p class="text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-700">
+            Level up your development and Adonis skills with hours of video content, from
+            beginner to advanced, through databases, testing, and more.
+          </p>
+        </div>
+      </article>
 
+      <article class="relative p-6 shadow-sm hover:shadow border border-sand-7 hover:border-sand-8 rounded-2xl transition ease-in-out duration-700 group flex flex-row gap-4">
+        <div class="shrink-0 w-10 h-10 bg-primary/20 rounded-md flex justify-center items-center">
+          <svg class="h-6 w-6 fill-primary" viewBox="0 0 256 256">
+            <path
+              fill="currentColor"
+              d="M208 96a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16h-32a16 16 0 0 0-16 16v8H96v-8a16 16 0 0 0-16-16H48a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h8v64h-8a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h32a16 16 0 0 0 16-16v-8h64v8a16 16 0 0 0 16 16h32a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16h-8V96Zm-32-48h32v32h-32ZM48 48h32v15.9a.5.5 0 0 0 0 .2V80H48Zm32 160H48v-32h32v15.9a.5.5 0 0 0 0 .2zm128 0h-32v-32h32Zm-24-48h-8a16 16 0 0 0-16 16v8H96v-8a16 16 0 0 0-16-16h-8V96h8a16 16 0 0 0 16-16v-8h64v8a16 16 0 0 0 16 16h8Z"
+            />
+          </svg>
+        </div>
 
-/* Custom scrollbar avec la couleur principale */
-::-webkit-scrollbar {
-  width: 10px;
-}
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">
+            <a href="https://packages.adonisjs.com" target="_blank">
+              <span>Packages</span>
+              <span class="absolute inset-0"></span>
+            </a>
+          </h2>
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
+          <p class="text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-700">
+            Supercharge your AdonisJS application with packages built and maintained by both the
+            core team and the community.
+          </p>
+        </div>
+      </article>
 
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #165DFB, #0ea5e9);
-  border-radius: 5px;
-}
+      <article class="relative p-6 shadow-sm hover:shadow border border-sand-7 hover:border-sand-8 rounded-2xl transition ease-in-out duration-700 group flex flex-row gap-4">
+        <div class="shrink-0 w-10 h-10 bg-primary/20 rounded-md flex justify-center items-center">
+          <svg class="h-6 w-6 fill-primary" viewBox="0 0 256 256">
+            <path
+              fill="currentColor"
+              d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m0 192a88 88 0 1 1 88-88 88.1 88.1 0 0 1-88 88m44.42-143.16-64 32a8.05 8.05 0 0 0-3.58 3.58l-32 64A8 8 0 0 0 80 184a8.1 8.1 0 0 0 3.58-.84l64-32a8.05 8.05 0 0 0 3.58-3.58l32-64a8 8 0 0 0-10.74-10.74M138 138l-40.11 20.11L118 118l40.15-20.07Z"
+            />
+          </svg>
+        </div>
 
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #0F4FD9, #0284c7);
-}
+        <div class="space-y-1">
+          <h2 class="text-lg font-semibold">
+            <a href="https://discord.gg/vDcEjq6" target="_blank">
+              <span>Discord</span>
+              <span class="absolute inset-0"></span>
+            </a>
+          </h2>
 
-/* Effet de glow sur les éléments interactifs */
-.glow-effect {
-  box-shadow: 0 0 20px rgba(22, 93, 251, 0.3);
-}
+          <p class="text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-700">
+            Never get lost again, ask questions, and share your knowledge or projects with a
+            growing and supportive community. Join us.
+          </p>
+        </div>
+      </article>
+    </div>
 
-/* Animation pour les cartes */
-@keyframes cardHover {
-  0% { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-10px) scale(1.02); }
-}
+    <!-- Features -->
+    <div class="grow mt-10 mb-8 px-16 xl:px-8 max-w-screen-xl mx-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <article class="relative py-4 px-5 bg-white border border-transparent rounded-lg hover:border-sand-8 hover:shadow-sm transition duration-100 ease-in-out group">
+          <h2 class="font-semibold text-sand-12">
+            <a href="https://lucid.adonisjs.com" target="_blank" class="flex flex-row gap-2">
+              <span class="bg-[#D5EAE7] h-6 w-6 flex justify-center items-center rounded">
+                <svg class="h-4 w-4 fill-[#0E766E]" viewBox="0 0 24 24">
+                  <g
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                  >
+                    <path d="M4 6a8 3 0 1 0 16 0A8 3 0 1 0 4 6" />
+                    <path d="M4 6v6a8 3 0 0 0 16 0V6" />
+                    <path d="M4 12v6a8 3 0 0 0 16 0v-6" />
+                  </g>
+                </svg>
+              </span>
+              <span>Lucid</span>
+              <span class="absolute inset-0"></span>
+            </a>
+          </h2>
 
-.card-hover:hover {
-  animation: cardHover 0.3s ease-out forwards;
-}
+          <p class="mt-4 text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-100">
+            A SQL ORM with a powerful query builder, active record, migrations, and model
+            factories. Everything you need to work with databases.
+          </p>
 
-/* Effet de particules flottantes */
-.floating-particles::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: radial-gradient(circle, rgba(22, 93, 251, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: float 20s linear infinite;
-  pointer-events: none;
-}
+          <svg
+            class="absolute top-4 right-5 opacity-0 group-hover:opacity-100 text-sand-9 w-4 h-4 transition ease-in-out duration-100"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6m-7 1 9-9m-5 0h5v5"
+            />
+          </svg>
+        </article>
 
-/* Responsive improvements */
-@media (max-width: 768px) {
-  .text-5xl { font-size: 2.5rem; }
-  .text-7xl { font-size: 3.5rem; }
-  .text-4xl { font-size: 2rem; }
-  .text-6xl { font-size: 3rem; }
-}
-</style>
+        <article class="relative py-4 px-5 bg-white border border-transparent rounded-lg hover:border-sand-8 hover:shadow-sm transition duration-100 ease-in-out group">
+          <h2 class="font-semibold text-sand-12">
+            <a href="https://vinejs.dev/" target="_blank" class="flex flex-row gap-2">
+              <span class="bg-[#F3DBFC] h-6 w-6 flex justify-center items-center rounded">
+                <svg class="h-4 w-4 fill-[#CA5AF2]" viewBox="0 0 24 24">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 3a12 12 0 0 0 8.5 3A12 12 0 0 1 12 21 12 12 0 0 1 3.5 6 12 12 0 0 0 12 3"
+                  />
+                </svg>
+              </span>
+              <span>Vine</span>
+              <span class="absolute inset-0"></span>
+            </a>
+          </h2>
+
+          <p class="mt-4 text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-100">
+            A yet simple but feature rich and type-safe form data validation. It comes with 50+
+            built-in rules and an expressive API to define custom rules.
+          </p>
+
+          <svg
+            class="absolute top-4 right-5 opacity-0 group-hover:opacity-100 text-sand-9 w-4 h-4 transition ease-in-out duration-100"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6m-7 1 9-9m-5 0h5v5"
+            />
+          </svg>
+        </article>
+
+        <article class="relative py-4 px-5 bg-white border border-transparent rounded-lg hover:border-sand-8 hover:shadow-sm transition duration-100 ease-in-out group">
+          <h2 class="font-semibold text-sand-12">
+            <a href="https://inertiajs.com/" target="_blank" class="flex flex-row gap-2">
+              <span class="bg-[#B8EAE0] h-6 w-6 flex justify-center items-center rounded">
+                <svg class="h-4 w-4 fill-[#4BBBA5]" viewBox="0 0 24 24">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="m12.5 8l4 4l-4 4H17l4-4l-4-4zm-9 0l4 4l-4 4H8l4-4l-4-4z"
+                  />
+                </svg>
+              </span>
+              <span>InertiaJS</span>
+              <span class="absolute inset-0"></span>
+            </a>
+          </h2>
+
+          <p class="mt-4 text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-100">
+            The modern monolithic application architecture. It allows you to build single-page
+            applications without building an API.
+          </p>
+
+          <svg
+            class="absolute top-4 right-5 opacity-0 group-hover:opacity-100 text-sand-9 w-4 h-4 transition ease-in-out duration-100"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6m-7 1 9-9m-5 0h5v5"
+            />
+          </svg>
+        </article>
+
+        <article class="relative py-4 px-5 bg-white border border-transparent rounded-lg hover:border-sand-8 hover:shadow-sm transition duration-100 ease-in-out group">
+          <h2 class="font-semibold text-sand-12">
+            <a href="https://japa.dev" target="_blank" class="flex flex-row gap-2">
+              <span class="bg-[#FACDDC] h-6 w-6 flex justify-center items-center rounded">
+                <svg class="h-4 w-4 fill-[#DD3074]" viewBox="0 0 256 256">
+                  <path
+                    fill="currentColor"
+                    d="m240.49 83.51-60-60a12 12 0 0 0-17 0L34.28 152.75a48.77 48.77 0 0 0 69 69l111.2-111.26 21.31-7.11a12 12 0 0 0 4.7-19.87M86.28 204.75a24.77 24.77 0 0 1-35-35l28.13-28.13c7.73-2.41 19.58-3 35.06 5a84 84 0 0 0 21.95 8ZM204.2 88.62a12.15 12.15 0 0 0-4.69 2.89l-38.89 38.9c-7.73 2.41-19.58 3-35.06-5a84 84 0 0 0-21.94-8L172 49l37.79 37.79Z"
+                  />
+                </svg>
+              </span>
+              <span>Japa</span>
+              <span class="absolute inset-0"></span>
+            </a>
+          </h2>
+
+          <p class="mt-4 text-sm text-sand-11 group-hover:text-sand-12 transition ease-in-out duration-100">
+            From JSON API tests using Open API schema to browser tests with Playwrighht, it
+            comes with everything you need to test your application.
+          </p>
+
+          <svg
+            class="absolute top-4 right-5 opacity-0 group-hover:opacity-100 text-sand-9 w-4 h-4 transition ease-in-out duration-100"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6m-7 1 9-9m-5 0h5v5"
+            />
+          </svg>
+        </article>
+      </div>
+    </div>
+
+    <div class="text-sm text-center [&>code]:font-medium [&>code]:text-[#a599ff] bg-sand-12 text-sand-1 fixed bottom-0 left-0 right-0 py-2">
+      Route for this page is registered in <code>start/routes.ts</code> file, rendering
+      <code>inertia/pages/home.vue</code> template
+    </div>
+  </div>
+</template>
