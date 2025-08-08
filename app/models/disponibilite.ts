@@ -18,7 +18,9 @@ export default class Disponibilite extends BaseModel {
   @column()
   public idDoctor!: string
 
-  public jours!: string[] 
+@column()
+public jours!: any
+
 
   @column()
   public heureDebut!: string

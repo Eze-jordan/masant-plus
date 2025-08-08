@@ -24,54 +24,81 @@ export default class DisponibiliteController {
     }
   }
 
-  // ➤ Créer une disponibilité (sans créer les créneaux)
-  public async store({ request, response }: HttpContextContract) {
-    const payload = request.body()
-    const { idDoctor, date_debut, date_fin, actif = true, jours, heureDebut, heureFin } = payload
+public async store({ request, response }: HttpContextContract) {
+  try {
+    const {
+      idDoctor,
+      date_debut,
+      date_fin,
+      actif = true,
+      jours,
+      heureDebut,
+      heureFin
+    } = request.body()
 
-    // Vérification des données requises
-    if (!idDoctor || !date_debut || !jours || !Array.isArray(jours) || jours.length === 0) {
-      return response.badRequest({ message: 'idDoctor, date_debut, jours (array) et heureDebut/heureFin sont requis.' })
+    // S'assurer que 'jours' est un tableau JSON valide
+    const joursJson = Array.isArray(jours) ? JSON.stringify(jours) : jours;
+
+    // Vérification des données requises sans validation stricte sur 'jours'
+    if (
+      !idDoctor ||
+      !date_debut ||
+      !heureDebut ||
+      !heureFin
+    ) {
+      return response.badRequest({
+        message: 'idDoctor, date_debut, heureDebut et heureFin sont requis.'
+      })
     }
 
-    try {
-      // Vérification du médecin et de son rôle
-      const user = await User.query().where('id', idDoctor).preload('role').firstOrFail()
-      if (!user.role || user.role.label !== 'doctor') {
-        return response.badRequest({ message: 'Le rôle doit être "Doctor"' })
-      }
-
-      // Validation des dates
-      const dateDebut = DateTime.fromISO(date_debut)
-      const dateFin = date_fin ? DateTime.fromISO(date_fin) : dateDebut
-
-      if (!dateDebut.isValid || !dateFin.isValid) {
-        return response.badRequest({ message: 'Dates invalides.' })
-      }
-
-      // Création de la disponibilité
-      const disponibilite = await Disponibilite.create({
-        idDoctor,
-        dateDebut,
-        dateFin,
-        heureDebut: heureDebut || '',
-        heureFin: heureFin || '',
-        actif,
-        jours, // Stockage des jours dans la disponibilité
-      })
-
-      // Création des créneaux pour chaque jour spécifié
-  
-
-      return response.created({
-        message: 'Disponibilité et créneaux créés avec succès.',
-        idDisponibilite: disponibilite.id
-      })
-    } catch (error: any) {
-      console.error(error)
-      return response.status(500).send({ message: error.message })
+    // Vérification du médecin et de son rôle
+    const user = await User.query().where('id', idDoctor).preload('role').firstOrFail()
+    if (!user.role || user.role.label.toLowerCase() !== 'doctor') {
+      return response.badRequest({ message: 'Le rôle doit être "Doctor".' })
     }
+
+    // Validation des dates
+    const dateDebut = DateTime.fromISO(date_debut)
+    const dateFin = date_fin ? DateTime.fromISO(date_fin) : dateDebut
+
+    if (!dateDebut.isValid || !dateFin.isValid) {
+      return response.badRequest({ message: 'Dates invalides.' })
+    }
+
+    // Validation des heures (optionnel mais recommandé)
+    const heureDebutValid = DateTime.fromFormat(heureDebut, 'HH:mm')
+    const heureFinValid = DateTime.fromFormat(heureFin, 'HH:mm')
+    if (!heureDebutValid.isValid || !heureFinValid.isValid || heureDebutValid >= heureFinValid) {
+      return response.badRequest({ message: 'Heures invalides ou incohérentes.' })
+    }
+
+    // Création de la disponibilité avec 'jours' correctement formaté
+    const disponibilite = await Disponibilite.create({
+      idDoctor,
+      dateDebut,
+      dateFin,
+      actif,
+      jours: joursJson, // Utilisation du tableau JSON sérialisé
+      heureDebut,
+      heureFin,
+    })
+
+    return response.created({
+      message: 'Disponibilité créée avec succès.',
+      idDisponibilite: disponibilite.id
+    })
+
+  } catch (error: any) {
+    console.error('Erreur lors de la création de la disponibilité :', error)
+    return response.status(500).send({
+      message: 'Erreur serveur lors de la création de la disponibilité.',
+      error: error.message
+    })
   }
+}
+
+
+
 
   // Fonction pour générer les créneaux horaires pour un jour donné
   public async generateCreneauxForDay({ params, request, response }: HttpContextContract) {
