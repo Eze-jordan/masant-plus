@@ -149,17 +149,17 @@ public async createCreneaux({ params, request, response }: HttpContextContract) 
     const creneaux = this.generateCreneaux(debut, fin, disponibilite.id);
 
     // Créer chaque créneau
-    for (const creneau of creneaux) {
-      await Creneau.create({
-        idDisponibilite: disponibilite.id, // Utiliser l'ID de la disponibilité existante
-        heureDebut: creneau.heureDebut ?? '',
-        heureFin: creneau.heureFin ?? '',
-        disponible: creneau.disponible,
-        isUsed: creneau.isUsed,
-        createdAt: creneau.createdAt ? DateTime.fromISO(creneau.createdAt) : DateTime.now(),
-        updatedAt: creneau.updatedAt ? DateTime.fromISO(creneau.updatedAt) : DateTime.now(),
-      });
-    }
+ for (const creneau of creneaux) {
+  await Creneau.create({
+    idDisponibilite: disponibilite.id, // Utilise l'ID de la disponibilité existante
+    heureDebut: creneau.heureDebut ?? '',
+    heureFin: creneau.heureFin ?? '',
+    disponible: creneau.disponible,
+    isUsed: creneau.isUsed,
+    createdAt: creneau.createdAt ? DateTime.fromISO(creneau.createdAt) : DateTime.now(),
+    updatedAt: creneau.updatedAt ? DateTime.fromISO(creneau.updatedAt) : DateTime.now(),
+  });
+}
 
     // Charger les créneaux associés à cette disponibilité
     await disponibilite.load('creneaux');
