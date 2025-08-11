@@ -10,6 +10,30 @@ export default class PaiementsController {
   /**
    * Crée un paiement simple en base (ex: Stripe ou autre)
    */
+
+public async index({ response }: HttpContextContract) {
+  try {
+    const paiements = await Paiement.query()
+      .preload('user')
+      .orderBy('datePaiement', 'desc')
+
+    const data = paiements.map(paiement => ({
+      id: paiement.id,
+      montant: paiement.montant,
+      datePaiement: paiement.datePaiement,
+      first_name: paiement.user?.first_name,
+      last_name: paiement.user?.last_name,
+      email: paiement.user?.email,  // <-- ajouté ici
+    }))
+
+    return response.ok(data)
+  } catch (error) {
+    console.error(error)
+    return response.status(500).json({ message: 'Erreur lors de la récupération des paiements.' })
+  }
+}
+
+
   public async create({ request, response }: HttpContextContract) {
     const { idUser, idAppointment, montant, modeId } = request.only([
       'idUser',

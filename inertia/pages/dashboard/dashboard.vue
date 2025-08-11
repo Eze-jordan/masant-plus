@@ -336,7 +336,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { router } from '@inertiajs/vue3'
+import GererDocteur from './geredocteur.vue'
+import ListeDemande from './ListeDemande.vue'
+import GererPatients from './GererPatients.vue'
+import GererUrgences from './GererUrgences.vue'
+import HistoriquePaiement from './HistoriquePaiement.vue'
 
 const sidebarOpen = ref(true)
 
@@ -361,7 +365,6 @@ import {
   User,
   Calendar,
   CreditCard,
-  Settings,
   Users,
   DollarSign,
   Bell,
@@ -369,11 +372,7 @@ import {
   ChevronRight
 } from 'lucide-vue-next'
 
-import GererDocteur from './geredocteur.vue'
-import ListeDemande from './ListeDemande.vue'
-import GererPatients from './GererPatients.vue'
-import GererUrgences from './GererUrgences.vue'
-import HistoriquePaiement from './HistoriquePaiement.vue'
+
 
 // Props typés
 const props = defineProps<{
@@ -396,6 +395,7 @@ const topDoctors = computed(() => {
     .filter(user => ['doctor', 'medecin'].includes((user.role || '').toLowerCase()))
     .slice(0, 4) // Les 4 premiers
 })
+console.log('Top Doctors:', topDoctors.value)
 
 
 // Stat cards dynamiques
