@@ -15,7 +15,6 @@ export default class Creneau extends BaseModel {
     creneau.id = randomUUID()
   }
 
-  // Propriété camelCase, colonne snake_case
   @column({ columnName: 'id_disponibilite' })
   public idDisponibilite!: string
 
@@ -25,20 +24,20 @@ export default class Creneau extends BaseModel {
   @column({ columnName: 'heure_fin' })
   public heureFin!: string
 
+  @column({ columnName: 'date' }) // on garde la date en format string (ex: "2025-08-01")
+  public date!: string
+
   @column()
   public disponible!: boolean
 
+  @column()
+  public isUsed: boolean = false
+
   @column.dateTime({ autoCreate: true })
-public createdAt!: DateTime
+  public createdAt!: DateTime
 
-
-@column()
-public isUsed: boolean = false
-
-
-@column.dateTime({ autoCreate: true, autoUpdate: true })
-public updatedAt!: DateTime
-
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  public updatedAt!: DateTime
 
   @belongsTo(() => Disponibilite, { foreignKey: 'idDisponibilite' })
   public disponibilite!: BelongsTo<typeof Disponibilite>
