@@ -41,6 +41,7 @@ import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
+import Payment from '#models/paiement'
 import PatientdetailsController from '#controllers/PatientdetailsController';
 const Patientdetails   =  new    PatientdetailsController()
 const patient   =  new    PatientController()
@@ -3744,6 +3745,7 @@ router.on('/').renderInertia('home')
 
 
 
+
 router.get('/dashboard', async ({ request, response, inertia }) => {
   const token = request.cookie('token')
 
@@ -3759,37 +3761,49 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
       return response.redirect('/login')
     }
 
-    // Récupérer tous les utilisateurs
+    // 🔵 Récupérer tous les utilisateurs
     const users = await User.all()
 
-    // Mapper pour ne pas exposer d’infos sensibles
+    // 🔵 Filtrer par rôle
+    const patients = users.filter(u => u.role?.label === 'patient' )
+    const doctors = users.filter(u => u.role?.label === 'doctor')
+
+    // 🔵 Récupérer tous les paiements
+    const payments = await Payment.all()
+
+    // 🔵 Total plateforme depuis les paiements
+    const montantTotalPlateforme = payments.reduce((acc, p) => acc + Number(p.montant), 0)
+
+    // 🔵 Mapper les utilisateurs sans données sensibles
     const safeUsers = users.map(user => ({
       id: user.id,
       firstName: user.first_name,
       lastName: user.last_name,
       email: user.email,
+      role: user.role,
     }))
-// Exemple de stats (à remplacer par de vraies requêtes DB)
-const stats = {
-  totalPatients: 50,
-  activePatients: 40,
-  inactivePatients: 10,
-  percentActive: (40 / 50) * 100,
-  montantTotalPlateforme: 120000
-}
 
-return inertia.render('dashboard/dashboard', {
-  user: {
-    id: currentUser.id,
-    firstName: currentUser.first_name,
-    lastName: currentUser.last_name,
-    email: currentUser.email,
-  },
-  users: safeUsers,
-  stats // ✅ Maintenant le composant Vue a tout ce qu'il attend
-})
+    const stats = {
+      totalPatients: patients.length,
+      totalDoctors: doctors.length,
+      totalUsers: users.length,
+      montantTotalPlateforme,
+    }
 
-  } catch (error:any) {
+    return inertia.render('dashboard/dashboard', {
+      user: {
+        id: currentUser.id,
+        firstName: currentUser.first_name,
+        lastName: currentUser.last_name,
+        email: currentUser.email,
+        role: currentUser.role,
+      },
+      users: safeUsers,
+      stats,
+      payments, // tu peux aussi faire .map pour limiter les infos exposées
+    })
+
+  } catch (error: any) {
     console.error('[Dashboard] Erreur JWT :', error.message)
     return response.redirect('/login')
   }

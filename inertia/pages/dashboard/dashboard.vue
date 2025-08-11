@@ -5,7 +5,7 @@
   :class="[sidebarOpen ? 'w-64' : 'w-20', 'bg-blue-600 text-white flex flex-col justify-between p-4 transition-all duration-300']"
 >
       <div>
-        
+
         <div class="flex justify-between items-center mb-10">
   <img src="/public/logo.png" alt="Logo Mindiva" class="h-30 w-50 object-contain" v-if="sidebarOpen" />
   <button @click="toggleSidebar" class="text-white">
@@ -42,7 +42,7 @@
               <span v-if="sidebarOpen"><ChevronRight
                 :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-45' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
               /></span>
-              
+
             </div>
             <ul
               v-if="openSubMenu === 'docteurs'"
@@ -72,12 +72,12 @@
             >
               <div class="flex items-center gap-6">
                 <User class="w-5 h-5" :class="activeMenu === 'patients' ? 'text-black' : 'text-white'" />
-                <span v-if="sidebarOpen">Patients</span> 
+                <span v-if="sidebarOpen">Patients</span>
               </div>
               <span v-if="sidebarOpen"><ChevronRight
                 :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-45' : '', activeMenu === 'patients' ? 'text-black' : 'text-white']"
               /></span>
-              
+
             </div>
             <ul
               v-if="openSubMenu === 'patients'"
@@ -88,7 +88,7 @@
                 :class="activeSubMenu === 'gerer-patients' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('patients', 'gerer-patients')"
                 style="text-decoration: none;"
-              >                <span v-if="sidebarOpen">Gérer les patients</span> 
+              >                <span v-if="sidebarOpen">Gérer les patients</span>
               </li>
             </ul>
           </li>
@@ -101,12 +101,12 @@
             >
               <div class="flex items-center gap-6">
                 <Calendar class="w-5 h-5" :class="activeMenu === 'urgent' ? 'text-black' : 'text-white'" />
-                <span v-if="sidebarOpen">Urgent</span> 
+                <span v-if="sidebarOpen">Urgent</span>
               </div>
               <span v-if="sidebarOpen"><ChevronRight
                 :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-45' : '', activeMenu === 'urgent' ? 'text-black' : 'text-white']"
               /></span>
-              
+
             </div>
             <ul
               v-if="openSubMenu === 'urgent'"
@@ -134,7 +134,7 @@
               <span v-if="sidebarOpen"><ChevronRight
                 :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-45' : '', activeMenu === 'paiement' ? 'text-black' : 'text-white']"
               /></span>
-              
+
             </div>
             <ul
               v-if="openSubMenu === 'paiement'"
@@ -153,16 +153,16 @@
         </ul>
 
       </div>
-      
+
       <div class="text-sm">
         <span v-if="sidebarOpen"><p class="font-semibold">{{ user?.name || '' }}</p>
         <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
 </span>
-   
+
 
         <div class="text-sm"> <span v-if="sidebarOpen"> <p class="font-semibold">        Administrateur</p>
      </span>
-       
+
       </div>
     </div>
     </aside>
@@ -200,7 +200,7 @@
           </div>
         </div>
 
-      
+
         <!-- Chart Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <!-- Chart Patients -->
@@ -389,7 +389,13 @@ const props = defineProps<{
 }>()
 
 
- 
+
+const totalPatients = computed(() => {
+  console.log('All users:', props.users)
+  return props.users.filter(user => (user.role?.label || '').toLowerCase() === 'patient').length
+})
+
+
 const topDoctors = computed(() => {
   return props.users
     .filter(user => ['doctor', 'medecin'].includes((user.role || '').toLowerCase()))
@@ -400,7 +406,7 @@ console.log('Top Doctors:', topDoctors.value)
 
 // Stat cards dynamiques
 const stats = [
-  { label: 'Total Patients', value: props.stats.totalPatients, icon: Users },
+  { label: 'Total Patients', value: totalPatients, icon: Users },
   { label: 'Total Docteurs', value: props.users.length, icon: Stethoscope },
   { label: 'Urgent', value: '0', icon: Calendar },
   { label: 'Revenus', value: `XAF ${props.stats.montantTotalPlateforme.toLocaleString()}`, icon: DollarSign }
