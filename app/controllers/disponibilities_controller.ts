@@ -36,18 +36,10 @@ public async store({ request, response }: HttpContextContract) {
       heureFin
     } = request.body()
 
-    // S'assurer que 'jours' est un tableau JSON valide
-    const joursJson = Array.isArray(jours) ? JSON.stringify(jours) : jours;
-
-    // Vérification des données requises sans validation stricte sur 'jours'
-    if (
-      !idDoctor ||
-      !date_debut ||
-      !heureDebut ||
-      !heureFin
-    ) {
+    // Vérification minimale des champs requis
+    if (!idDoctor || !date_debut) {
       return response.badRequest({
-        message: 'idDoctor, date_debut, heureDebut et heureFin sont requis.'
+        message: 'idDoctor et date_debut sont requis.'
       })
     }
 
@@ -65,22 +57,32 @@ public async store({ request, response }: HttpContextContract) {
       return response.badRequest({ message: 'Dates invalides.' })
     }
 
-    // Validation des heures (optionnel mais recommandé)
-    const heureDebutValid = DateTime.fromFormat(heureDebut, 'HH:mm')
-    const heureFinValid = DateTime.fromFormat(heureFin, 'HH:mm')
-    if (!heureDebutValid.isValid || !heureFinValid.isValid || heureDebutValid >= heureFinValid) {
-      return response.badRequest({ message: 'Heures invalides ou incohérentes.' })
+    // Validation des heures si présentes
+    if (heureDebut || heureFin) {
+      const heureDebutValid = DateTime.fromFormat(heureDebut || '', 'HH:mm')
+      const heureFinValid = DateTime.fromFormat(heureFin || '', 'HH:mm')
+
+      if (
+        !heureDebutValid.isValid ||
+        !heureFinValid.isValid ||
+        heureDebutValid >= heureFinValid
+      ) {
+        return response.badRequest({ message: 'Heures invalides ou incohérentes.' })
+      }
     }
 
-    // Création de la disponibilité avec 'jours' correctement formaté
+    // Traitement des jours
+    const joursJson = Array.isArray(jours) ? JSON.stringify(jours) : jours ?? '[]'
+
+    // Création de la disponibilité
     const disponibilite = await Disponibilite.create({
       idDoctor,
       dateDebut,
       dateFin,
       actif,
-      jours: joursJson, // Utilisation du tableau JSON sérialisé
-      heureDebut,
-      heureFin,
+      jours: joursJson,
+      heureDebut: heureDebut || null,
+      heureFin: heureFin || null
     })
 
     return response.created({
@@ -96,6 +98,7 @@ public async store({ request, response }: HttpContextContract) {
     })
   }
 }
+
 
 
 
