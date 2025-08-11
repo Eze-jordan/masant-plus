@@ -3827,4 +3827,3 @@ router.get('/resources/files/:id', async (ctx) => {
   });
 }).middleware([throttle])// Middleware pour limiter les requêtes (précaution supplémentaire)
 
-// ...existing code...

@@ -18,8 +18,7 @@ export default class Disponibilite extends BaseModel {
   @column()
   public idDoctor!: string
 
-@column()
-public jours!: any
+
 
 
   @column()
@@ -30,10 +29,10 @@ public jours!: any
 
   @column.dateTime({ columnName: 'date_debut' }) // ← ICI
   public dateDebut: DateTime | null = null
-  
+
   @column.dateTime({ columnName: 'date_fin' }) // ← ICI
   public dateFin: DateTime | null = null
-  
+
 
   @column()
   public actif!: boolean
