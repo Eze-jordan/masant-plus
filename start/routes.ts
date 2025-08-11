@@ -10,6 +10,8 @@ import AppKeyGuard from '#middleware/app_key_guard_middleware'
 import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
 const medicament =new   MedicamentFrancesController()
 const userinfo  =new  pourcentage_comptes_controller()
+import ResourcesController from '#controllers/resources_controller';
+const resourcesController = new ResourcesController();
 const DemandeController =new DemandeDocteurController()
 const patientsend  =new  sendinginfopatients_controller()
 const doctorSpecialty  =new  SpecialiteController()
@@ -89,7 +91,7 @@ const passwordResetController = new PasswordResetController()
 
 
 /**
- * @swagger 
+ * @swagger
  * /login:
  *   post:
  *     tags:
@@ -2499,7 +2501,7 @@ router.post('/login', async (ctx) => {
       return authController.login(ctx)
     })
   })
-  
+
 }).middleware([throttle])
 
 router.get('/paiements/solde/:userId', async (ctx) => {
@@ -2612,7 +2614,7 @@ router.post('/upload/document', async (ctx: HttpContextContract) => {
         // Construire l'URL publique en fonction de la configuration S3
         const s3BaseUrl = process.env.S3_ENDPOINT?.replace(/\/$/, '') || ''
         const bucket = process.env.S3_BUCKET || ''
-        
+
         // URL publique du fichier téléchargé
         console.log(bucket)
         const publicUrl = `${s3BaseUrl}/masanteplus/uploads/profile/${fileName}`
@@ -2813,7 +2815,7 @@ router.delete('/users/:id', async (ctx) => {
     })
   })
 }).middleware([throttle])
-// pour changer le mode passe 
+// pour changer le mode passe
 
 router.put('/users/:id/change-password', async (ctx) => {
   console.log('[PUT /users/:id/change-password] Débutz de traitement')
@@ -2846,7 +2848,7 @@ router.put('/users/:id', async (ctx) => {
 // Route GET /disponibilites (Liste toutes les disponibilités)
 router.get('/disponibilites', async (ctx) => {
   console.log('[GET /disponibilites] Début')
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return disponibilityuser.index(ctx)
@@ -2856,7 +2858,7 @@ router.get('/disponibilites', async (ctx) => {
 
 router.post('/disponibilites/:id/creneaux', async (ctx) => {
   console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return  disponibilityuser.createCreneaux(ctx)
@@ -2867,7 +2869,7 @@ router.post('/disponibilites/:id/creneaux', async (ctx) => {
 // Route GET //disponibilites/:id/creneaux (Affiche une disponibilité spécifique par ID)
 router.get('/disponibilites/:id', async (ctx) => {
   console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return  disponibilityuser.getByDoctor(ctx)
@@ -2890,7 +2892,7 @@ router.post('/disponibilites', async (ctx) => {
 
 router.get('/patients/:id', async (ctx) => {
   console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return patientsend.show(ctx)
@@ -2902,7 +2904,7 @@ router.get('/patients/:id', async (ctx) => {
 
 router.put('/disponibilites/:id', async (ctx) => {
   console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return disponibilityuser.update(ctx)
@@ -2913,7 +2915,7 @@ router.put('/disponibilites/:id', async (ctx) => {
 // Route DELETE /disponibilites/:id (Supprime une disponibilité par ID)
 router.delete('/disponibilites/:id', async (ctx) => {
   console.log(`[DELETE /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return  disponibilityuser.destroy(ctx)
@@ -3108,7 +3110,7 @@ router.post('/paiements/mobile-money', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       // Créer une instance du contrôleur
       const paiementsController = new PaiementsController()
-      
+
       // Appeler la méthode d'instance sur l'objet paiementsController
       return await paiementsController.createMobileMoneyInvoice(ctx)
     })
@@ -3120,7 +3122,7 @@ router.get('/paiements', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       // Créer une instance du contrôleur
       const paiementsController = new PaiementsController()
-      
+
       // Appeler la méthode d'instance sur l'objet paiementsController
       return await paiementsController.index(ctx)
     })
@@ -3686,7 +3688,7 @@ router.group(() => {
 })
 
 
-//route pour les demandes des docteurs 
+//route pour les demandes des docteurs
 router.post('/DemandeDocteur', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3813,3 +3815,16 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
 router.get('*', async ({ inertia }) => {
   return inertia.render('errors/not_found', { status: 404 })
 })
+
+// Route pour récupérer les fichiers via ResourcesController
+
+
+router.get('/resources/files/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await resourcesController.index(ctx);
+    });
+  });
+}).middleware([throttle])// Middleware pour limiter les requêtes (précaution supplémentaire)
+
+// ...existing code...
