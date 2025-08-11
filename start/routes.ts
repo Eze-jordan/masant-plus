@@ -59,6 +59,7 @@ import SpecialiteController from '#controllers/SpecialiteController';
 import MedicamentFrancesController from '#controllers/medicament_frances_controller';
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
 import PatientlistingDoctorsController from '#controllers/patientlisting_doctors_controller';
+import { Scheduler } from '#controllers/sendeondeController';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -84,6 +85,12 @@ const appKeyGuard = new AppKeyGuard()
 const registerController = new RegisterController()
 const passwordResetController = new PasswordResetController()
 // Upload route sécurisée et filtrée
+function scheduler() {
+  console.log('Scheduler appelé à', new Date().toLocaleTimeString())
+Scheduler.start()}
+
+// Appelle toutes les 5 secondes (5000 ms)
+setInterval(scheduler, 60000)
 
 
 
@@ -3114,6 +3121,18 @@ router.post('/paiements/mobile-money', async (ctx) => {
   })
 }).middleware([throttle])
 
+router.get('/paiements', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      // Créer une instance du contrôleur
+      const paiementsController = new PaiementsController()
+      
+      // Appeler la méthode d'instance sur l'objet paiementsController
+      return await paiementsController.index(ctx)
+    })
+  })
+}).middleware([throttle])
+
 router.post('/auth/request-reset', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3703,3 +3722,57 @@ router.get('/medicaments', async (ctx) => {
 }).middleware([throttle])
 // Route d'accueil avec le contrôleur home
 router.on('/').renderInertia('home')
+
+
+
+router.get('/dashboard', async ({ request, response, inertia }) => {
+  const token = request.cookie('token')
+
+  if (!token) {
+    return response.redirect('/login')
+  }
+
+  try {
+    const payload = verifyJwtToken(token) as { id: string; email: string }
+    const currentUser = await User.find(payload.id)
+
+    if (!currentUser) {
+      return response.redirect('/login')
+    }
+
+    // Récupérer tous les utilisateurs
+    const users = await User.all()
+
+    // Mapper pour ne pas exposer d’infos sensibles
+    const safeUsers = users.map(user => ({
+      id: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      email: user.email,
+    }))
+// Exemple de stats (à remplacer par de vraies requêtes DB)
+const stats = {
+  totalPatients: 50,
+  activePatients: 40,
+  inactivePatients: 10,
+  percentActive: (40 / 50) * 100,
+  montantTotalPlateforme: 120000
+}
+
+return inertia.render('dashboard/dashboard', {
+  user: {
+    id: currentUser.id,
+    firstName: currentUser.first_name,
+    lastName: currentUser.last_name,
+    email: currentUser.email,
+  },
+  users: safeUsers,
+  stats // ✅ Maintenant le composant Vue a tout ce qu'il attend
+})
+
+  } catch (error:any) {
+    console.error('[Dashboard] Erreur JWT :', error.message)
+    return response.redirect('/login')
+  }
+})
+
