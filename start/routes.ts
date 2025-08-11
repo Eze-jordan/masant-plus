@@ -3590,6 +3590,14 @@ router.get('/doctors', async (ctx) => {
   })
 })
 
+router.get('/alldoctors', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await doctorAll.index(ctx)
+    })
+  })
+})
+
 router.get('/csrf-check', async ({ response }) => {
   return response.ok({ status: 'ok' })
 })
@@ -3700,6 +3708,15 @@ router.post('/demandes-docteurs/reject/:id', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       const controller = new DemandeDocteurController()
       return await controller.reject(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/demandes-docteurs', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new DemandeDocteurController()
+      return await controller.index(ctx)
     })
   })
 }).middleware([throttle])
