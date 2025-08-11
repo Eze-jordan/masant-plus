@@ -1,12 +1,12 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { User } from 'lucide-vue-next'
 
 const props = defineProps({
   user: Object,
   users: {
     type: Array,
-    required: true,
+    required: false,
     default: () => [],
   },
 })
@@ -40,6 +40,21 @@ const filteredPatients = computed(() => {
     p.email?.toLowerCase().includes(search.value.toLowerCase()) ||
     p.adresse?.toLowerCase().includes(search.value.toLowerCase())
   )
+})
+
+async function fetchPatients() {
+  try {
+    const response = await fetch('/patient') // Mets ici ton endpoint API réel
+    if (!response.ok) throw new Error('Erreur lors de la récupération des patients')
+    const data = await response.json()
+    patients.value = data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+onMounted(() => {
+  fetchPatients()
 })
 
 function toggleMenu(id) {
