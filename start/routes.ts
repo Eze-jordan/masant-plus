@@ -60,7 +60,6 @@ import SpecialiteController from '#controllers/SpecialiteController';
 import MedicamentFrancesController from '#controllers/medicament_frances_controller';
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
 import PatientlistingDoctorsController from '#controllers/patientlisting_doctors_controller';
-import { Scheduler } from '#controllers/sendeondeController';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
