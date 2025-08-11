@@ -54,5 +54,11 @@ export default class UserController {
       return response.status(500).json({ message: 'Erreur lors de la récupération des données' });
     }
   }
+
+    public async index({ response }: HttpContextContract) {
+    // Récupère tous les docteurs
+    const docteurs = await Docteur.all()
+    return response.ok(docteurs)
+  }
   
 }

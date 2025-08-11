@@ -46,10 +46,11 @@ export default class DemandeDocteurController {
   
 
   // Lister toutes les demandes (admin)
-  public async index({ response }: HttpContextContract) {
-    const demandes = await DemandeDocteur.all()
-    return response.ok(demandes)
-  }
+ public async index({ response }: HttpContextContract) {
+  const demandes = await DemandeDocteur.query().where('status', 'pending')
+  return response.ok(demandes)
+}
+
 
   // Voir le détail d'une demande
   public async show({ params, response }: HttpContextContract) {
