@@ -164,7 +164,6 @@ async function fetchPaiements() {
     const res = await fetch('/paiements')
     if (!res.ok) throw new Error('Erreur de récupération des paiements')
     const data = await res.json()
-    console.log(data)
 paiements.value = data.map(p => ({
   id: p.id,
   first_name: p.first_name ?? '',
