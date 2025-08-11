@@ -3795,3 +3795,7 @@ return inertia.render('dashboard/dashboard', {
   }
 })
 
+// Route fallback - doit être la dernière route
+router.get('*', async ({ inertia }) => {
+  return inertia.render('errors/not_found', { status: 404 })
+})
