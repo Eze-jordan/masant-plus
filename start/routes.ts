@@ -15,6 +15,7 @@ const patientsend  =new  sendinginfopatients_controller()
 const doctorSpecialty  =new  SpecialiteController()
 import { throttle } from '#start/limiter'
 const patients  =new  PatientController()
+const patients_controller = new PatientsController()
 import RegisterController from '#controllers/RegisterController'
 import AuthController from '#controllers/auth_controller'
 import PatientsController from '#controllers/patients_controller'
@@ -3179,6 +3180,15 @@ router.get('/account/all', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return await admins.getAllUsers(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+router.get('/patient', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await patients_controller.index(ctx)
     })
   })
 }).middleware([throttle])
