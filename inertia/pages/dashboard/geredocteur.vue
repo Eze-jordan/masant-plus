@@ -81,6 +81,7 @@ onMounted(async () => {
 
     // Récupérer les données et ajouter champs manquants par défaut
     const data = await response.json()
+    console.log(data)
     docteurs.value = data.map(d => ({
       phone: '',
       specialty: '',
