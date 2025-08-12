@@ -3819,7 +3819,9 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
 })
 
 // Route fallback - doit être la dernière route
-
+router.get('*', async ({ inertia }) => {
+  return inertia.render('errors/not_found', { status: 404 })
+})
 
 // Route pour récupérer les fichiers via ResourcesController
 
