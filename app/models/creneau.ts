@@ -27,6 +27,9 @@ export default class Creneau extends BaseModel {
   @column({ columnName: 'date' }) // on garde la date en format string (ex: "2025-08-01")
   public date!: string
 
+    @column({ columnName: 'jour' })
+    // on garde la date en format string (ex: "2025-08-01")
+  public jour!: string
   @column()
   public disponible!: boolean
 
