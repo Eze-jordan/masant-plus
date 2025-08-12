@@ -2877,6 +2877,16 @@ router.get('/disponibilites/:id', async (ctx) => {
   })
 }).middleware([throttle])
 
+router.get('/detailsdisponibilites/:id', async (ctx) => {
+  console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return  disponibilityuser.show(ctx)
+    })
+  })
+}).middleware([throttle])
+
 // Route POST /disponibilites (Créer une nouvelle disponibilité)
 router.post('/disponibilites', async (ctx) => {
   console.log('[POST /disponibilites] Début')
