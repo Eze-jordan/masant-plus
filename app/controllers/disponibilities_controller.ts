@@ -314,66 +314,62 @@ public async store({ request, response }: HttpContextContract) {
   }
 
   // ➤ Détails d'une disponibilité
-  public async show({ params, response }: HttpContextContract) {
-    try {
-      const disponibilite = await Disponibilite.query()
-        .where('id', params.id)
-        .preload('creneaux')
-        .preload('doctor')
-        .firstOrFail()
+public async show({ params, response }: HttpContextContract) {
+  try {
+    const disponibilite = await Disponibilite.query()
+      .where('id', params.id)
+      .select(['id', 'date_debut', 'date_fin', 'created_at']) // champs que tu veux
+      .firstOrFail()
 
-      return response.ok(disponibilite)
-    } catch (error) {
-      console.error(error)
-      return response.status(404).send({ message: 'Disponibilité non trouvée.' })
-    }
+    return response.ok(disponibilite)
+  } catch (error) {
+    console.error(error)
+    return response.status(404).send({ message: 'Disponibilité non trouvée.' })
   }
+}
+
 
   // ➤ Mettre à jour une disponibilité
-  public async update({ params, request, response }: HttpContextContract) {
-    const data = request.only([
-      'idDoctor',
-      'heureDebut',
-      'heureFin',
-      'date_debut',
-      'date_fin',
-      'actif',
-    ])
+public async update({ params, request, response }: HttpContextContract) {
+  const data = request.only([
+    'idDoctor',
+    'date_debut',
+    'date_fin',
+    'actif',
+  ])
 
-    try {
-      const disponibilite = await Disponibilite.findOrFail(params.id)
+  try {
+    const disponibilite = await Disponibilite.findOrFail(params.id)
 
-      disponibilite.idDoctor = data.idDoctor ?? disponibilite.idDoctor
-      disponibilite.heureDebut = data.heureDebut ?? disponibilite.heureDebut
-      disponibilite.heureFin = data.heureFin ?? disponibilite.heureFin
+    disponibilite.idDoctor = data.idDoctor ?? disponibilite.idDoctor
 
-      if (data.date_debut) {
-        const parsed = DateTime.fromISO(data.date_debut)
-        if (!parsed.isValid) {
-          return response.badRequest({ message: 'date_debut invalide' })
-        }
-        disponibilite.dateDebut = parsed
+    if (data.date_debut) {
+      const parsed = DateTime.fromISO(data.date_debut)
+      if (!parsed.isValid) {
+        return response.badRequest({ message: 'date_debut invalide' })
       }
-
-      if (data.date_fin) {
-        const parsed = DateTime.fromISO(data.date_fin)
-        if (!parsed.isValid) {
-          return response.badRequest({ message: 'date_fin invalide' })
-        }
-        disponibilite.dateFin = parsed
-      }
-
-      if (typeof data.actif === 'boolean') {
-        disponibilite.actif = data.actif
-      }
-
-      await disponibilite.save()
-      return response.ok(disponibilite)
-    } catch (error: any) {
-      console.error(error)
-      return response.status(404).send({ message: 'Disponibilité non trouvée.' })
+      disponibilite.dateDebut = parsed
     }
+
+    if (data.date_fin) {
+      const parsed = DateTime.fromISO(data.date_fin)
+      if (!parsed.isValid) {
+        return response.badRequest({ message: 'date_fin invalide' })
+      }
+      disponibilite.dateFin = parsed
+    }
+
+    if (typeof data.actif === 'boolean') {
+      disponibilite.actif = data.actif
+    }
+
+    await disponibilite.save()
+    return response.ok(disponibilite)
+  } catch (error: any) {
+    console.error(error)
+    return response.status(404).send({ message: 'Disponibilité non trouvée.' })
   }
+}
 
   // ➤ Supprimer une disponibilité
   public async destroy({ params, response }: HttpContextContract) {
