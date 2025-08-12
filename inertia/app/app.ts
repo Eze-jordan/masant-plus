@@ -7,7 +7,7 @@ import type { DefineComponent } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 
-const appName = import.meta.env.VITE_APP_NAME || 'AdonisJS'
+const appName = import.meta.env.VITE_APP_NAME || 'masanteplus'
 
 createInertiaApp({
   progress: { color: '#5468FF' },
@@ -22,9 +22,9 @@ createInertiaApp({
   },
 
   setup({ el, App, props, plugin }) {
-    
+
     createSSRApp({ render: () => h(App, props) })
-    
+
       .use(plugin)
       .mount(el)
   },
