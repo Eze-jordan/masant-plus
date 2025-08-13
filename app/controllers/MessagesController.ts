@@ -24,7 +24,7 @@ export default class MessagesController {
       roleReceiver,
       message,
       titre,
-      date, // <-- récupéré depuis la requête
+      date,
     } = request.only([
       'idDiscussion',
       'idUserSender',
@@ -32,37 +32,46 @@ export default class MessagesController {
       'roleReceiver',
       'message',
       'titre',
-      'date', // <-- ajouté ici
+      'date',
     ])
-  
+
     const file = request.file('file', {
       size: '5mb',
       extnames: ['pdf', 'doc', 'docx'],
     })
-  
-    const typeMessage = file ? 'document' : (request.input('typeMessage') || 'text')
-  
+
     try {
+      // 1️⃣ Vérification expéditeur
       const sender = await User.find(idUserSender)
-      if (!sender) return response.status(404).send({ message: 'Expéditeur non trouvé.' })
-  
-      let discussion = idDiscussion
-        ? await Discussion.find(idDiscussion)
-        : await this.findOrCreateDiscussion(idUserSender, idUserReceiver, roleReceiver)
-  
-      if (!discussion) {
-        return response.status(404).send({ message: 'Discussion non trouvée.' })
+      if (!sender) {
+        return response.status(404).send({ message: 'Expéditeur non trouvé.' })
       }
-  
-      // Upload fichier
+
+      // 2️⃣ Trouver ou créer discussion
+      let discussion: Discussion
+      if (idDiscussion) {
+        const foundDiscussion = await Discussion.find(idDiscussion)
+        if (!foundDiscussion) {
+          return response.status(404).send({ message: 'Discussion non trouvée.' })
+        }
+        discussion = foundDiscussion
+      } else {
+        const foundDiscussion = await this.findOrCreateDiscussion(idUserSender, idUserReceiver, roleReceiver)
+        if (!foundDiscussion) {
+          return response.status(400).send({ message: 'Impossible de créer la discussion.' })
+        }
+        discussion = foundDiscussion
+      }
+
+      // 3️⃣ Upload fichier (optionnel)
       let fileUrl: string | null = null
-  
+      let typeMessage = 'text'
+
       if (file && file.tmpPath) {
         const fileName = `${cuid()}.${file.extname}`
         const fileBuffer = await fs.readFile(file.tmpPath)
-  
         await drive.use('s3').put(`uploads/documents/${fileName}`, fileBuffer)
-  
+
         const s3 = new S3Client({
           region: process.env.AWS_REGION!,
           credentials: {
@@ -72,39 +81,41 @@ export default class MessagesController {
           endpoint: process.env.S3_ENDPOINT!,
           forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
         })
-  
+
         const command = new GetObjectCommand({
           Bucket: process.env.S3_BUCKET!,
           Key: `uploads/documents/${fileName}`,
         })
-  
+
         fileUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 60 * 24 * 7 })
-  
-        // ➕ Ajout à Ressource avec date saisie par l'utilisateur
+        typeMessage = 'document'
+
         await Ressource.create({
           url: fileUrl,
           titre: titre ?? file.clientName ?? 'Document médical',
-          date: date ?? '', // <-- ici on utilise la date utilisateur
+          date: date ?? '',
           userId: idUserSender,
         })
       }
-  
+
+      // 4️⃣ Création du message
       const newMessage = await DiscussionMessagery.create({
         idDiscussion: discussion.id,
         idUserSender,
         message: fileUrl ?? message,
         typeMessage,
       })
-  
+
       await newMessage.load('sender')
-  
+
+      // 5️⃣ Notification
       await Notification.create({
         idUser: idUserReceiver,
         titre: 'Nouveau message reçu',
         description: `Vous avez reçu un ${file ? 'document' : 'message'} de ${newMessage.sender?.email ?? 'un utilisateur'} ${newMessage.sender?.last_name ?? ''}.`,
         isRead: false,
       })
-  
+
       return response.created({
         message: 'Message envoyé avec succès.',
         data: {
@@ -124,8 +135,10 @@ export default class MessagesController {
       })
     }
   }
-  
 
+  /**
+   * Trouver ou créer discussion avec idDoctor et idPatient dans la même ligne
+   */
   private async findOrCreateDiscussion(
     idUserSender: string,
     idUserReceiver: string,
@@ -139,9 +152,14 @@ export default class MessagesController {
         ? [idUserReceiver, idUserSender]
         : [idUserSender, idUserReceiver]
 
+    // Vérification discussion existante dans la même ligne
     let discussion = await Discussion.query()
-      .where('idDoctor', idDoctor)
-      .andWhere('idPatient', idPatient)
+      .where(q => q
+        .where('idDoctor', idDoctor).andWhere('idPatient', idPatient)
+      )
+      .orWhere(q => q
+        .where('idDoctor', idPatient).andWhere('idPatient', idDoctor)
+      )
       .first()
 
     if (!discussion) {
@@ -154,6 +172,10 @@ export default class MessagesController {
 
     return discussion
   }
+
+
+
+
 
   public async getByUser({ params, response }: HttpContextContract) {
     const userId = params.userId
