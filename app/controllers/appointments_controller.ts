@@ -91,113 +91,102 @@ export default class AppointmentController {
    */
 
 
-  public async create({ request, response }: HttpContextContract) {
-    try {
-      // Extraction des données de la requête
-      const payload = request.only([
-        'idDoctor',
-        'idPatient',
-        'date',
-        'typeRdv',
-        'etatRdv',
-        'heureDebut',
-        'heureFin',
-        'description',
-        'idCreneau' // Assurez-vous d'inclure 'idCreneau' ici
-      ]);
 
-      // Vérification de la validité de la date
-      const dateRdv = DateTime.fromISO(payload.date);
-      if (!dateRdv.isValid) {
-        return response.badRequest({ message: 'Date invalide.' });
-      }
 
-      // Convertir les heures en DateTime pour la même date
-      let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`);
-      let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`);
+public async create({ request, response }: HttpContextContract) {
+  try {
+    const payload = request.only([
+      'idDoctor',
+      'idPatient',
+      'date',
+      'typeRdv',
+      'etatRdv',
+      'heureDebut',
+      'heureFin',
+      'description',
+      'idCreneau'
+    ])
 
-      // Vérification de la validité des heures et si l'heure de fin est après l'heure de début
-      if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
-        return response.badRequest({ message: 'Heures invalides ou fin avant début.' });
-      }
-
-      // Vérification des conflits de rendez-vous existants
-      const existingAppointments = await Appointment.query()
-        .where('idDoctor', payload.idDoctor)
-        .andWhere('dateRdv', dateRdv.toISODate());
-
-      // Fonction pour vérifier si deux intervalles se chevauchent
-      function isOverlapping(intervalA: Interval, intervalB: Interval) {
-        return intervalA.overlaps(intervalB);
-      }
-
-      // Construire l'intervalle du rendez-vous demandé
-      let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin);
-
-      // Vérifier si le créneau demandé chevauche un rendez-vous existant
-      let hasOverlap = existingAppointments.some(app => {
-        const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`);
-        const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`);
-        const appInterval = Interval.fromDateTimes(appStart, appEnd);
-        return isOverlapping(requestedInterval, appInterval);
-      });
-
-      // Si un chevauchement est trouvé, renvoyer une erreur
-      if (hasOverlap) {
-        return response.badRequest({ message: 'Le créneau est déjà occupé.' });
-      }
-
-      // Définir les états valides
-      const validStates = ['PENDING', 'CONFIRMED', 'CANCELLED'];
-
-      // Si l'état n'est pas valide, on le définit par défaut à "PENDING"
-      const etatRdv = validStates.includes(payload.etatRdv) ? payload.etatRdv : 'PENDING';
-
-      // Créer le rendez-vous avec les horaires et l'état validés
-      const appointment = await Appointment.create({
-        idDoctor: payload.idDoctor,
-        idUser: payload.idPatient,
-        dateRdv: dateRdv,
-        typeRdv: payload.typeRdv,
-        etatRdv: etatRdv,  // Utilisation de l'état validé
-        heureDebut: heureDebut.toFormat('HH:mm'),
-        heureFin: heureFin.toFormat('HH:mm'),
-        description: payload.description,
-      });
-
-      // Si un ID de créneau est fourni, on le met à jour
-      if (payload.idCreneau) {
-        try {
-          const creneau = await Creneau.findOrFail(payload.idCreneau);
-
-          if (creneau.isUsed) {
-            console.warn(`Le créneau ${payload.idCreneau} est déjà marqué comme utilisé.`);
-          } else {
-            // Marquer le créneau comme utilisé
-            creneau.isUsed = true;
-            await creneau.save();
-            console.log(`Créneau ${payload.idCreneau} mis à jour avec succès.`);
-          }
-        } catch (error) {
-          console.error('Erreur lors de la mise à jour du créneau :', error);
-        }
-      }
-
-      // Retourner la réponse avec succès et les informations du rendez-vous créé
-      return response.created({
-        message: 'Rendez-vous créé avec succès.',
-        id: appointment.id,  // ID du rendez-vous créé
-        data: appointment,    // Détails du rendez-vous
-      });
-
-    } catch (error) {
-      console.error('[AppointmentController.create] Erreur :', error);
-      return response.internalServerError({
-        message: 'Erreur serveur lors de la création du rendez-vous.',
-        error: error.message
-      });
+    const dateRdv = DateTime.fromISO(payload.date)
+    if (!dateRdv.isValid) {
+      return response.badRequest({ message: 'Date invalide.' })
     }
+
+    let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`)
+    let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`)
+
+    if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
+      return response.badRequest({ message: 'Heures invalides ou fin avant début.' })
+    }
+
+    const existingAppointments = await Appointment.query()
+      .where('idDoctor', payload.idDoctor)
+      .andWhere('dateRdv', dateRdv.toISODate())
+
+    function isOverlapping(intervalA: Interval, intervalB: Interval) {
+      return intervalA.overlaps(intervalB)
+    }
+
+    let requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
+
+    let hasOverlap = existingAppointments.some(app => {
+      const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`)
+      const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`)
+      const appInterval = Interval.fromDateTimes(appStart, appEnd)
+      return isOverlapping(requestedInterval, appInterval)
+    })
+
+    if (hasOverlap) {
+      return response.badRequest({ message: 'Le créneau est déjà occupé.' })
+    }
+
+    const validStates = ['PENDING', 'CONFIRMED', 'CANCELLED']
+    const etatRdv = validStates.includes(payload.etatRdv) ? payload.etatRdv : 'PENDING'
+
+    // Création du rendez-vous avec idCreneau inclus
+    const appointment = await Appointment.create({
+      idDoctor: payload.idDoctor,
+      idUser: payload.idPatient,
+      dateRdv: dateRdv,
+      typeRdv: payload.typeRdv,
+      etatRdv: etatRdv,
+      heureDebut: heureDebut.toFormat('HH:mm'),
+      heureFin: heureFin.toFormat('HH:mm'),
+      description: payload.description,
+      idCreneau: payload.idCreneau,  // Ajout du champ ici
+    })
+
+    // Mise à jour du créneau en tant qu'utilisé
+    if (payload.idCreneau) {
+      try {
+        const creneau = await Creneau.findOrFail(payload.idCreneau)
+
+        if (creneau.isUsed) {
+          console.warn(`Le créneau ${payload.idCreneau} est déjà marqué comme utilisé.`)
+        } else {
+          creneau.isUsed = true
+          await creneau.save()
+          console.log(`Créneau ${payload.idCreneau} mis à jour avec succès.`)
+        }
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour du créneau :', error)
+      }
+    }
+
+    return response.created({
+      message: 'Rendez-vous créé avec succès.',
+      id: appointment.id,
+      data: appointment,
+    })
+  } catch (error) {
+    console.error('[AppointmentController.create] Erreur :', error)
+    return response.internalServerError({
+      message: 'Erreur serveur lors de la création du rendez-vous.',
+      error: error.message,
+    })
   }
+}
+
   /**
  * Récupérer les rendez-vous à venir d’un patient
  */

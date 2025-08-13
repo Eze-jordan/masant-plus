@@ -5,6 +5,7 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { EtatRDV, StatusPaiement } from '../enum/enums.js'
 import { CreateInvoice, GetInvoice, MakePushUSSD } from '#services/ebilling'
 import Appointment from '#models/appointment'
+import Creneau from '#models/creneau'
 
 export default class PaiementsController {
   /**
@@ -35,6 +36,7 @@ public async index({ response }: HttpContextContract) {
 
 
 
+
 public async create({ request, response }: HttpContextContract) {
   const { idUser, idAppointment, montant, modeId, numeroTelephone } = request.only([
     'idUser',
@@ -55,10 +57,28 @@ public async create({ request, response }: HttpContextContract) {
       numeroTelephone,
     })
 
-    // 🔁 Mettre à jour le rendez-vous à CONFIRME
+    // Récupérer le rendez-vous lié
     const rdv = await Appointment.find(idAppointment)
     if (rdv) {
-      rdv.etatRdv = EtatRDV.CONFIRME
+      // Récupérer le créneau associé
+      const creneau = await Creneau.find(rdv.idCreneau)
+
+      if (paiement.statut === StatusPaiement.PAYE) {
+        // Paiement OK => mettre le rdv en CONFIRME et laisser isUsed à false
+        rdv.etatRdv = EtatRDV.CONFIRME
+
+        if (creneau) {
+          creneau.isUsed = true
+          await creneau.save()
+        }
+      } else {
+        // Paiement échoué => mettre isUsed à true (libérer ou marquer créneau)
+        if (creneau) {
+          creneau.isUsed = true
+          await creneau.save()
+        }
+      }
+
       await rdv.save()
     }
 
@@ -67,6 +87,18 @@ public async create({ request, response }: HttpContextContract) {
       paiement,
     })
   } catch (error: any) {
+    // En cas d'erreur, on peut envisager de marquer le créneau comme utilisé (libéré)
+    try {
+      const rdv = await Appointment.find(idAppointment)
+      if (rdv) {
+        const creneau = await Creneau.find(rdv.idCreneau)
+        if (creneau) {
+          creneau.isUsed = false
+          await creneau.save()
+        }
+      }
+    } catch (_) {}
+
     return response.status(500).send({
       message: 'Erreur lors de la création du paiement',
       error: error.message,
