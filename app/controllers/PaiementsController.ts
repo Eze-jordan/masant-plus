@@ -2,7 +2,7 @@ import Paiement from '#models/paiement'
 import ModePaiement from '#models/mode_paiement'
 import { DateTime } from 'luxon'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { StatusPaiement } from '../enum/enums.js'
+import { EtatRDV, StatusPaiement } from '../enum/enums.js'
 import { CreateInvoice, GetInvoice, MakePushUSSD } from '#services/ebilling'
 import Appointment from '#models/appointment'
 
@@ -34,37 +34,47 @@ public async index({ response }: HttpContextContract) {
 }
 
 
-  public async create({ request, response }: HttpContextContract) {
-    const { idUser, idAppointment, montant, modeId } = request.only([
-      'idUser',
-      'idAppointment',
-      'montant',
-      'modeId',
-    ])
 
-    try {
-      const paiement = await Paiement.create({
-        idUser,
-        idAppointment,
-        montant,
-        statut: StatusPaiement.PAYE,
-        datePaiement: DateTime.now(),
-        modeId,
-      })
+public async create({ request, response }: HttpContextContract) {
+  const { idUser, idAppointment, montant, modeId, numeroTelephone } = request.only([
+    'idUser',
+    'idAppointment',
+    'montant',
+    'modeId',
+    'numeroTelephone',
+  ])
 
-      return response.created({
-        message: 'Paiement créé avec succès',
-        paiement,
-      })
-    } catch (error: any) {
-      return response.status(500).send({
-        message: 'Erreur lors de la création du paiement',
-        error: error.message,
-      })
+  try {
+    const paiement = await Paiement.create({
+      idUser,
+      idAppointment,
+      montant,
+      statut: StatusPaiement.PAYE,
+      datePaiement: DateTime.now(),
+      modeId,
+      numeroTelephone,
+    })
+
+    // 🔁 Mettre à jour le rendez-vous à CONFIRME
+    const rdv = await Appointment.find(idAppointment)
+    if (rdv) {
+      rdv.etatRdv = EtatRDV.CONFIRME
+      await rdv.save()
     }
-  }
 
-  
+    return response.created({
+      message: 'Paiement créé et rendez-vous confirmé avec succès',
+      paiement,
+    })
+  } catch (error: any) {
+    return response.status(500).send({
+      message: 'Erreur lors de la création du paiement',
+      error: error.message,
+    })
+  }
+}
+
+
   /**
    * Crée une facture Mobile Money via eBilling + push USSD, puis enregistre le paiement
    */
@@ -92,16 +102,16 @@ public async index({ response }: HttpContextContract) {
       'idUser',
       'idAppointment',
     ])
-  
+
     try {
       // 1. Détection du mode de paiement (basé sur le numéro)
       const modeLabel = this.detectPaymentLabel(payer_msisdn)
       let modePaiement = await ModePaiement.query().where('label', modeLabel).first()
-  
+
       if (!modePaiement) {
         modePaiement = await ModePaiement.create({ label: modeLabel })
       }
-  
+
       // 2. Création de la facture via eBilling
       const invoice = await CreateInvoice({
         amount,
@@ -112,12 +122,12 @@ public async index({ response }: HttpContextContract) {
         description,
         expiry_period,
       })
-  
+
       const bill_id = invoice?.e_bill?.bill_id ?? null
-  
+
       // Déterminer si la facture est déjà payée (si applicable)
       const isPaid = invoice?.e_bill?.status === 'PAYE' // à adapter selon l'API eBilling
-  
+
       // 3. Création du paiement avec le bon statut
       const paiement = await Paiement.create({
         idUser,
@@ -128,7 +138,7 @@ public async index({ response }: HttpContextContract) {
         modeId: modePaiement.id,
         numeroTelephone: payer_msisdn,
       })
-  
+
       // 4. Si payé immédiatement → mise à jour du rendez-vous
       if (isPaid) {
         const appointment = await Appointment.find(idAppointment)
@@ -137,7 +147,7 @@ public async index({ response }: HttpContextContract) {
           await appointment.save()
         }
       }
-  
+
       // 5. Envoi du push USSD (optionnel)
       let ussdResponse = null
       try {
@@ -150,7 +160,7 @@ public async index({ response }: HttpContextContract) {
       } catch (pushError) {
         console.error('Erreur lors de l\'envoi du push USSD :', pushError)
       }
-  
+
       // 6. Réponse finale
       return response.created({
         message: isPaid
@@ -169,7 +179,7 @@ public async index({ response }: HttpContextContract) {
       })
     }
   }
-  
+
 
   /**
    * Vérifie le statut d'une facture par bill_id
