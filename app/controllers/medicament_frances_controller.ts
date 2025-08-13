@@ -34,17 +34,30 @@ export default class MedicationsController {
     }
   }
 
-  public async index({ response }: HttpContextContract) {
-    try {
-      const medications = await Medication.all()
-      return response.ok(medications)
-    } catch (error) {
-      console.error(error)
-      return response.status(500).json({
-        message: 'Erreur lors de la récupération des médicaments',
-        error: error.message,
-      })
+public async index({ request, response }: HttpContextContract) {
+  try {
+    const search = request.input('search')
+
+    let medications
+
+    if (search) {
+      medications = await Medication
+        .query()
+        .whereILike('nom', `%${search}%`) // filtre insensible à la casse
+        .limit(10) // optionnel : limite les résultats
+    } else {
+      medications = await Medication.all()
     }
+
+    return response.ok(medications)
+  } catch (error) {
+    console.error(error)
+    return response.status(500).json({
+      message: 'Erreur lors de la récupération des médicaments',
+      error: error.message,
+    })
   }
-  
+}
+
+
 }
