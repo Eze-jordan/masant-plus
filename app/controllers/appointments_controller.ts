@@ -268,7 +268,7 @@ export default class AppointmentController {
    */
 public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
   try {
-    const idUser = request.param('idUser'); // id patient
+    const idUser = request.param('id'); // id patient
     if (!idUser) {
       return response.badRequest({ message: 'ID patient est requis.' });
     }
