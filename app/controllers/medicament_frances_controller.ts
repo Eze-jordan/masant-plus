@@ -34,17 +34,26 @@ export default class MedicationsController {
     }
   }
 
-public async index({ request, response }: HttpContextContract) {
+public async index({ params, request, response }: HttpContextContract) {
   try {
+    // Récupérer le paramètre dynamique :name
+    const nameParam = params.name
+
+    // Ou la recherche en query
     const search = request.input('search')
 
     let medications
 
-    if (search) {
+    if (nameParam) {
       medications = await Medication
         .query()
-        .whereILike('nom', `%${search}%`) // filtre insensible à la casse
-        .limit(10) // optionnel : limite les résultats
+        .whereILike('name', `%${nameParam}%`)
+        .limit(10)
+    } else if (search) {
+      medications = await Medication
+        .query()
+        .whereILike('name', `%${search}%`)
+        .limit(10)
     } else {
       medications = await Medication.all()
     }
@@ -58,6 +67,4 @@ public async index({ request, response }: HttpContextContract) {
     })
   }
 }
-
-
-}
+  }

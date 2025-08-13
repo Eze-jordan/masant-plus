@@ -3742,9 +3742,10 @@ router.get('/doctorDisponibilities', async (ctx) => {
   })
 }).middleware([throttle])
 
-router.get('/medicaments', async (ctx) => {
+router.get('/medicaments/:name', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
+      console.log(ctx)
       return medicament.index(ctx)
     })
   })
@@ -3818,13 +3819,6 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
   }
 })
 
-// Route fallback - doit être la dernière route
-router.get('*', async ({ inertia }) => {
-  return inertia.render('errors/not_found', { status: 404 })
-})
-
-// Route pour récupérer les fichiers via ResourcesController
-
 
 router.get('/resources/files/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
@@ -3834,3 +3828,17 @@ router.get('/resources/files/:id', async (ctx) => {
   });
 }).middleware([throttle])// Middleware pour limiter les requêtes (précaution supplémentaire)
 
+
+
+// Route fallback - doit être la dernière route
+router.get('/*', async ({ request, inertia }) => {
+  const acceptsHtml = request.accepts(['html', 'json']) === 'html'
+
+  if (!acceptsHtml) {
+    // C'est une requête API (JSON ou autre), on ne gère pas ici
+    return
+  }
+
+  // Si c'est une requête HTML (Inertia) → rendre la page not_found
+  return inertia.render('errors/not_found', { status: 404 })
+})
