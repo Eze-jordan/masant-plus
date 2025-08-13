@@ -12,47 +12,47 @@ export default class AppointmentController {
   public async getAppointmentsForDoctor({ request, response }: HttpContextContract) {
     try {
       const idDoctor = request.input('idDoctor')
-  
+
       if (!idDoctor) {
         return response.badRequest({ message: 'idDoctor est requis.' })
       }
-  
+
       const filterType = request.input('typeRdv') as keyof typeof TypeRDV | undefined
       const filterEtat = request.input('etatRdv') as keyof typeof EtatRDV | undefined
-  
+
       // Validation des filtres
       if (filterType && !Object.keys(TypeRDV).includes(filterType)) {
         return response.badRequest({ message: `typeRdv invalide : ${filterType}` })
       }
-  
+
       if (filterEtat && !Object.keys(EtatRDV).includes(filterEtat)) {
         return response.badRequest({ message: `etatRdv invalide : ${filterEtat}` })
       }
-  
+
       // Construction de la requête
       const query = Appointment.query().where('idDoctor', idDoctor)
-  
+
       if (filterType) {
         query.andWhere('typeRdv', filterType)
       }
-  
+
       if (filterEtat) {
         query.andWhere('etatRdv', filterEtat)
       }
-  
+
       // Chargement des relations
       const appointments = await query
-        .preload('patient') 
+        .preload('patient')
         .preload('paiements')
         .preload('prescription')
         .preload('review')
-  
+
       // Transformation des données
       const result = appointments.map((appointment) => {
         const dateIso = appointment.dateRdv.toISODate() // ex: "2025-08-01"
         const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`, { zone: 'local' })
         const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`, { zone: 'local' })
-  
+
         return {
           id: appointment.id,
           typeRdv: appointment.typeRdv,
@@ -68,14 +68,14 @@ export default class AppointmentController {
           dateFin: dateFin.isValid ? dateFin.toISO() : null,
         }
       })
-  
+
       // ✅ Tri chronologique par dateDebut
       result.sort((a, b) => {
         const dateA = a.dateDebut ? DateTime.fromISO(a.dateDebut) : DateTime.invalid('Invalid')
         const dateB = b.dateDebut ? DateTime.fromISO(b.dateDebut) : DateTime.invalid('Invalid')
         return dateA.toMillis() - dateB.toMillis()
       })
-  
+
       return response.ok(result)
     } catch (error) {
       console.error('[getAppointmentsForDoctor] Erreur :', error)
@@ -84,7 +84,7 @@ export default class AppointmentController {
       })
     }
   }
-  
+
 
   /**
    * Créer un nouveau rendez-vous
@@ -192,9 +192,9 @@ export default class AppointmentController {
 
     } catch (error) {
       console.error('[AppointmentController.create] Erreur :', error);
-      return response.internalServerError({ 
+      return response.internalServerError({
         message: 'Erreur serveur lors de la création du rendez-vous.',
-        error: error.message 
+        error: error.message
       });
     }
   }
@@ -203,7 +203,7 @@ export default class AppointmentController {
  */
  /**
    * Récupérer tous les rendez-vous pour un patient donné (sans filtre de date)
-  
+
  public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
   try {
     const idUser = request.param('id')
@@ -268,27 +268,21 @@ export default class AppointmentController {
    */
 public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
   try {
-    const idDoctor = request.param('id');
-
-    if (!idDoctor) {
-      return response.badRequest({ message: 'id utilisateur est requis.' });
+    const idUser = request.param('idUser'); // id patient
+    if (!idUser) {
+      return response.badRequest({ message: 'ID patient est requis.' });
     }
 
     const now = DateTime.local();
 
-    const disponibilites = await Appointment.query()
-      .where('idDoctor', idDoctor)
-      .andWhere('dateRdv', '>=', now.toISODate()) // On ne veut que les dates futures
-      .andWhere((query) => {
-        query
-          .whereNull('idUser')                  // pas encore pris
-          .orWhere('etatRdv', EtatRDV.PENDING)  // en attente
-          .orWhereNull('etatRdv');              // état inconnu (legacy)
-      })
+    const appointments = await Appointment.query()
+      .where('idUser', idUser)               // rendez-vous du patient
+      .andWhere('dateRdv', '>=', now.toISODate())
+      .andWhere('etatRdv', EtatRDV.CONFIRME) // par exemple seulement les confirmés
       .orderBy('dateRdv', 'asc')
       .orderBy('heureDebut', 'asc');
 
-    const result = disponibilites.map((appointment) => {
+    const result = appointments.map((appointment) => {
       const dateIso = appointment.dateRdv.toISODate();
       const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`);
       const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`);
@@ -303,13 +297,13 @@ public async getUpcomingAppointmentsForPatient({ request, response }: HttpContex
     });
 
     return response.ok({
-      message: `Créneaux libres à venir pour le docteur ${idDoctor}.`,
-      disponibilites: result,
+      message: `Rendez-vous à venir pour le patient ${idUser}.`,
+      appointments: result,
     });
   } catch (error) {
     console.error('[getUpcomingAppointmentsForPatient] Erreur :', error);
     return response.internalServerError({
-      message: 'Erreur serveur lors de la récupération des disponibilités.',
+      message: 'Erreur serveur lors de la récupération des rendez-vous.',
       error: error.message,
     });
   }
