@@ -3831,14 +3831,15 @@ router.get('/resources/files/:id', async (ctx) => {
 
 
 // Route fallback - doit être la dernière route
-router.get('/*', async ({ request, inertia }) => {
+router.get('/*', async ({ request, inertia, response }) => {
   const acceptsHtml = request.accepts(['html', 'json']) === 'html'
 
-  if (!acceptsHtml) {
-    // C'est une requête API (JSON ou autre), on ne gère pas ici
-    return
+  if (acceptsHtml) {
+    // Renvoie la page d’erreur Inertia (HTML)
+    return inertia.render('errors/not_found', { status: 404 })
   }
 
-  // Si c'est une requête HTML (Inertia) → rendre la page not_found
-  return inertia.render('errors/not_found', { status: 404 })
+  // Sinon, c’est une requête API → renvoie un JSON 404
+  return response.status(404).json({ message: 'Not Found' })
 })
+
