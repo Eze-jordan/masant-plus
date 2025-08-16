@@ -3,9 +3,9 @@ import base64 from 'base-64';  // Changement ici : importation par défaut
 const base64Encode = base64.encode; // Utilisation de `encode`
 
 // 🔐 Récupération des credentials depuis .env
-const username = process.env.EBILLING_USERNAME
-const sharedkey = process.env.EBILLING_SHAREDKEY
-const domain = process.env.EBILLING_DOMAIN
+const username = "elieboulingui2@gmail.com"
+const sharedkey = "2618e075-0abb-463f-9cd7-31c606c41c2a"
+const domain = "https://lab.billing-easy.net/api/v1/"
 
 
 // 🔒 Encodage des credentials

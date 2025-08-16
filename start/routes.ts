@@ -75,7 +75,7 @@ const passwordResetController = new PasswordResetController()
 
 
 /**
- * @swagger 
+ * @swagger
  * /login:
  *   post:
  *     tags:
@@ -2485,7 +2485,7 @@ router.post('/login', async (ctx) => {
       return authController.login(ctx)
     })
   })
-  
+
 }).middleware([throttle])
 
 router.get('/paiements/solde/:userId', async (ctx) => {
@@ -2659,7 +2659,7 @@ router.delete('/users/:id', async (ctx) => {
     })
   })
 }).middleware([throttle])
-// pour changer le mode passe 
+// pour changer le mode passe
 
 router.put('/users/:id/change-password', async (ctx) => {
   console.log('[PUT /users/:id/change-password] Débutz de traitement')
@@ -2692,7 +2692,7 @@ router.put('/users/:id', async (ctx) => {
 // Route GET /disponibilites (Liste toutes les disponibilités)
 router.get('/disponibilites', async (ctx) => {
   console.log('[GET /disponibilites] Début')
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return disponibilityuser.index(ctx)
@@ -2703,7 +2703,7 @@ router.get('/disponibilites', async (ctx) => {
 // Route GET /disponibilites/:id (Affiche une disponibilité spécifique par ID)
 router.get('/disponibilites/:id', async (ctx) => {
   console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return  disponibilityuser.getByDoctor(ctx)
@@ -2726,7 +2726,7 @@ router.post('/disponibilites', async (ctx) => {
 // Route PUT /disponibilites/:id (Met à jour une disponibilité par ID)
 router.put('/disponibilites/:id', async (ctx) => {
   console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return disponibilityuser.update(ctx)
@@ -2737,7 +2737,7 @@ router.put('/disponibilites/:id', async (ctx) => {
 // Route DELETE /disponibilites/:id (Supprime une disponibilité par ID)
 router.delete('/disponibilites/:id', async (ctx) => {
   console.log(`[DELETE /disponibilites/${ctx.params.id}] Début`)
-  
+
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return  disponibilityuser.destroy(ctx)
@@ -2901,9 +2901,21 @@ router.post('/paiements/mobile-money', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       // Créer une instance du contrôleur
       const paiementsController = new PaiementsController()
-      
+
       // Appeler la méthode d'instance sur l'objet paiementsController
       return await paiementsController.createMobileMoneyInvoice(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.post('/paiements/visa', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      // Créer une instance du contrôleur
+      const paiementsController = new PaiementsController()
+
+      // Appeler la méthode d'instance sur l'objet paiementsController
+      return await paiementsController.createvisaMoneyInvoice(ctx)
     })
   })
 }).middleware([throttle])
@@ -3028,6 +3040,8 @@ router.get('/paiements/mobile-money', async (ctx) => {
     })
   })
 }).middleware([throttle])
+
+
 
 
 router.post('/feedbacks', async (ctx) => {
@@ -3415,7 +3429,7 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
       last_name: user.last_name,
       email: user.email,
       phone: user.phone,
-      specialty: user.specialites, 
+      specialty: user.specialites,
       accountStatus: user.accountStatus,
       profileImage: user.profileImage,
       createdAt: user.createdAt,
@@ -3431,7 +3445,7 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
         lastName: currentUser.last_name,
         email: currentUser.email,
         phone: currentUser.phone,
-      
+
         accountStatus: currentUser.accountStatus,
         profileImage: currentUser.profileImage,
         createdAt: currentUser.createdAt,
@@ -3535,7 +3549,7 @@ router.group(() => {
 })
 
 
-//route pour les demandes des docteurs 
+//route pour les demandes des docteurs
 router.post('/DemandeDocteur', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
