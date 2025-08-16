@@ -30,19 +30,14 @@ export default class Appointment extends BaseModel {
   @column()
   public heureDebut!: string
 
- @column({ columnName: 'id_creneau' })
-  public idCreneau!: string
-
+  @column()
+  public idCreneau!: string  // Make sure this is a UUID of the Creneau
 
   @column()
   public heureFin!: string
 
-
-  @column()
-public description?: string
-
-
-
+  @column()  // Optional field, description may or may not be provided
+  public description?: string
 
   @column()
   public typeRdv!: keyof typeof TypeRDV
@@ -50,6 +45,7 @@ public description?: string
   @column()
   public etatRdv!: keyof typeof EtatRDV
 
+  // Relationships
   @belongsTo(() => User, { foreignKey: 'idUser' })
   public patient!: BelongsTo<typeof User>
 
@@ -62,9 +58,9 @@ public description?: string
   @hasOne(() => Prescription, { foreignKey: 'idAppointment' })
   public prescription!: HasOne<typeof Prescription>
 
-    @belongsTo(() => Creneau, { foreignKey: 'idCreneau' })
-  public creneau!: BelongsTo<typeof Creneau>
+  @belongsTo(() => Creneau, { foreignKey: 'idCreneau' })
+  public creneau!: BelongsTo<typeof Creneau>  // Link to the Creneau model
 
   @hasMany(() => Review, { foreignKey: 'idAppointment' })
-  public review!: HasMany<typeof Review>
+  public reviews!: HasMany<typeof Review>  // Fixed plural name of reviews
 }
