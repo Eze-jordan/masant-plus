@@ -2897,7 +2897,7 @@ router.get('/list-files/:prefix?', async (ctx) => {
 
 
 router.post('/paiements/mobile-money', async (ctx) => {
-  await onlyFrontend.handle(ctx, async () => {
+  await onlyFrontend.handle(ctx, async () =>/*  */ {
     await appKeyGuard.handle(ctx, async () => {
       // Créer une instance du contrôleur
       const paiementsController = new PaiementsController()

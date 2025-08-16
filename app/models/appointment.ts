@@ -30,6 +30,10 @@ export default class Appointment extends BaseModel {
   public heureDebut!: string
 
   @column()
+  public idCreneau!: string
+
+
+  @column()
   public heureFin!: string
 
   @column()

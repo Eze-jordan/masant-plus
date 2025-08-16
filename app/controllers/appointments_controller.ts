@@ -42,7 +42,7 @@ export default class AppointmentController {
 
       // Chargement des relations
       const appointments = await query
-        .preload('patient') 
+        .preload('patient')
         .preload('paiements')
         .preload('prescription')
         .preload('review')
@@ -61,7 +61,7 @@ export default class AppointmentController {
           id: appointment.id,
           typeRdv: appointment.typeRdv,
           etatRdv: appointment.etatRdv,
-          
+
           nomPatient: appointment.patient?.first_name ?? null,
           prenomPatient: appointment.patient?.last_name ?? null,
           paiements: appointment.paiements,
@@ -82,51 +82,54 @@ export default class AppointmentController {
   /**
    * Créer un nouveau rendez-vous
    */
-  public async create({ request, response }: HttpContextContract) {
-    try {
-      const payload = request.only([
-        'idDoctor',
-        'idPatient',
-        'date',
-        'typeRdv',
-        'etatRdv',
-        'description',
-      ])
+public async create({ request, response }: HttpContextContract) {
+  try {
+    const payload = request.only([
+      'idDoctor',
+      'idPatient',
+      'date',
+      'typeRdv',
+      'etatRdv',
+      'description',
+      'idCreneau', // Ensure you add the idCreneau field
+    ])
 
-      // Vérification des champs obligatoires
-      if (!payload.idDoctor || !payload.idPatient || !payload.date || !payload.typeRdv || !payload.etatRdv) {
-        return response.badRequest({ message: 'Champs requis manquants.' })
-      }
-
-      // Validation des valeurs d'enum
-      if (!Object.keys(TypeRDV).includes(payload.typeRdv)) {
-        return response.badRequest({ message: `typeRdv invalide : ${payload.typeRdv}` })
-      }
-
-      if (!Object.keys(EtatRDV).includes(payload.etatRdv)) {
-        return response.badRequest({ message: `etatRdv invalide : ${payload.etatRdv}` })
-      }
-
-      const dateRdv = DateTime.fromISO(payload.date)
-      if (!dateRdv.isValid) {
-        return response.badRequest({ message: 'Date invalide.' })
-      }
-
-      const appointment = await Appointment.create({
-        idDoctor: payload.idDoctor,
-        idUser: payload.idPatient,
-        dateRdv: dateRdv,
-        typeRdv: payload.typeRdv,
-        etatRdv: payload.etatRdv,
-        heureDebut: '09:00', // à personnaliser
-        heureFin: '09:30',   // idem
-      
-      })
-
-      return response.created(appointment)
-    } catch (error) {
-      console.error('[AppointmentController.create] Erreur :', error)
-      return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' })
+    // Vérification des champs obligatoires
+    if (!payload.idDoctor || !payload.idPatient || !payload.date || !payload.typeRdv || !payload.etatRdv || !payload.idCreneau) {
+      return response.badRequest({ message: 'Champs requis manquants.' })
     }
+
+    // Validation des valeurs d'enum
+    if (!Object.keys(TypeRDV).includes(payload.typeRdv)) {
+      return response.badRequest({ message: `typeRdv invalide : ${payload.typeRdv}` })
+    }
+
+    if (!Object.keys(EtatRDV).includes(payload.etatRdv)) {
+      return response.badRequest({ message: `etatRdv invalide : ${payload.etatRdv}` })
+    }
+
+    const dateRdv = DateTime.fromISO(payload.date)
+    if (!dateRdv.isValid) {
+      return response.badRequest({ message: 'Date invalide.' })
+    }
+
+    // Créer l'appointment avec le idCreneau inclus
+    const appointment = await Appointment.create({
+      idDoctor: payload.idDoctor,
+      idUser: payload.idPatient,
+      dateRdv: dateRdv,
+      typeRdv: payload.typeRdv,
+      etatRdv: payload.etatRdv,
+      heureDebut: '09:00', // à personnaliser
+      heureFin: '09:30',  // idem
+      idCreneau: payload.idCreneau, // Ajoutez l'ID du créneau
+    })
+
+    return response.created(appointment)
+  } catch (error) {
+    console.error('[AppointmentController.create] Erreur :', error)
+    return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' })
   }
+}
+
 }

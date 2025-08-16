@@ -23,7 +23,7 @@
               ma santé plus
             </h1>
           </div>
-          
+
           <!-- Navigation Links -->
           <nav class="hidden md:flex space-x-10">
             <Link href="/" class="relative text-gray-700 hover:text-[#165DFB] transition-all duration-300 group font-medium">
@@ -43,7 +43,7 @@
               <div class="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-[#165DFB] to-cyan-500 group-hover:w-full transition-all duration-300"></div>
             </Link>
           </nav>
-          
+
           <!-- Connexion Button -->
           <div class="relative group">
             <div class="absolute -inset-1 bg-gradient-to-r from-[#165DFB] to-cyan-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
@@ -73,7 +73,7 @@
         <!-- Hero Title -->
         <div class="mb-8">
           <h1 class="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Bienvenue sur 
+            Bienvenue sur
             <div class="relative inline-block mt-2">
               <span class="bg-gradient-to-r from-[#165DFB] via-sky-500 to-cyan-500 bg-clip-text text-transparent animate-gradient">
                 ma santé plus
@@ -102,7 +102,7 @@
               </span>
             </button>
           </div>
-          
+
           <button @click="showMoreInfo" class="relative bg-white/90 backdrop-blur-sm border-2 border-[#165DFB] text-[#165DFB] px-10 py-5 rounded-2xl text-xl font-semibold hover:bg-[#165DFB]/5 hover:scale-105 transition-all duration-300 shadow-xl">
             En savoir plus
           </button>
@@ -131,7 +131,7 @@
           <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Pourquoi nous choisir ?</h2>
           <p class="text-xl text-gray-600 max-w-3xl mx-auto">Des fonctionnalités pensées pour vous offrir la meilleure expérience possible</p>
         </div>
-        
+
         <div class="grid md:grid-cols-3 gap-10">
           <!-- Feature Card 1 -->
           <div class="group relative">
@@ -322,7 +322,7 @@
           </div>
         </div>
         <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-          <p class="text-lg">&copy; 2024 ma santé plus. Tous droits réservés.</p>
+          <p class="text-lg">&copy; 2025 ma santé plus. Tous droits réservés.</p>
         </div>
       </div>
     </footer>
@@ -382,25 +382,25 @@ const animateNumbers = () => {
   const targetUsers = 15000
   const targetProjects = 8500
   const targetSatisfaction = 98
-  
+
   const startTime = Date.now()
-  
+
   const animate = () => {
     const elapsed = Date.now() - startTime
     const progress = Math.min(elapsed / duration, 1)
-    
+
     // Easing function pour un effet plus fluide
     const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-    
+
     animatedUsers.value = Math.floor(targetUsers * easeOutQuart)
     animatedProjects.value = Math.floor(targetProjects * easeOutQuart)
     animatedSatisfaction.value = Math.floor(targetSatisfaction * easeOutQuart)
-    
+
     if (progress < 1) {
       requestAnimationFrame(animate)
     }
   }
-  
+
   animate()
 }
 
