@@ -120,8 +120,8 @@ public async create({ request, response }: HttpContextContract) {
       dateRdv: dateRdv,
       typeRdv: payload.typeRdv,
       etatRdv: payload.etatRdv,
-      heureDebut: '09:00', // à personnaliser
-      heureFin: '09:30',  // idem
+      heureDebut: '', // à personnaliser
+      heureFin: '',  // idem
       idCreneau: payload.idCreneau, // Ajoutez l'ID du créneau
     })
 
