@@ -7,6 +7,8 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
+const userinfo  =new  pourcentage_comptes_controller()
+
 const DemandeController =new DemandeDocteurController()
 import { throttle } from '#start/limiter'
 import RegisterController from '#controllers/RegisterController'
@@ -46,6 +48,7 @@ import DemandeDocteurController from '#controllers/DemandeDocteurController';
 import doctor_displays_controller from '#controllers/doctor_displays_controller';
 import specialities_controller from '#controllers/specialities_controller';
 import DisponibilitesdoctorController from '#controllers/DisponibilitesdoctorController';
+import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -3524,7 +3527,14 @@ router.get('/ListeDemande', async ({ request, response, auth, inertia }) => {
 })
 
 
-
+router.get('/users/:id/info', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /users/:id/info] Avant appel controller show')
+      return userinfo.show(ctx)  // Méthode pour récupérer l'utilisateur
+    })
+  })
+}).middleware([throttle])
 router.group(() => {
   // Route pour créer un live
   router.post('/lives/create/:idDiscussion', async (ctx) => {
