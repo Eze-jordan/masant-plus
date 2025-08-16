@@ -11,9 +11,11 @@ export default class LiveController {
    * Créer un live pour les utilisateurs d'une discussion
    */
   public async createLive({ params, response }: HttpContextContract) {
-    const { idDiscussion } = params // ID de la discussion
+    const { idDiscussion } = params
 
     try {
+      console.log('Création du live pour la discussion:', idDiscussion)
+
       // Récupérer la discussion
       const discussion = await Discussion.query()
         .where('id', idDiscussion)
@@ -22,17 +24,26 @@ export default class LiveController {
         .first()
 
       if (!discussion) {
+        console.log('Discussion non trouvée')
         return response.status(404).send({ message: 'Discussion non trouvée.' })
       }
 
-      // Récupérer les utilisateurs de la discussion
       const doctor = discussion.doctor
       const patient = discussion.patient
 
-      // Créer un live (par exemple, basé sur le nom de la discussion)
+      if (!doctor || !patient) {
+        console.log('Doctor ou patient manquant dans la discussion')
+        return response.status(400).send({ message: 'Discussion incomplète.' })
+      }
+
+      // Créer le live
       const live = await Live.create({
         name: `Live Discussion ${discussion.id}`,
+        doctorId: doctor.id,   // <-- Ajout du doctorId
+        patientId: patient.id, // <-- Ajout du patientId
       })
+
+      console.log('Live créé:', live)
 
       // Associer les utilisateurs au live
       await LiveUser.createMany([
@@ -40,11 +51,14 @@ export default class LiveController {
         { liveId: live.id, userId: patient.id },
       ])
 
+      console.log('LiveUser créés pour doctor et patient')
+
       return response.created({
         message: 'Live créé avec succès.',
         data: live,
       })
     } catch (error: any) {
+      console.error('Erreur création live:', error.message)
       return response.status(500).send({
         message: 'Erreur lors de la création du live.',
         error: error.message,

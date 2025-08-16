@@ -47,6 +47,25 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public last_name?: string
 
+  @column()
+public weight!: string // josue le poids na aps encore et dans la migration si tu ajoutes quelque jours n oublie pas de migrate la le poids 
+
+  @column()
+public dateNaissance?: DateTime   // ✅ nouvelle colonne
+
+@column()
+public about?: string             // ✅ nouvelle colonne
+
+@column()
+public groupeSanguin?: string 
+
+@column()
+public genre?: string
+
+
+@column()
+public anneeExperience?: number
+
 
   @column()
   public declare address?: string // Ajout de la déclaration pour éviter les erreurs
@@ -146,6 +165,8 @@ export class Docteur extends User {
 
   @column()
   public declare specialisation?: string
+
+  
 }
 
 export class Patient extends User {

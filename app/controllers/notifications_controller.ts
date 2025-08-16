@@ -5,7 +5,7 @@ export default class NotificationController {
   
   // Récupérer toutes les notifications de l'utilisateur authentifié
   public async index({ params, response }: HttpContextContract) {
-    const userId = params.id; // Récupérer l'id de l'utilisateur à partir des paramètres de l'URL
+    const userId = params.id;
   
     if (!userId) {
       console.log('ID utilisateur manquant');
@@ -14,7 +14,8 @@ export default class NotificationController {
   
     try {
       const notifications = await Notification.query()
-        .where('idUser', userId) // Utiliser userId passé dans les params
+        .where('idUser', userId)
+        .preload('user') // Précharger les données de l'utilisateur
         .orderBy('createdAt', 'desc');
   
       if (notifications.length === 0) {
@@ -25,14 +26,26 @@ export default class NotificationController {
       console.log('Notifications récupérées:', notifications);
   
       return response.status(200).json({
-        userId: userId, // Inclure l'ID de l'utilisateur dans la réponse
-        notifications: notifications
+        userId: userId,
+        notifications: notifications.map((notif) => ({
+          id: notif.id,
+          titre: notif.titre,
+          description: notif.description,
+          isRead: notif.isRead,
+          createdAt: notif.createdAt.toISO(), // Format ISO pour la date
+          sender: {
+            id: notif.user.id,
+            nom: notif.user.first_name, // ou notif.user.name selon ton modèle
+            email: notif.user.email, // selon ce que tu veux afficher
+          }
+        }))
       });
     } catch (error) {
       console.error('Erreur lors de la récupération des notifications:', error);
       return response.status(500).json({ message: 'Erreur serveur lors de la récupération des notifications' });
     }
   }
+  
   
 
   // Récupérer une notification spécifique par ID

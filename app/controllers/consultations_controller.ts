@@ -28,7 +28,7 @@ export default class AppointmentsController {
 
         switch (appointment.etatRdv) {
           case 'ANNULE':
-            currentStatus = 'annulé'
+            currentStatus = 'ANNULE'
             break
           case 'CONFIRME':
           default:

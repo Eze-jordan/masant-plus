@@ -200,4 +200,8 @@ function affecterMedecin() {
     medecinSelectionne.value = null
   }
 }
+<<<<<<< HEAD
 </script>
+=======
+</script>
+>>>>>>> 6f506420a02e20676352333842b78602f55cbfe5

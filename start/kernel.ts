@@ -13,11 +13,11 @@ server.errorHandler(() => import('#exceptions/handler'))
 |--------------------------------------------------------------------------
 */
 server.use([
+  () => import('@adonisjs/cors/cors_middleware'), // ici, après app_key_guard
   () => import('#middleware/container_bindings_middleware'),
   () => import('#middleware/app_key_guard_middleware'),
   () => import('#middleware/force_json_response_middleware'),
   () => import('@adonisjs/static/static_middleware'),
-  () => import('@adonisjs/cors/cors_middleware'),
   () => import('@adonisjs/vite/vite_middleware'),
   () => import('@adonisjs/inertia/inertia_middleware'),
 ])
@@ -42,7 +42,7 @@ router.use([
 |--------------------------------------------------------------------------
 */
 export const middleware = router.named({
-  
+
   auth: () => import('#middleware/auth_middleware'),
   authJwt: () => import('#middleware/auth_jwt_middleware'),
   onlyFrontend: () => import('#middleware/only_frontend_middleware'),

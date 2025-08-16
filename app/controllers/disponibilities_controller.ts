@@ -1,10 +1,11 @@
 import Disponibilite from '#models/disponibilite'
 import Creneau from '#models/creneau'
-import User from '#models/user'  // Assure-toi que cet import est correct
+import User from '#models/user'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { DateTime } from 'luxon'
 
 export default class DisponibiliteController {
+
   // ➤ Retourne toutes les disponibilités pour tous les médecins
   public async index({ response }: HttpContextContract) {
     try {
@@ -23,140 +24,305 @@ export default class DisponibiliteController {
     }
   }
 
-  // ➤ Créer une disponibilité avec créneaux générés automatiquement
-// ➤ Créer une disponibilité avec créneaux générés automatiquement
-public async store({ request, response }: HttpContextContract) {
-  const data = request.only([
-    'idDoctor',
-    'heureDebut',
-    'heureFin',
-    'date_debut',
-    'date_fin',
-    'actif',
-  ])
+  // ➤ Créer une nouvelle disponibilité
+  public async store({ request, response }: HttpContextContract) {
+    try {
+      const {
+        idDoctor,
+        date_debut,
+        date_fin,
+        actif = true,
+      } = request.body()
 
-  if (!data.idDoctor) {
-    return response.status(400).send({
-      message: 'idDoctor est obligatoire.',
-    })
+      if (!idDoctor || !date_debut) {
+        return response.badRequest({
+          message: 'idDoctor et date_debut sont requis.'
+        })
+      }
+
+      const user = await User.query().where('id', idDoctor).preload('role').firstOrFail()
+      if (!user.role || user.role.label.toLowerCase() !== 'doctor') {
+        return response.badRequest({ message: 'Le rôle doit être "Doctor".' })
+      }
+
+      const dateDebut = DateTime.fromISO(date_debut)
+      const dateFin = date_fin ? DateTime.fromISO(date_fin) : dateDebut
+
+      if (!dateDebut.isValid || !dateFin.isValid) {
+        return response.badRequest({ message: 'Dates invalides.' })
+      }
+
+      const disponibilite = await Disponibilite.create({
+        idDoctor,
+        dateDebut,
+        dateFin,
+        actif,
+      })
+
+      return response.created({
+        message: 'Disponibilité créée avec succès.',
+        idDisponibilite: disponibilite.id
+      })
+
+    } catch (error: any) {
+      console.error('Erreur lors de la création de la disponibilité :', error)
+      return response.status(500).send({
+        message: 'Erreur serveur lors de la création de la disponibilité.',
+        error: error.message
+      })
+    }
+  }
+
+
+  // ➤ Générer des créneaux pour une plage horaire et mettre à jour la disponibilité
+  public async generateCreneauxForDay({ params, request, response }: HttpContextContract) {
+    const { dateDebut, dateFin } = request.only(['dateDebut', 'dateFin'])
+
+    if (!dateDebut || !dateFin) {
+      return response.badRequest({ message: 'dateDebut et dateFin sont requis.' })
+    }
+
+    try {
+      const disponibilite = await Disponibilite.findOrFail(params.id)
+
+      const debut = DateTime.fromISO(dateDebut)
+      const fin = DateTime.fromISO(dateFin)
+      if (!debut.isValid || !fin.isValid || debut >= fin) {
+        return response.badRequest({ message: 'Dates invalides.' })
+      }
+
+      disponibilite.dateDebut = debut
+      disponibilite.dateFin = fin
+      await disponibilite.save()
+
+      // Note : ici tu génères les créneaux sans date associée, peut-être à revoir selon usage
+      const creneaux = this.generateCreneaux(debut.toFormat('HH:mm'), fin.toFormat('HH:mm'), disponibilite.id)
+
+      for (const creneau of creneaux) {
+        const exists = await Creneau.query()
+          .where('idDisponibilite', disponibilite.id)
+          .where('heureDebut', creneau.heureDebut)
+          .where('heureFin', creneau.heureFin)
+          .first()
+
+        if (!exists) {
+          await Creneau.create({
+            ...creneau,
+            createdAt: DateTime.fromISO(creneau.createdAt),
+            updatedAt: DateTime.fromISO(creneau.updatedAt),
+          })
+        }
+      }
+
+      await disponibilite.load('creneaux')
+
+      return response.ok({
+        message: 'Créneaux générés avec succès.',
+        disponibilite,
+        creneauxCount: creneaux.length,
+      })
+    } catch (error: any) {
+      console.error(error)
+      return response.status(500).send({ message: error.message })
+    }
+  }
+
+  // ➤ Créer des créneaux pour une disponibilité sur des jours donnés (heures 'HH:mm')
+public async createCreneaux({ params, request, response }: HttpContextContract) {
+  const { dates } = request.only(['dates'])
+
+  if (!dates || !Array.isArray(dates) || dates.length === 0) {
+    return response.badRequest({ message: 'Le tableau dates est requis.' })
   }
 
   try {
-    // Vérifier que l'utilisateur a bien le rôle "doctor"
-    const user = await User.query()
-      .where('id', data.idDoctor)
-      .preload('role')
-      .firstOrFail()
+    const disponibilite = await Disponibilite.findOrFail(params.id)
 
-    if (!user.role || user.role.label !== 'doctor') {
-      return response.status(403).send({
-        message: 'L\'utilisateur n\'a pas le rôle "Doctor".',
-      })
+    if (!disponibilite.dateDebut || !disponibilite.dateFin) {
+      return response.badRequest({ message: 'La disponibilité doit avoir une date de début et de fin.' })
     }
 
-    // Vérification des heures de début et fin
-    if (!data.heureDebut || !data.heureFin) {
-      return response.status(400).send({
-        message: 'heureDebut et heureFin sont obligatoires.',
-      })
+    const dateDebutISO = disponibilite.dateDebut.toISODate()!
+    const dateFinISO = disponibilite.dateFin.toISODate()!
+
+    let totalCreated = 0
+
+    for (const jour of dates) {
+      if (!jour.date || !jour.heureDebut || !jour.heureFin) {
+        return response.badRequest({ message: 'Chaque objet doit contenir date, heureDebut et heureFin.' })
+      }
+
+      const dateISO = DateTime.fromISO(jour.date)
+      if (!dateISO.isValid) {
+        return response.badRequest({ message: `La date ${jour.date} est invalide.` })
+      }
+
+      if (dateISO < DateTime.fromISO(dateDebutISO) || dateISO > DateTime.fromISO(dateFinISO)) {
+        return response.badRequest({ message: `La date ${jour.date} n'est pas dans la période de disponibilité.` })
+      }
+
+      const { debut, fin, valid } = this.validateHeures(jour.heureDebut, jour.heureFin)
+      if (!valid) {
+        return response.badRequest({ message: `Heures invalides pour la date ${jour.date}.` })
+      }
+
+      const jourSemaine = dateISO.setLocale('fr').toFormat('cccc')
+
+      const creneaux = this.generateCreneaux(debut, fin, disponibilite.id, dateISO.toFormat('yyyy-MM-dd'))
+
+      for (const creneau of creneaux) {
+        const exists = await Creneau.query()
+          .where('idDisponibilite', disponibilite.id)
+          .where('heureDebut', creneau.heureDebut)
+          .where('heureFin', creneau.heureFin)
+          .where('date', dateISO.toFormat('yyyy-MM-dd'))
+          .first()
+
+        if (!exists) {
+          await Creneau.create({
+            idDisponibilite: disponibilite.id,
+            heureDebut: creneau.heureDebut ?? '',
+            heureFin: creneau.heureFin ?? '',
+            disponible: creneau.disponible,
+            isUsed: creneau.isUsed,
+            date: dateISO.toFormat('yyyy-MM-dd'),
+            jour: jourSemaine,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          })
+          totalCreated++
+        }
+      }
     }
 
-    const dateDebut = data.date_debut ? DateTime.fromISO(data.date_debut) : null
-    const dateFin = data.date_fin ? DateTime.fromISO(data.date_fin) : null
-
-    if (dateDebut && !dateDebut.isValid) {
-      return response.badRequest({ message: 'La date_debut est invalide.' })
-    }
-    if (dateFin && !dateFin.isValid) {
-      return response.badRequest({ message: 'La date_fin est invalide.' })
-    }
-
-    // Créer la disponibilité
-    const disponibilite = await Disponibilite.create({
-      idDoctor: data.idDoctor,
-      heureDebut: data.heureDebut,
-      heureFin: data.heureFin,
-      dateDebut,
-      dateFin,
-      actif: data.actif ?? true,
-    })
-
-    // Créer les créneaux pour un an sans trop de requêtes
-    const allCreneaux = this.generateCreneaux(data.heureDebut, data.heureFin, dateDebut, dateFin, disponibilite.id)
-
-    // Insérer tous les créneaux en une seule requête
-    await Creneau.createMany(allCreneaux)
-
-    // Précharger les relations avant de renvoyer la réponse
     await disponibilite.load('creneaux')
-    await disponibilite.load('doctor')
 
-    return response.created(disponibilite)
+    return response.ok({
+      message: `${totalCreated} créneaux créés avec succès.`,
+      disponibilite,
+      creneauxCount: totalCreated,
+    })
   } catch (error: any) {
+    if (error.code === 'E_ROW_NOT_FOUND') {
+      return response.status(404).send({ message: 'Disponibilité introuvable.' })
+    }
+    console.error(error)
+    return response.status(500).send({ message: error.message })
+  }
+}
+
+
+  // Validation des heures au format 'HH:mm'
+  private validateHeures(heureDebut: string, heureFin: string) {
+    const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
+    const fin = DateTime.fromFormat(heureFin, 'HH:mm')
+
+    if (!debut.isValid || !fin.isValid || debut >= fin) {
+      return { valid: false, debut: '', fin: '' }
+    }
+
+    return { valid: true, debut: debut.toFormat('HH:mm'), fin: fin.toFormat('HH:mm') }
+  }
+
+  // Génère des créneaux de 15 minutes entre debut et fin (format 'HH:mm') — ici la date est obligatoire
+  generateCreneaux(debut: string, fin: string, idDisponibilite: string, date?: string) {
+    const creneaux = []
+
+    let start = DateTime.fromFormat(debut, 'HH:mm')
+    const end = DateTime.fromFormat(fin, 'HH:mm')
+
+    if (!start.isValid || !end.isValid || start >= end) {
+      return []
+    }
+
+    while (start.plus({ minutes: 15 }) <= end) {
+      const next = start.plus({ minutes: 15 })
+
+      creneaux.push({
+        idDisponibilite,
+        heureDebut: start.toFormat('HH:mm'),
+        heureFin: next.toFormat('HH:mm'),
+        disponible: true,
+        isUsed: false,
+        date: date ?? '',  // date obligatoire idéalement toujours fournie côté appel
+        createdAt: DateTime.now().toISO(),
+        updatedAt: DateTime.now().toISO(),
+      })
+
+      start = next
+    }
+
+    return creneaux
+  }
+
+  // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
+
+
+public async getByDoctor({ params, response }: HttpContextContract) {
+  try {
+    // Récupérer toutes les disponibilités du docteur avec créneaux non utilisés
+    const disponibilites = await Disponibilite.query()
+      .where('idDoctor', params.id)
+      .preload('creneaux', (query) => {
+        query.where('is_used', false)
+      })
+      .preload('doctor', (doctorQuery) => {
+        doctorQuery.select(['id', 'first_name', 'type'])
+      })
+      .orderBy('dateDebut', 'asc')
+
+    const groupedByDate: Record<string, any> = {}
+
+    for (const dispo of disponibilites) {
+      if (!dispo.dateDebut) continue
+      const dateKey = dispo.dateDebut.toISODate()
+      if (!dateKey) continue
+
+      const creneaux = dispo.creneaux as Creneau[]
+      if (creneaux.length === 0) continue
+
+      if (!groupedByDate[dateKey]) {
+        groupedByDate[dateKey] = {
+          date_debut: dateKey,
+          date_fin: dispo.dateFin?.toISODate() ?? null,
+          idDoctor: dispo.idDoctor,
+          doctor: dispo.doctor,
+          actif: dispo.actif,
+          creneaux: []
+        }
+      }
+
+      groupedByDate[dateKey].creneaux.push(
+        ...creneaux.map(c => {
+          const jour = DateTime.fromISO(c.date).setLocale('fr').toFormat('cccc')
+          return {
+            id: c.id,
+            heureDebut: c.heureDebut,
+            heureFin: c.heureFin,
+            date: c.date,
+            jour,
+          }
+        })
+      )
+    }
+
+    return response.ok(Object.values(groupedByDate))
+  } catch (error) {
     console.error(error)
     return response.status(500).send({
-      message: 'Erreur lors de la création de la disponibilité.',
+      message: 'Erreur serveur',
       error: error.message,
     })
   }
 }
 
-// Fonction pour générer les créneaux
-private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTime | null, dateFin: DateTime | null, idDisponibilite: string) {
-  const allCreneaux = []
-  const start = dateDebut ?? DateTime.now()
-  const end = dateFin ?? start.plus({ years: 1 }) // Un an de créneaux
-
-  const debut = DateTime.fromFormat(heureDebut, 'HH:mm')
-  const fin = DateTime.fromFormat(heureFin, 'HH:mm')
-
-  if (!debut.isValid || !fin.isValid) {
-    throw new Error('Format des heures invalide.')
-  }
-
-  // Boucle pour chaque jour entre start et end
-  for (let day = start; day <= end; day = day.plus({ days: 1 })) {
-    let current = debut
-    while (current < fin) {
-      const next = current.plus({ minutes: 30 })
-
-      // Ajouter chaque créneau dans un tableau
-      allCreneaux.push({
-        id_disponibilite: idDisponibilite,
-        heure_debut: current.toFormat('HH:mm'),
-        heure_fin: next.toFormat('HH:mm'),
-        disponible: true,
-      })
-
-      current = next
-    }
-  }
-
-  return allCreneaux
-}
-
-   
-
-  // ➤ Liste toutes les disponibilités avec relations pour un médecin donné
-  public async getByDoctor({ params, response }: HttpContextContract) {
-    try {
-      const disponibilites = await Disponibilite.query()
-        .where('idDoctor', params.id)
-        .preload('creneaux')
-        .orderBy('dateDebut', 'desc')
-      return response.ok(disponibilites)
-    } catch (error) {
-      return response.status(500).send({ message: 'Erreur serveur', error: error.message })
-    }
-  }
 
   // ➤ Détails d'une disponibilité
   public async show({ params, response }: HttpContextContract) {
     try {
       const disponibilite = await Disponibilite.query()
         .where('id', params.id)
-        .preload('creneaux')
-        .preload('doctor')
+        .select(['id', 'date_debut', 'date_fin', 'created_at']) // champs que tu veux
         .firstOrFail()
 
       return response.ok(disponibilite)
@@ -166,12 +332,11 @@ private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTi
     }
   }
 
+
   // ➤ Mettre à jour une disponibilité
   public async update({ params, request, response }: HttpContextContract) {
     const data = request.only([
       'idDoctor',
-      'heureDebut',
-      'heureFin',
       'date_debut',
       'date_fin',
       'actif',
@@ -181,8 +346,6 @@ private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTi
       const disponibilite = await Disponibilite.findOrFail(params.id)
 
       disponibilite.idDoctor = data.idDoctor ?? disponibilite.idDoctor
-      disponibilite.heureDebut = data.heureDebut ?? disponibilite.heureDebut
-      disponibilite.heureFin = data.heureFin ?? disponibilite.heureFin
 
       if (data.date_debut) {
         const parsed = DateTime.fromISO(data.date_debut)
@@ -200,23 +363,15 @@ private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTi
         disponibilite.dateFin = parsed
       }
 
-      // IMPORTANT : vérifie que "actif" est bien défini dans la requête
-      if (typeof data.actif !== 'undefined') {
+      if (typeof data.actif === 'boolean') {
         disponibilite.actif = data.actif
       }
 
       await disponibilite.save()
-      return response.ok({
-        message: 'Disponibilité mise à jour avec succès',
-        disponibilite, // retourne aussi l'objet mis à jour
-      })
-      
+      return response.ok(disponibilite)
     } catch (error: any) {
       console.error(error)
-      return response.status(404).send({
-        message: 'Disponibilité non trouvée.',
-        error: error.message,
-      })
+      return response.status(404).send({ message: 'Disponibilité non trouvée.' })
     }
   }
 
@@ -226,12 +381,9 @@ private generateCreneaux(heureDebut: string, heureFin: string, dateDebut: DateTi
       const disponibilite = await Disponibilite.findOrFail(params.id)
       await disponibilite.delete()
       return response.ok({ message: 'Disponibilité supprimée avec succès.' })
-    } catch (error: any) {
+    } catch (error) {
       console.error(error)
-      return response.status(404).send({
-        message: 'Disponibilité non trouvée.',
-        error: error.message,
-      })
+      return response.status(404).send({ message: 'Disponibilité non trouvée.' })
     }
   }
 }

@@ -7,6 +7,7 @@ import { TypeRDV, EtatRDV } from '../enum/enums.js'
 import { BaseModel, belongsTo, column, hasMany, hasOne, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { randomUUID } from 'node:crypto'
+import Creneau from './creneau.js'
 
 export default class Appointment extends BaseModel {
   @column({ isPrimary: true })
@@ -36,6 +37,14 @@ export default class Appointment extends BaseModel {
   @column()
   public heureFin!: string
 
+
+  @column()
+public description?: string
+
+    @column()
+  public idCreneau!: string
+
+
   @column()
   public typeRdv!: keyof typeof TypeRDV
 
@@ -53,6 +62,9 @@ export default class Appointment extends BaseModel {
 
   @hasOne(() => Prescription, { foreignKey: 'idAppointment' })
   public prescription!: HasOne<typeof Prescription>
+
+    @belongsTo(() => Creneau, { foreignKey: 'idCreneau' })
+  public creneau!: BelongsTo<typeof Creneau>
 
   @hasMany(() => Review, { foreignKey: 'idAppointment' })
   public review!: HasMany<typeof Review>

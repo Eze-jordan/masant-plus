@@ -2,45 +2,26 @@ import env from '#start/env'
 import app from '@adonisjs/core/services/app'
 import { Secret } from '@adonisjs/core/helpers'
 import { defineConfig } from '@adonisjs/core/http'
+import 'reflect-metadata'
 
-/**
- * The app key is used for encrypting cookies, generating signed URLs,
- * and by the "encryption" module.
- *
- * The encryption module will fail to decrypt data if the key is lost or
- * changed. Therefore it is recommended to keep the app key secure.
- */
 export const appKey = new Secret(env.get('APP_KEY'))
+
 export const providers = [
-  '@adonisjs/core', // Le core d'AdonisJS (obligatoire)
-  '@adonisjs/cors', // Provider CORS
-  '@adonisjs/session', // Provider Session (si tu utilises les sessions)
-  '@adonisjs/auth',
-  '@adonisjs/core',
-  '@adonisjs/session', // Provider Auth (si tu gères l'authentification)
+  '@adonisjs/core',  // The core of AdonisJS
+  '@adonisjs/cors',  // CORS middleware
+  '@adonisjs/session',  // Session provider if you're using sessions
+  '@adonisjs/auth',  // Auth provider for user authentication
 ]
-/**
- * The configuration settings used by the HTTP server
- */
+
 export const http = defineConfig({
   generateRequestId: true,
-  allowMethodSpoofing: false,
-
-  /**
-   * Enabling async local storage will let you access HTTP context
-   * from anywhere inside your application.
-   */
+  allowMethodSpoofing: false, // You may want to set this to true for more flexible HTTP request handling
   useAsyncLocalStorage: false,
-
-  /**
-   * Manage cookies configuration. The settings for the session id cookie are
-   * defined inside the "config/session.ts" file.
-   */
   cookie: {
     path: '/',
     maxAge: '2h',
     httpOnly: true,
-    secure: app.inProduction,
+    secure: app.inProduction,  // Use secure cookies in production
     sameSite: 'lax',
   },
 })

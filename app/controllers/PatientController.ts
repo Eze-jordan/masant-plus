@@ -1,27 +1,23 @@
+import Role from '#models/role'
 import User from '#models/user'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class PatientController {
-  public async show({ params, response }: HttpContextContract) {
-    const { id } = params
+export default class PatientsController {
 
-    try {
-      const patient = await User.query()
-        .where('id', id)
-        .firstOrFail()
-
-      console.log('Patient found:', patient)
-
-      return response.ok({
-        id: patient.id,
-        firstName: patient.first_name,
-        last_name: patient.last_name,
-        email: patient.email,
-        phone: patient.phone,
-      })
-    } catch (error) {
-      console.log('Patient not found with id:', id)
-      return response.status(404).json({ message: 'Patient not found' })
+    public async show({ response }: HttpContextContract) {
+      try {
+        const patientRole = await Role.findByOrFail('label', 'patient');
+  
+        const patients = await User
+          .query()
+          .where('role_id', patientRole.id);
+  
+        return response.ok(patients);
+      } catch (error) {
+        console.error('Erreur Patient index:', error);
+        // Renvoyer une réponse 200 avec message d'erreur (pas recommandé mais possible)
+        return response.ok({ data: [], message: 'Erreur serveur, impossible de récupérer les patients' });
+      }
     }
   }
-}
+  
