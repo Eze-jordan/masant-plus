@@ -41,8 +41,7 @@ export default class Appointment extends BaseModel {
   @column()
 public description?: string
 
-    @column()
-  public idCreneau!: string
+
 
 
   @column()
