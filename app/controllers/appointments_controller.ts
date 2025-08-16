@@ -86,6 +86,50 @@ export default class AppointmentController {
   /**
    * Créer un nouveau rendez-vous
    */
+
+  
+public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
+  try {
+    const idUser = request.param('id'); // id patient
+    if (!idUser) {
+      return response.badRequest({ message: 'ID patient est requis.' });
+    }
+
+    const now = DateTime.local();
+
+    const appointments = await Appointment.query()
+      .where('idUser', idUser)               // rendez-vous du patient
+      .andWhere('dateRdv', '>=', now.toISODate())
+      .andWhere('etatRdv', EtatRDV.CONFIRME) // par exemple seulement les confirmés
+      .orderBy('dateRdv', 'asc')
+      .orderBy('heureDebut', 'asc');
+
+    const result = appointments.map((appointment) => {
+      const dateIso = appointment.dateRdv.toISODate();
+      const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`);
+      const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`);
+
+      return {
+        id: appointment.id,
+        typeRdv: appointment.typeRdv,
+        etatRdv: appointment.etatRdv ?? 'PENDING',
+        dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
+        dateFin: dateFin.isValid ? dateFin.toISO() : null,
+      };
+    });
+
+    return response.ok({
+      message: `Rendez-vous à venir pour le patient ${idUser}.`,
+      appointments: result,
+    });
+  } catch (error) {
+    console.error('[getUpcomingAppointmentsForPatient] Erreur :', error);
+    return response.internalServerError({
+      message: 'Erreur serveur lors de la récupération des rendez-vous.',
+      error: error.message,
+    });
+  }
+}
   public async create({ request, response }: HttpContextContract) {
     try {
       const payload = request.only([

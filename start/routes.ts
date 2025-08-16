@@ -7,10 +7,17 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
+import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
+const medicament =new   MedicamentFrancesController()
 const userinfo  =new  pourcentage_comptes_controller()
-
+import ResourcesController from '#controllers/resources_controller';
+const resourcesController = new ResourcesController();
 const DemandeController =new DemandeDocteurController()
+const patientsend  =new  sendinginfopatients_controller()
+const doctorSpecialty  =new  SpecialiteController()
 import { throttle } from '#start/limiter'
+const patients  =new  PatientController()
+const patients_controller = new PatientsController()
 import RegisterController from '#controllers/RegisterController'
 import AuthController from '#controllers/auth_controller'
 import PatientsController from '#controllers/patients_controller'
@@ -36,19 +43,26 @@ import DisponibilitesController from '#controllers/disponibilities_controller'
 import AppointmentController from '#controllers/appointments_controller'
 import { verifyJwtToken } from '../app/Utils/verifytoken.js'
 import User from '#models/user'
+import Payment from '#models/paiement'
+import PatientdetailsController from '#controllers/PatientdetailsController';
+const Patientdetails   =  new    PatientdetailsController()
 const patient   =  new    PatientController()
 const specialty  =  new  specialities_controller()
+const patientlistingdoctors  =  new  PatientlistingDoctorsController()
 import update_users_controller from '#controllers/update_users_controller'
 import live_for_users_controller from '#controllers/live_for_users_controller'
 import retraits_controller from '#controllers/retraits_controller';
-import Paiement from '#models/paiement';
 import PatientController from '#controllers/PatientController';
 import verify_emails_controller from '#controllers/verify_emails_controller';
 import DemandeDocteurController from '#controllers/DemandeDocteurController';
 import doctor_displays_controller from '#controllers/doctor_displays_controller';
 import specialities_controller from '#controllers/specialities_controller';
 import DisponibilitesdoctorController from '#controllers/DisponibilitesdoctorController';
-import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller';
+import sendinginfopatients_controller from '#controllers/sendinginfopatients_controller';
+import SpecialiteController from '#controllers/SpecialiteController';
+import MedicamentFrancesController from '#controllers/medicament_frances_controller';
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
+import PatientlistingDoctorsController from '#controllers/patientlisting_doctors_controller';
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -74,7 +88,6 @@ const appKeyGuard = new AppKeyGuard()
 const registerController = new RegisterController()
 const passwordResetController = new PasswordResetController()
 // Upload route sécurisée et filtrée
-
 
 
 /**
@@ -2518,7 +2531,15 @@ router.get('/paiements/gains-mois/:userId', async (ctx) => {
     })
   })
 }).middleware([throttle])
+///
 
+router.post('/medicament', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return medicament.store(ctx)
+    })
+  })
+}).middleware([throttle])
 router.post('/upload/image', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -2556,6 +2577,63 @@ router.post('/upload/image', async (ctx) => {
     })
   })
 })
+
+
+
+router.post('/upload/document', async (ctx: HttpContextContract) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const { request, response } = ctx
+
+      // Accepter les fichiers PDF et Word, avec une limite de 5MB
+      const file = request.file('File', {
+        size: '5mb', // Limite la taille du fichier à 5MB
+        extnames: ['pdf', 'doc', 'docx'],
+      })
+
+      // Vérifier si un fichier a été fourni
+      if (!file || !file.tmpPath) {
+        return response.badRequest({ message: 'Aucun fichier fourni.' })
+      }
+
+      // Validation de l'extension du fichier
+      if (!['pdf', 'doc', 'docx'].includes(file.extname)) {
+        return response.badRequest({ message: 'Le fichier doit être un PDF ou un document Word.' })
+      }
+
+      try {
+        // Générer un nom unique pour le fichier
+        const fileName = `${cuid()}.${file.extname}`
+
+        // Lire le fichier en mémoire
+        const fileBuffer = await fs.readFile(file.tmpPath)
+
+        // Upload vers S3
+        await drive.use('s3').put(`uploads/profile/${fileName}`, fileBuffer)
+
+        // Construire l'URL publique en fonction de la configuration S3
+        const s3BaseUrl = process.env.S3_ENDPOINT?.replace(/\/$/, '') || ''
+        const bucket = process.env.S3_BUCKET || ''
+
+        // URL publique du fichier téléchargé
+        console.log(bucket)
+        const publicUrl = `${s3BaseUrl}/masanteplus/uploads/profile/${fileName}`
+
+        // Réponse avec l'URL du fichier
+        return response.created({
+          message: 'Document envoyé avec succès',
+          url: publicUrl,
+        })
+      } catch (error) {
+        // Gestion des erreurs lors du téléchargement
+        console.error(error)
+        return response.internalServerError({ message: "Erreur lors de l'envoi du document" })
+      }
+    })
+  })
+})
+
+
 router.get('/get-url', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -2606,6 +2684,72 @@ router.get('/get-url', async (ctx) => {
 });
 
 
+router.get('/get-docs', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+      const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+      const region = process.env.AWS_REGION;
+      const endpoint = process.env.S3_ENDPOINT;
+      const bucket = process.env.S3_BUCKET;
+      const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === 'true';
+
+      if (!accessKeyId || !secretAccessKey || !region || !endpoint || !bucket) {
+        ctx.response.status(500).json({ message: 'Configuration AWS incomplète.' });
+        return;
+      }
+
+      try {
+        const s3 = new S3Client({
+          region,
+          credentials: {
+            accessKeyId,
+            secretAccessKey,
+          },
+          endpoint,
+          forcePathStyle,
+        });
+
+        // Liste tous les fichiers dans le bucket
+        const listCommand = new ListObjectsV2Command({
+          Bucket: bucket,
+        });
+
+        const data = await s3.send(listCommand);
+
+        // Filtrer les fichiers ayant l'extension .doc
+        const docFiles = data.Contents?.filter(file => file.Key?.endsWith('.doc') || file.Key?.endsWith('.docx'));
+
+        if (docFiles && docFiles.length === 0) {
+          ctx.response.status(404).json({ message: 'Aucun fichier .doc trouvé.' });
+          return;
+        }
+
+        // Générer des URLs signées pour chaque fichier .doc
+        const signedUrls = [];
+        for (let file of docFiles || []) {
+          const command = new GetObjectCommand({
+            Bucket: bucket,
+            Key: file.Key,
+          });
+
+          const url = await getSignedUrl(s3, command, { expiresIn: 604800 }); // 7 jours
+          signedUrls.push({
+            fileName: file.Key,
+            url,
+          });
+        }
+
+        // Retourner les URLs signées
+        ctx.response.status(200).json(signedUrls);
+      } catch (error) {
+        console.error(error);
+        ctx.response.status(500).json({ message: "Erreur lors de la récupération des fichiers." });
+      }
+    });
+  });
+});
+
 
 
 router.get('/docs', async ({ view }) => {
@@ -2649,6 +2793,15 @@ router.get('/users/:id', async (ctx) => {
   })
 }).middleware([throttle])
 
+router.get('/users/:id/info', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /users/:id/info] Avant appel controller show')
+      return userinfo.show(ctx)  // Méthode pour récupérer l'utilisateur
+    })
+  })
+}).middleware([throttle])
+
 
 router.delete('/users/:id', async (ctx) => {
   console.log('[GET /users/:id] Début de traitement')
@@ -2686,7 +2839,7 @@ router.put('/users/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       console.log('[PUT /users/:id] Avant appel controller update')
-      return registerController.update(ctx)  // Ton controller update ici
+      return registerController.updateimage(ctx)  // Ton controller update ici
     })
   })
 }).middleware([throttle])
@@ -2703,13 +2856,33 @@ router.get('/disponibilites', async (ctx) => {
   })
 }).middleware([throttle])
 
-// Route GET /disponibilites/:id (Affiche une disponibilité spécifique par ID)
+router.post('/disponibilites/:id/creneaux', async (ctx) => {
+  console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return  disponibilityuser.createCreneaux(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route GET //disponibilites/:id/creneaux (Affiche une disponibilité spécifique par ID)
 router.get('/disponibilites/:id', async (ctx) => {
   console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
 
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return  disponibilityuser.getByDoctor(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/detailsdisponibilites/:id', async (ctx) => {
+  console.log(`[GET /disponibilites/${ctx.params.id}] Début`)
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return  disponibilityuser.show(ctx)
     })
   })
 }).middleware([throttle])
@@ -2726,7 +2899,19 @@ router.post('/disponibilites', async (ctx) => {
   })
 }).middleware([throttle])
 
-// Route PUT /disponibilites/:id (Met à jour une disponibilité par ID)
+
+router.get('/patients/:id', async (ctx) => {
+  console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
+
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patientsend.show(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Route PUT /disponibilites/:id (Met à jour une disponibilité par ID) /patients/:id'
+
 router.put('/disponibilites/:id', async (ctx) => {
   console.log(`[PUT /disponibilites/${ctx.params.id}] Début`)
 
@@ -2809,6 +2994,13 @@ router.post('/registeradmin', async (ctx) => {
 
 
 // Login route
+router.post('/doctorspecialty', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return doctorSpecialty.create(ctx)
+    })
+  })
+}).middleware([throttle])
 
 
 
@@ -2816,6 +3008,22 @@ router.get('/patients/count/:userId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return patientsController.index(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/patients/listing-doctors/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patientlistingdoctors.getDoctorsByPatient(ctx)
+    })
+  })
+}).middleware([throttle])
+
+router.get('/patients/listing-resource/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return patientlistingdoctors.getRessourcesByPatient(ctx)
     })
   })
 }).middleware([throttle])
@@ -2836,7 +3044,15 @@ router.get('/patientsuser/:id', async (ctx) => {
   })
 }).middleware([throttle])
 
-// Consultations count route
+router.get('/patient/details/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return Patientdetails.show(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Patientdetails
 
 
 router.get('/consultations/:userId', async (ctx) => {
@@ -2900,7 +3116,7 @@ router.get('/list-files/:prefix?', async (ctx) => {
 
 
 router.post('/paiements/mobile-money', async (ctx) => {
-  await onlyFrontend.handle(ctx, async () =>/*  */ {
+  await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       // Créer une instance du contrôleur
       const paiementsController = new PaiementsController()
@@ -2911,14 +3127,14 @@ router.post('/paiements/mobile-money', async (ctx) => {
   })
 }).middleware([throttle])
 
-router.post('/paiements/visa', async (ctx) => {
+router.get('/paiements', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       // Créer une instance du contrôleur
       const paiementsController = new PaiementsController()
 
       // Appeler la méthode d'instance sur l'objet paiementsController
-      return await paiementsController.createvisaMoneyInvoice(ctx)
+      return await paiementsController.index(ctx)
     })
   })
 }).middleware([throttle])
@@ -2969,6 +3185,15 @@ router.get('/account/all', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       return await admins.getAllUsers(ctx)
+    })
+  })
+}).middleware([throttle])
+
+
+router.get('/patient', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await patients_controller.index(ctx)
     })
   })
 }).middleware([throttle])
@@ -3043,8 +3268,6 @@ router.get('/paiements/mobile-money', async (ctx) => {
     })
   })
 }).middleware([throttle])
-
-
 
 
 router.post('/feedbacks', async (ctx) => {
@@ -3291,6 +3514,13 @@ router.get('/lives', async (ctx) => {
   });
 });
 
+router.post('/appointments', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentController.create(ctx)
+    })
+  })
+})
 
 router.get('/appointments/doctor', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
@@ -3300,47 +3530,37 @@ router.get('/appointments/doctor', async (ctx) => {
   })
 })
 
-router.post('/appointments', async (ctx) => {
+
+router.get('/appointments/patient/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
-      await appointmentController.create(ctx)
+      await appointmentController.getUpcomingAppointmentsForPatient(ctx)
+    })
+  })
+})
+router.put('/appointments/cancel/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentController.cancel(ctx)
     })
   })
 })
 
-router.get('/', async ({ inertia }) => {
-  return inertia.render('home') // => resources/js/Pages/auth/login.tsx
+router.get('/paiment/patient/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await patients.show(ctx)
+    })
+  })
 })
-
-router.get('/auth', async ({ inertia }) => {
-  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
+//
+router.get('/disponibilites/doctor/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await disponibilityuser.show(ctx)
+    })
+  })
 })
-
-router.get('/register', async ({ inertia }) => {
-  return inertia.render('auth/register') // assure-toi que ce composant existe
-})
-
-router.get('/login', async ({ inertia }) => {
-  return inertia.render('auth/login') // correspond à resources/js/Pages/auth/login.tsx
-})
-
-
-
-
-
-router.get('/auth/rest-password', async ({ inertia }) => {
-  return inertia.render('auth/rest-password')
-})
-
-// routes.ts
-router.get('/logins', async ({ inertia }) => {
-  return inertia.render('auth/login') // => resources/js/Pages/auth/login.tsx
-})
-
-router.get('/registers', async ({ inertia }) => {
-  return inertia.render('auth/register') // assure-toi que ce composant existe
-})
-
 
 
 router.post('/logins', async (ctx) => {
@@ -3351,6 +3571,13 @@ router.post('/logins', async (ctx) => {
   })
 })
 
+router.post('/adminlogin', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await loginadmin.admin(ctx)
+    })
+  })
+})
 
 router.get('/specialities', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
@@ -3368,111 +3595,17 @@ router.get('/doctors', async (ctx) => {
   })
 })
 
-router.get('/csrf-check', async ({ response }) => {
-  return response.ok({ status: 'ok' })
+router.get('/alldoctors', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await doctorAll.index(ctx)
+    })
+  })
 })
 
 
-router.get('/dashboard', async ({ request, response, inertia }) => {
-  const token = request.cookie('token');
 
-  if (!token) {
-    return response.redirect('/login');
-  }
 
-  try {
-    // ✅ Vérification du JWT
-    const payload = verifyJwtToken(token) as { id: string; email: string };
-    const currentUser = await User.query().where('id', payload.id).preload('role').first();
-
-    if (!currentUser) {
-      return response.redirect('/login');
-    }
-
-    // ✅ Charger tous les utilisateurs avec leur rôle
-    const users = await User.query().preload('role');
-
-    // ✅ Filtrage des patients et docteurs
-    const patients = users.filter((u) => u.role && u.role.label.toLowerCase() === 'patient');
-    const doctors = users.filter(
-      (u) => u.role && ['doctor', 'medecin'].includes(u.role.label.toLowerCase())
-    );
-
-    // ✅ Statistiques docteurs
-    const totalDoctors = doctors.length;
-    const activeDoctors = doctors.filter(
-      (u) => u.accountStatus?.toLowerCase() === 'active'
-    ).length;
-    const inactiveDoctors = totalDoctors - activeDoctors;
-    const doctorPercentActive = totalDoctors
-      ? Math.round((activeDoctors / totalDoctors) * 100)
-      : 0;
-
-    // ✅ Statistiques patients
-    const totalPatients = patients.length;
-    const activePatients = patients.filter(
-      (p) => p.accountStatus?.toLowerCase() === 'active'
-    ).length;
-    const inactivePatients = totalPatients - activePatients;
-    const patientPercentActive = totalPatients
-      ? Math.round((activePatients / totalPatients) * 100)
-      : 0;
-
-    // ✅ Récupérer tous les paiements validés et calculer la somme
-    const totalPaiements = await Paiement.query()
-      .where('statut', 'valide') // tu peux enlever ce filtre si tu veux TOUT
-      .sum('montant as total');
-
-    const montantTotalPlateforme = totalPaiements[0].$extras.total || 0;
-
-    // ✅ Version "safe" des utilisateurs (sans mot de passe ou infos sensibles)
-    const safeUsers = users.map((user) => ({
-      id: user.id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      phone: user.phone,
-      specialty: user.specialites,
-      accountStatus: user.accountStatus,
-      profileImage: user.profileImage,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      role: user.role ? user.role.label : null,
-    }));
-
-    // ✅ Rendu Inertia
-    return inertia.render('dashboard/dashboard', {
-      user: {
-        id: currentUser.id,
-        firstName: currentUser.first_name,
-        lastName: currentUser.last_name,
-        email: currentUser.email,
-        phone: currentUser.phone,
-
-        accountStatus: currentUser.accountStatus,
-        profileImage: currentUser.profileImage,
-        createdAt: currentUser.createdAt,
-        updatedAt: currentUser.updatedAt,
-        role: currentUser.role ? currentUser.role.label : null,
-      },
-      users: safeUsers,
-      stats: {
-        totalPatients,
-        activePatients,
-        inactivePatients,
-        percentActive: patientPercentActive,
-        totalDoctors,
-        activeDoctors,
-        inactiveDoctors,
-        percentDoctorsActive: doctorPercentActive,
-        montantTotalPlateforme, // 💰 Montant total envoyé au frontend
-      },
-    });
-  } catch (error: any) {
-    console.error('[Dashboard] Erreur JWT :', error.message);
-    return response.redirect('/login');
-  }
-});
 
 
 
@@ -3485,14 +3618,24 @@ router.get('/404', async ({ inertia }) => {
   return inertia.render('errors/not_found')
 })
 
-
-
-
-// Route fallback - doit être la dernière route
-router.get('*', async ({ inertia }) => {
-  return inertia.render('errors/not_found', { status: 404 })
+// Routes d'authentification
+router.get('/auth', async ({ inertia }) => {
+  return inertia.render('auth/login')
 })
 
+router.get('/register', async ({ inertia }) => {
+  return inertia.render('auth/register')
+})
+
+router.get('/login', async ({ inertia }) => {
+  return inertia.render('auth/login')
+})
+
+router.get('/auth/rest-password', async ({ inertia }) => {
+  return inertia.render('auth/rest-password')
+})
+
+// Route fallback - doit être la dernière route
 
 router.get('/doctor', async ({ inertia }) => {
   return inertia.render('/dashboard/docteurs')
@@ -3527,14 +3670,7 @@ router.get('/ListeDemande', async ({ request, response, auth, inertia }) => {
 })
 
 
-router.get('/users/:id/info', async (ctx) => {
-  await onlyFrontend.handle(ctx, async () => {
-    await appKeyGuard.handle(ctx, async () => {
-      console.log('[GET /users/:id/info] Avant appel controller show')
-      return userinfo.show(ctx)  // Méthode pour récupérer l'utilisateur
-    })
-  })
-}).middleware([throttle])
+
 router.group(() => {
   // Route pour créer un live
   router.post('/lives/create/:idDiscussion', async (ctx) => {
@@ -3578,6 +3714,15 @@ router.post('/demandes-docteurs/reject/:id', async (ctx) => {
   })
 }).middleware([throttle])
 
+router.get('/demandes-docteurs', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new DemandeDocteurController()
+      return await controller.index(ctx)
+    })
+  })
+}).middleware([throttle])
+
 router.post('/demandes-docteurs/approve/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3597,4 +3742,103 @@ router.get('/doctorDisponibilities', async (ctx) => {
   })
 }).middleware([throttle])
 
+router.get('/medicaments/:name', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      console.log(ctx)
+      return medicament.index(ctx)
+    })
+  })
+}).middleware([throttle])
+// Route d'accueil avec le contrôleur home
+router.on('/').renderInertia('home')
 
+
+
+
+router.get('/dashboard', async ({ request, response, inertia }) => {
+  const token = request.cookie('token')
+
+  if (!token) {
+    return response.redirect('/login')
+  }
+
+  try {
+    const payload = verifyJwtToken(token) as { id: string; email: string }
+    const currentUser = await User.find(payload.id)
+
+    if (!currentUser) {
+      return response.redirect('/login')
+    }
+
+    // 🔵 Récupérer tous les utilisateurs
+    const users = await User.all()
+
+    // 🔵 Filtrer par rôle
+    const patients = users.filter(u => u.role?.label === 'patient' )
+    const doctors = users.filter(u => u.role?.label === 'doctor')
+
+    // 🔵 Récupérer tous les paiements
+    const payments = await Payment.all()
+
+    // 🔵 Total plateforme depuis les paiements
+    const montantTotalPlateforme = payments.reduce((acc, p) => acc + Number(p.montant), 0)
+
+    // 🔵 Mapper les utilisateurs sans données sensibles
+    const safeUsers = users.map(user => ({
+      id: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      email: user.email,
+      role: user.role,
+    }))
+
+    const stats = {
+      totalPatients: patients.length,
+      totalDoctors: doctors.length,
+      totalUsers: users.length,
+      montantTotalPlateforme,
+    }
+
+    return inertia.render('dashboard/dashboard', {
+      user: {
+        id: currentUser.id,
+        firstName: currentUser.first_name,
+        lastName: currentUser.last_name,
+        email: currentUser.email,
+        role: currentUser.role,
+      },
+      users: safeUsers,
+      stats,
+      payments, // tu peux aussi faire .map pour limiter les infos exposées
+    })
+
+  } catch (error: any) {
+    console.error('[Dashboard] Erreur JWT :', error.message)
+    return response.redirect('/login')
+  }
+})
+
+
+router.get('/resources/files/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await resourcesController.index(ctx);
+    });
+  });
+}).middleware([throttle])// Middleware pour limiter les requêtes (précaution supplémentaire)
+
+
+
+// Route fallback - doit être la dernière route
+router.get('/*', async ({ request, inertia, response }) => {
+  const acceptsHtml = request.accepts(['html', 'json']) === 'html'
+
+  if (acceptsHtml) {
+    // Renvoie la page d’erreur Inertia (HTML)
+    return inertia.render('errors/not_found', { status: 404 })
+  }
+
+  // Sinon, c’est une requête API → renvoie un JSON 404
+  return response.status(404).json({ message: 'Not Found' })
+})
