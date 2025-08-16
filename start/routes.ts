@@ -3127,6 +3127,19 @@ router.post('/paiements/mobile-money', async (ctx) => {
   })
 }).middleware([throttle])
 
+
+router.post('/paiements/visa', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      // Créer une instance du contrôleur
+      const paiementsController = new PaiementsController()
+
+      // Appeler la méthode d'instance sur l'objet paiementsController
+      return await paiementsController.createvisaMoneyInvoice(ctx)
+    })
+  })
+}).middleware([throttle])
+
 router.get('/paiements', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
