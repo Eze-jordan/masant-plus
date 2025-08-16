@@ -11,14 +11,24 @@ export default class WelcomeMailService {
     },
   });
 
-  static async sendAccountInfo(email: string, fullName: string, password: string) {
+  static async sendAccountInfo(email: string, fullName: string,) {
     const html = `
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto;">
+      <h2 style="color: #0d6efd; text-align: center;">Bienvenue ${fullName} !</h2>
       <p>Bonjour ${fullName},</p>
-      <p>Votre compte a bien été créé sur notre plateforme.</p>
-      <p><strong>Email :</strong> ${email}</p>
-      <p><strong>Mot de passe :</strong> ${password}</p>
-      <p>Vous pouvez le changer une fois connecté.</p>
-    `;
+      <p>Nous sommes ravis de vous accueillir sur notre plateforme. Votre compte a été créé avec succès.</p>
+      <p>Vous pouvez dès à présent accéder à votre espace personnel et profiter de nos services.</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://backend.sammomed.online" 
+           style="background-color: #0d6efd; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+          Se connecter
+        </a>
+      </div>
+      <p>Si vous avez des questions, notre équipe reste à votre disposition.</p>
+      <p style="margin-top: 20px;">À bientôt,<br>L'équipe Support</p>
+    </div>
+  `;
+  
 
     try {
       const info = await this.transporter.sendMail({

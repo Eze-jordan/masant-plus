@@ -28,7 +28,11 @@ export default class LikesController {
         .first()
 
       if (existingLike) {
-        return response.status(409).send({ message: 'Like déjà existant.' })
+        return response.ok({
+          message: 'Like déjà existant.',
+          like: existingLike,
+          alreadyLiked: true,
+        })
       }
 
       // Créer le like avec la date actuelle
@@ -41,6 +45,7 @@ export default class LikesController {
       return response.created({
         message: 'Like créé avec succès.',
         like,
+        alreadyLiked: false,
       })
     } catch (error: any) {
       return response.status(500).send({

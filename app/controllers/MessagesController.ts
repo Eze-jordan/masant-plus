@@ -1,100 +1,120 @@
-import Message from '#models/message'
+import DiscussionMessagery from '#models/discussion_messagery'
 import User from '#models/user'
 import Discussion from '#models/discussion'
 import Notification from '#models/notification'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { DateTime } from 'luxon'
+import { cuid } from '@adonisjs/core/helpers'
+import drive from '@adonisjs/drive/services/main'
+import fs from 'fs/promises'
+
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import Ressource from '#models/Ressource'
 
 export default class MessagesController {
   /**
-   * Créer un message (et discussion doctor/patient si non existante)
+   * Créer un message (texte ou fichier)
    */
   public async create({ request, response }: HttpContextContract) {
-    const { idDiscussion, idUserSender, idUserReceiver, roleReceiver, message } = request.only([
+    const {
+      idDiscussion,
+      idUserSender,
+      idUserReceiver,
+      roleReceiver,
+      message,
+      titre,
+      date,
+    } = request.only([
       'idDiscussion',
       'idUserSender',
       'idUserReceiver',
       'roleReceiver',
       'message',
+      'titre',
+      'date',
     ])
 
-    console.log('Create message request received:', { idDiscussion, idUserSender, idUserReceiver, roleReceiver, message })
+    const file = request.file('file', {
+      size: '5mb',
+      extnames: ['pdf', 'doc', 'docx'],
+    })
 
     try {
+      // 1️⃣ Vérification expéditeur
       const sender = await User.find(idUserSender)
-      console.log('Sender found:', sender)
       if (!sender) {
-        console.log('Expéditeur non trouvé')
         return response.status(404).send({ message: 'Expéditeur non trouvé.' })
       }
 
-      let discussion: Discussion | null = null
-
+      // 2️⃣ Trouver ou créer discussion
+      let discussion: Discussion
       if (idDiscussion) {
-        discussion = await Discussion.find(idDiscussion)
-        console.log('Discussion trouvée par idDiscussion:', discussion)
-        if (!discussion) {
-          console.log('Discussion non trouvée')
+        const foundDiscussion = await Discussion.find(idDiscussion)
+        if (!foundDiscussion) {
           return response.status(404).send({ message: 'Discussion non trouvée.' })
         }
+        discussion = foundDiscussion
       } else {
-        const receiver = await User.find(idUserReceiver)
-        console.log('Receiver found:', receiver)
-        if (!receiver) {
-          console.log('Destinataire non trouvé')
-          return response.status(404).send({ message: 'Destinataire non trouvé.' })
+        const foundDiscussion = await this.findOrCreateDiscussion(idUserSender, idUserReceiver, roleReceiver)
+        if (!foundDiscussion) {
+          return response.status(400).send({ message: 'Impossible de créer la discussion.' })
         }
-
-        let idDoctor: string
-        let idPatient: string
-
-        if (roleReceiver === 'doctor') {
-          idDoctor = idUserReceiver
-          idPatient = idUserSender
-        } else {
-          idDoctor = idUserSender
-          idPatient = idUserReceiver
-        }
-
-        discussion = await Discussion.query()
-          .where('idDoctor', idDoctor)
-          .andWhere('idPatient', idPatient)
-          .first()
-
-        console.log('Discussion trouvée par doctor/patient:', discussion)
-
-        if (!discussion) {
-          discussion = await Discussion.create({
-            idDoctor,
-            idPatient,
-            dateChat: DateTime.now(),
-          })
-          console.log('Nouvelle discussion créée:', discussion)
-        }
+        discussion = foundDiscussion
       }
 
-      const newMessage = await Message.create({
+      // 3️⃣ Upload fichier (optionnel)
+      let fileUrl: string | null = null
+      let typeMessage = 'text'
+
+      if (file && file.tmpPath) {
+        const fileName = `${cuid()}.${file.extname}`
+        const fileBuffer = await fs.readFile(file.tmpPath)
+        await drive.use('s3').put(`uploads/documents/${fileName}`, fileBuffer)
+
+        const s3 = new S3Client({
+          region: process.env.AWS_REGION!,
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          },
+          endpoint: process.env.S3_ENDPOINT!,
+          forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+        })
+
+        const command = new GetObjectCommand({
+          Bucket: process.env.S3_BUCKET!,
+          Key: `uploads/documents/${fileName}`,
+        })
+
+        fileUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 60 * 24 * 7 })
+        typeMessage = 'document'
+
+        await Ressource.create({
+          url: fileUrl,
+          titre: titre ?? file.clientName ?? 'Document médical',
+          date: date ?? '',
+          userId: idUserSender,
+        })
+      }
+
+      // 4️⃣ Création du message
+      const newMessage = await DiscussionMessagery.create({
         idDiscussion: discussion.id,
         idUserSender,
-        idUserReceiver,
-        message,
+        message: fileUrl ?? message,
+        typeMessage,
       })
 
-      // Charger l'expéditeur et le destinataire
       await newMessage.load('sender')
-      await newMessage.load('receiver')
 
-      console.log('Nouveau message créé:', newMessage)
-
-      // Créer la notification pour le destinataire
-      const notification = await Notification.create({
+      // 5️⃣ Notification
+      await Notification.create({
         idUser: idUserReceiver,
         titre: 'Nouveau message reçu',
-        description: `Vous avez reçu un nouveau message de ${sender.email || 'un utilisateur'}.`,
+        description: `Vous avez reçu un ${file ? 'document' : 'message'} de ${newMessage.sender?.email ?? 'un utilisateur'} ${newMessage.sender?.last_name ?? ''}.`,
         isRead: false,
       })
-
-      console.log('Notification créée:', notification)
 
       return response.created({
         message: 'Message envoyé avec succès.',
@@ -103,8 +123,8 @@ export default class MessagesController {
           message: newMessage.message,
           createdAt: newMessage.createdAt,
           senderUsername: newMessage.sender?.first_name ?? 'Inconnu',
-          receiverUsername: newMessage.receiver?.first_name ?? 'Inconnu',
           idDiscussion: newMessage.idDiscussion,
+          typeMessage: newMessage.typeMessage,
         },
       })
     } catch (error: any) {
@@ -116,9 +136,49 @@ export default class MessagesController {
     }
   }
 
+  /**
+   * Trouver ou créer discussion avec idDoctor et idPatient dans la même ligne
+   */
+  private async findOrCreateDiscussion(
+    idUserSender: string,
+    idUserReceiver: string,
+    roleReceiver: string
+  ): Promise<Discussion | null> {
+    const receiver = await User.find(idUserReceiver)
+    if (!receiver) return null
+
+    const [idDoctor, idPatient] =
+      roleReceiver === 'doctor'
+        ? [idUserReceiver, idUserSender]
+        : [idUserSender, idUserReceiver]
+
+    // Vérification discussion existante dans la même ligne
+    let discussion = await Discussion.query()
+      .where(q => q
+        .where('idDoctor', idDoctor).andWhere('idPatient', idPatient)
+      )
+      .orWhere(q => q
+        .where('idDoctor', idPatient).andWhere('idPatient', idDoctor)
+      )
+      .first()
+
+    if (!discussion) {
+      discussion = await Discussion.create({
+        idDoctor,
+        idPatient,
+        dateChat: DateTime.now(),
+      })
+    }
+
+    return discussion
+  }
+
+
+
+
+
   public async getByUser({ params, response }: HttpContextContract) {
     const userId = params.userId
-    console.log('getByUser called with userId:', userId)
 
     try {
       const discussions = await Discussion.query()
@@ -127,25 +187,13 @@ export default class MessagesController {
         .preload('doctor')
         .preload('patient')
 
-      console.log('Discussions trouvées:', discussions)
-
-      if (discussions.length === 0) {
-        console.log('Aucune discussion trouvée pour cet utilisateur')
-        return response.ok({
-          message: 'Aucune discussion trouvée pour cet utilisateur.',
-          data: [],
-        })
-      }
-
       const results = []
 
       for (const discussion of discussions) {
-        const lastMessage = await Message.query()
+        const lastMessage = await DiscussionMessagery.query()
           .where('idDiscussion', discussion.id)
           .orderBy('createdAt', 'desc')
           .first()
-
-        console.log('Dernier message pour discussion', discussion.id, ':', lastMessage)
 
         if (!lastMessage) continue
 
@@ -157,19 +205,18 @@ export default class MessagesController {
           lastMessage: lastMessage.message,
           time: lastMessage.createdAt.toFormat('HH:mm'),
           unread: false,
-          avatar: otherUser.profileImage || `https://ui-avatars.com/api/?name=${otherUser.first_name}+${otherUser.last_name}`,
+          avatar:
+            otherUser.profileImage ||
+            `https://ui-avatars.com/api/?name=${otherUser.first_name}+${otherUser.last_name}`,
           isOnline: false,
         })
       }
-
-      console.log('Résultats formatés:', results)
 
       return response.ok({
         message: 'Discussions récupérées avec succès.',
         data: results,
       })
     } catch (error: any) {
-      console.error('Erreur getByUser:', error)
       return response.status(500).send({
         message: 'Erreur lors de la récupération des messages.',
         error: error.message,
@@ -177,68 +224,48 @@ export default class MessagesController {
     }
   }
 
-  /**
-   * Récupérer les messages d'une discussion
-   */
   public async getByDiscussion({ params, response }: HttpContextContract) {
-    console.log('getByDiscussion called with params:', params);
-  
     try {
-      const discussionId = params.discussionId;
-      console.log('Recherche messages pour discussionId:', discussionId);
-  
-      const messages = await Message.query()
+      const discussionId = params.discussionId
+
+      const messages = await DiscussionMessagery.query()
         .where('idDiscussion', discussionId)
-        .preload('sender')   // Assure que `sender` contient `id` et `username`
-        .preload('receiver') // Idem pour `receiver`
-        .orderBy('createdAt', 'asc');
-  
-      console.log(`Messages RAW pour discussionId=${discussionId}:`, JSON.stringify(messages, null, 2));
-  
+        .preload('sender')
+        .orderBy('createdAt', 'asc')
+
       const formatted = messages.map((m) => ({
         id: m.id,
         message: m.message,
+        typeMessage: m.typeMessage,
         createdAt: m.createdAt,
         senderId: m.sender?.id ?? null,
-        receiverId: m.receiver?.id ?? null,
         senderUsername: m.sender?.first_name ?? 'Inconnu',
-        receiverUsername: m.receiver?.first_name ?? 'Inconnu',
-      }));
-  
-      console.log(`Messages formatés pour discussionId=${discussionId}:`, formatted);
-  
+      }))
+
       return response.ok({
         message: 'Messages récupérés avec succès.',
         data: formatted,
-      });
+      })
     } catch (error: any) {
-      console.error('Erreur getByDiscussion:', error);
       return response.status(500).send({
         message: 'Erreur lors de la récupération des messages.',
         error: error.message,
-      });
+      })
     }
   }
-  
 
   public async update({ params, request, response }: HttpContextContract) {
     const messageId = params.id
-    const { message } = request.only(['message'])
-
-    console.log('Update message called with id:', messageId, 'and new message:', message)
+    const { message, typeMessage } = request.only(['message', 'typeMessage'])
 
     try {
-      const existingMessage = await Message.find(messageId)
-      console.log('Message existant:', existingMessage)
+      const existingMessage = await DiscussionMessagery.find(messageId)
       if (!existingMessage) {
-        console.log('Message non trouvé')
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
 
-      if (message !== undefined) {
-        existingMessage.message = message
-        console.log('Message mis à jour:', existingMessage)
-      }
+      if (message !== undefined) existingMessage.message = message
+      if (typeMessage !== undefined) existingMessage.typeMessage = typeMessage
 
       await existingMessage.save()
 
@@ -247,7 +274,6 @@ export default class MessagesController {
         data: existingMessage,
       })
     } catch (error: any) {
-      console.error('Erreur update message:', error)
       return response.status(500).send({
         message: 'Erreur lors de la mise à jour du message.',
         error: error.message,
@@ -256,25 +282,18 @@ export default class MessagesController {
   }
 
   public async delete({ params, response }: HttpContextContract) {
-    console.log('Delete message called with id:', params.id)
-
     try {
-      const message = await Message.find(params.id)
-      console.log('Message à supprimer:', message)
+      const message = await DiscussionMessagery.find(params.id)
       if (!message) {
-        console.log('Message non trouvé')
         return response.status(404).send({ message: 'Message non trouvé.' })
       }
 
       await message.delete()
 
-      console.log('Message supprimé avec succès')
-
       return response.ok({
         message: 'Message supprimé avec succès.',
       })
     } catch (error: any) {
-      console.error('Erreur delete message:', error)
       return response.status(500).send({
         message: 'Erreur lors de la suppression du message.',
         error: error.message,
@@ -283,28 +302,21 @@ export default class MessagesController {
   }
 
   public async deleteAllByDiscussion({ params, response }: HttpContextContract) {
-    console.log('Delete all messages by discussion called with discussionId:', params.discussionId)
-
     try {
       const discussionId = params.discussionId
 
-      const messages = await Message.query().where('idDiscussion', discussionId)
-      console.log('Messages à supprimer:', messages)
+      const messages = await DiscussionMessagery.query().where('idDiscussion', discussionId)
 
       if (messages.length === 0) {
-        console.log('Aucun message trouvé pour cette discussion')
         return response.status(404).send({ message: 'Aucun message trouvé pour cette discussion.' })
       }
 
-      await Message.query().where('idDiscussion', discussionId).delete()
-
-      console.log(`Tous les messages de la discussion ${discussionId} ont été supprimés.`)
+      await DiscussionMessagery.query().where('idDiscussion', discussionId).delete()
 
       return response.ok({
         message: `Tous les messages de la discussion ${discussionId} ont été supprimés.`,
       })
     } catch (error: any) {
-      console.error('Erreur deleteAllByDiscussion:', error)
       return response.status(500).send({
         message: 'Erreur lors de la suppression des messages.',
         error: error.message,

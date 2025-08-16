@@ -18,6 +18,8 @@ export default class AppKeyGuard {
       })
     }
 
+    // Appeler la méthode handle() de AssociateSpecialites
+    console.log(`[AppKeyGuard] Clé API valide. Accès autorisé.`)
     await next()
   }
 }

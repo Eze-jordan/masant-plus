@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
   // Déclare la prop 'onmessage'
   const { onmessage } = defineProps<{ onmessage: string }>()
