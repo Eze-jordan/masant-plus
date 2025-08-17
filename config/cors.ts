@@ -7,12 +7,11 @@ import { defineConfig } from '@adonisjs/cors'
  * https://docs.adonisjs.com/guides/security/cors
  */
 const corsConfig = defineConfig({
-   enabled: true,
-  origin: true, // accepte toutes origines (en dev)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  headers: ['Content-Type', 'Authorization', 'x-app-key'],
-  exposeHeaders: ['x-app-key'],
-  credentials: false, // true si tu veux cookies, sinon false
+  enabled: true,
+  origin: ['*'], // Autorise explicitement toutes les origines (à modifier en production)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Toutes les méthodes nécessaires
+  headers: ['Content-Type', 'Authorization', 'x-app-key', 'Accept'], // Headers autorisés
+  credentials: true, // Important si vous utilisez des cookies/sessions
   maxAge: 90,
 })
 

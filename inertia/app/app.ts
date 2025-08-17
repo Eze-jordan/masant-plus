@@ -12,7 +12,7 @@ const appName = import.meta.env.VITE_APP_NAME || 'masanteplus'
 createInertiaApp({
   progress: { color: '#5468FF' },
 
-  title: (title) => `${title} - ${appName}`,
+  title: (title) => `${title}  ${appName}`,
 
   resolve: (name) => {
     return resolvePageComponent(
@@ -23,7 +23,11 @@ createInertiaApp({
 
   setup({ el, App, props, plugin }) {
 
+<<<<<<< HEAD
+    createApp({ render: () => h(App, props) })
+=======
     createSSRApp({ render: () => h(App, props) })
+>>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
 
       .use(plugin)
       .mount(el)

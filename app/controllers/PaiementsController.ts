@@ -78,6 +78,118 @@ public async create({ request, response }: HttpContextContract) {
   /**
    * Crée une facture Mobile Money via eBilling + push USSD, puis enregistre le paiement
    */
+public async createvisaMoneyInvoice({ request, response }: HttpContextContract) {
+  const {
+    amount,
+    payer_msisdn,
+    payer_email,
+    short_description,
+    external_reference,
+    description,
+    expiry_period,
+    payment_system_name,
+    idUser,
+    idAppointment,
+  } = request.only([
+    'amount',
+    'payer_msisdn',
+    'payer_email',
+    'short_description',
+    'external_reference',
+    'description',
+    'expiry_period',
+    'payment_system_name',
+    'idUser',
+    'idAppointment',
+  ])
+
+  try {
+    // 1. Détection du mode de paiement (basé sur le numéro)
+    const modeLabel = this.detectPaymentLabel(payer_msisdn)
+    let modePaiement = await ModePaiement.query().where('label', modeLabel).first()
+
+    if (!modePaiement) {
+      modePaiement = await ModePaiement.create({ label: modeLabel })
+    }
+
+    // 2. Création de la facture via eBilling
+    const invoice = await CreateInvoice({
+      amount,
+      payer_msisdn,
+      payer_email,
+      short_description,
+      external_reference,
+      description,
+      expiry_period,
+    })
+
+    // Vérifie si la facture est correctement générée
+    if (!invoice?.e_bill?.bill_id) {
+      throw new Error('Erreur lors de la génération de la facture eBilling.')
+    }
+
+    const bill_id = invoice.e_bill.bill_id // Récupération de l'ID de la facture eBilling
+
+    // Déterminer si la facture est déjà payée (si applicable)
+    const isPaid = invoice.e_bill.status === 'PAYE' // Vérifier si la facture est payée
+
+    // 3. Création du paiement avec l'ID de la facture eBilling
+    const paiement = await Paiement.create({
+      idUser,
+      idAppointment,
+      montant: amount,
+      statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.EN_ATTENTE,
+      datePaiement: DateTime.now(),
+      modeId: modePaiement.id,
+      numeroTelephone: payer_msisdn,
+      billing_id: bill_id,  // Enregistrement de l'ID de la facture
+    })
+
+    // 4. Si payé immédiatement → mise à jour du rendez-vous
+    if (isPaid) {
+      const appointment = await Appointment.find(idAppointment)
+      if (appointment) {
+        appointment.etatRdv = EtatRDV.CONFIRME
+        await appointment.save()
+      }
+    }
+
+    // 5. Envoi du push USSD (optionnel)
+    let ussdResponse = null
+    try {
+      if (bill_id) {
+        ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name })
+        console.log('Réponse USSD:', ussdResponse)
+      } else {
+        console.warn('Pas de bill_id, push USSD ignoré.')
+      }
+    } catch (pushError) {
+      console.error('Erreur lors de l\'envoi du push USSD :', pushError)
+    }
+
+    // 6. Générer le lien de redirection pour Visa avec l'ID de la facture
+    const redirectUrl = `https://test.billing-easy.net?invoice=${bill_id}&redirect_url=https://myredirecturl.com`
+
+    // 7. Réponse finale avec le lien
+    return response.created({
+      message: isPaid
+        ? 'Paiement confirmé. Rendez-vous mis à jour.'
+        : 'Paiement enregistré. Facture créée et push tenté.',
+      bill_id,
+      paiement,
+      invoice,
+      ussdResponse,
+      redirectUrl,  // Ajoute le lien généré dans la réponse
+    })
+  } catch (error: any) {
+    console.error('Erreur lors du traitement Mobile Money:', error)
+    return response.status(500).send({
+      message: 'Erreur lors du traitement Mobile Money.',
+      error: error.message,
+    })
+  }
+}
+
   public async createMobileMoneyInvoice({ request, response }: HttpContextContract) {
     const {
       amount,
@@ -123,12 +235,17 @@ public async create({ request, response }: HttpContextContract) {
         expiry_period,
       })
 
-      const bill_id = invoice?.e_bill?.bill_id ?? null
+      // Vérifie si la facture est correctement générée
+      if (!invoice?.e_bill?.bill_id) {
+        throw new Error('Erreur lors de la génération de la facture eBilling.')
+      }
+
+      const bill_id = invoice.e_bill.bill_id // Récupération de l'ID de la facture eBilling
 
       // Déterminer si la facture est déjà payée (si applicable)
-      const isPaid = invoice?.e_bill?.status === 'PAYE' // à adapter selon l'API eBilling
+      const isPaid = invoice.e_bill.status === 'PAYE' // Vérifier si la facture est payée
 
-      // 3. Création du paiement avec le bon statut
+      // 3. Création du paiement avec l'ID de la facture eBilling
       const paiement = await Paiement.create({
         idUser,
         idAppointment,
@@ -137,13 +254,14 @@ public async create({ request, response }: HttpContextContract) {
         datePaiement: DateTime.now(),
         modeId: modePaiement.id,
         numeroTelephone: payer_msisdn,
+        billing_id: bill_id,  // Enregistrement de l'ID de la facture
       })
 
       // 4. Si payé immédiatement → mise à jour du rendez-vous
       if (isPaid) {
         const appointment = await Appointment.find(idAppointment)
         if (appointment) {
-          appointment.etatRdv = 'CONFIRME'
+          appointment.etatRdv = EtatRDV.CONFIRME
           await appointment.save()
         }
       }
@@ -172,13 +290,14 @@ public async create({ request, response }: HttpContextContract) {
         ussdResponse,
       })
     } catch (error: any) {
-      console.error('Erreur traitement Mobile Money:', error)
+      console.error('Erreur lors du traitement Mobile Money:', error)
       return response.status(500).send({
         message: 'Erreur lors du traitement Mobile Money.',
         error: error.message,
       })
     }
   }
+
 
 
   /**

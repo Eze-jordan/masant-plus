@@ -34,6 +34,9 @@ export default class Paiement extends BaseModel {
   @column()
   public modeId!: string
 
+    @column()
+  public billing_id!: string
+
   @column()
 public numeroTelephone!: string
 

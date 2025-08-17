@@ -57,7 +57,11 @@ export default class AppointmentController {
           id: appointment.id,
           typeRdv: appointment.typeRdv,
           etatRdv: appointment.etatRdv,
+<<<<<<< HEAD
+
+=======
           idPatient: appointment.patient?.id ?? null,
+>>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
           nomPatient: appointment.patient?.first_name ?? null,
           prenomPatient: appointment.patient?.last_name ?? null,
           paiements: appointment.paiements,
@@ -89,6 +93,40 @@ export default class AppointmentController {
   /**
    * Créer un nouveau rendez-vous
    */
+<<<<<<< HEAD
+public async create({ request, response }: HttpContextContract) {
+  try {
+    const payload = request.only([
+      'idDoctor',
+      'idPatient',
+      'date',
+      'typeRdv',
+      'etatRdv',
+      'description',
+      'idCreneau', // Ensure you add the idCreneau field
+    ])
+
+    // Vérification des champs obligatoires
+    if (!payload.idDoctor || !payload.idPatient || !payload.date || !payload.typeRdv || !payload.etatRdv || !payload.idCreneau) {
+      return response.badRequest({ message: 'Champs requis manquants.' })
+    }
+
+    // Validation des valeurs d'enum
+    if (!Object.keys(TypeRDV).includes(payload.typeRdv)) {
+      return response.badRequest({ message: `typeRdv invalide : ${payload.typeRdv}` })
+    }
+
+    if (!Object.keys(EtatRDV).includes(payload.etatRdv)) {
+      return response.badRequest({ message: `etatRdv invalide : ${payload.etatRdv}` })
+    }
+
+    const dateRdv = DateTime.fromISO(payload.date)
+    if (!dateRdv.isValid) {
+      return response.badRequest({ message: 'Date invalide.' })
+    }
+
+    // Créer l'appointment avec le idCreneau inclus
+=======
 
 
 
@@ -144,11 +182,27 @@ public async create({ request, response }: HttpContextContract) {
     const etatRdv = validStates.includes(payload.etatRdv) ? payload.etatRdv : 'PENDING'
 
     // Création du rendez-vous avec idCreneau inclus
+>>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
     const appointment = await Appointment.create({
       idDoctor: payload.idDoctor,
       idUser: payload.idPatient,
       dateRdv: dateRdv,
       typeRdv: payload.typeRdv,
+<<<<<<< HEAD
+      etatRdv: payload.etatRdv,
+      heureDebut: '', // à personnaliser
+      heureFin: '',  // idem
+      idCreneau: payload.idCreneau, // Ajoutez l'ID du créneau
+    })
+
+    return response.created(appointment)
+  } catch (error) {
+    console.error('[AppointmentController.create] Erreur :', error)
+    return response.internalServerError({ message: 'Erreur serveur lors de la création du rendez-vous.' })
+  }
+}
+
+=======
       etatRdv: etatRdv,
       heureDebut: heureDebut.toFormat('HH:mm'),
       heureFin: heureFin.toFormat('HH:mm'),
@@ -338,4 +392,5 @@ public async cancel({ params, response }: HttpContextContract) {
   }
 }
 
+>>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
 }
