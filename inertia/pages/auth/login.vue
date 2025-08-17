@@ -18,11 +18,7 @@
           </Link>
         </p>
       </div>
-<<<<<<< HEAD
-
-=======
   
->>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
       <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form class="space-y-6" @submit.prevent="handleLogin">
@@ -43,11 +39,7 @@
                 />
               </div>
             </div>
-<<<<<<< HEAD
-
-=======
   
->>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
             <div>
               <label for="password" class="block text-sm font-medium text-gray-700">
                 Mot de passe
@@ -78,11 +70,7 @@
                 </button>
               </div>
             </div>
-<<<<<<< HEAD
-
-=======
   
->>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
             <div class="flex items-center justify-between">
               <div class="flex items-center">
                 <input
@@ -96,22 +84,14 @@
                   Se souvenir de moi
                 </label>
               </div>
-<<<<<<< HEAD
-
-=======
   
->>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
               <div class="text-sm">
                 <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
                   Mot de passe oublié ?
                 </a>
               </div>
             </div>
-<<<<<<< HEAD
-
-=======
   
->>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
             <div>
               <button
                 type="submit"
@@ -128,15 +108,6 @@
               </button>
             </div>
           </form>
-<<<<<<< HEAD
-
-          <div class="mt-6">
-            <div class="relative">
-
-
-            </div>
-
-=======
   
           <div class="mt-6">
             <div class="relative">
@@ -144,7 +115,6 @@
               
             </div>
   
->>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
             <div v-if="error" class="mt-6 grid grid-cols-2 gap-3">
               <ServerError :message="error" />
             </div>
@@ -207,8 +177,4 @@ const handleLogin = async () => {
 }
 
 
-<<<<<<< HEAD
 </script>
-=======
-</script>
->>>>>>> 6f506420a02e20676352333842b78602f55cbfe5
