@@ -43,7 +43,6 @@ export default class AppointmentController {
         .preload('patient')
         .preload('paiements')
         .preload('prescription')
-        .preload('review')
 
       // Transformation des données
       const result = appointments.map((appointment) => {
@@ -61,7 +60,6 @@ export default class AppointmentController {
           paiements: appointment.paiements,
           description: appointment.description,
           prescription: appointment.prescription,
-          review: appointment.review,
           dateDebut: dateDebut.isValid ? dateDebut.toISO() : null,
           dateFin: dateFin.isValid ? dateFin.toISO() : null,
         }
@@ -143,6 +141,7 @@ public async getUpcomingAppointmentsForPatient({ request, response }: HttpContex
         'description',
         'idCreneau'
       ])
+console.log('Payload:', payload);
 
       // Vérification des champs obligatoires
       const requiredFields = ['idDoctor', 'idPatient', 'date', 'typeRdv', 'etatRdv', 'idCreneau']
