@@ -79,7 +79,7 @@ public async create({ request, response }: HttpContextContract) {
    * Crée une facture Mobile Money via eBilling + push USSD, puis enregistre le paiement
    */
 public async createvisaMoneyInvoice({ request, response }: HttpContextContract) {
-  const {
+  let {
     amount,
     payer_msisdn,
     payer_email,
@@ -101,15 +101,34 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
     'payment_system_name',
     'idUser',
     'idAppointment',
-  ])
+  ]);
+
+  console.log('payer_msisdn:', payer_msisdn);  // Log pour vérifier le numéro de téléphone
+  console.log('payment_system_name:', payment_system_name);  // Log pour vérifier payment_system_name
 
   try {
+    // Vérifier que payment_system_name est bien 'visa', sinon retourner une erreur
+    if (payment_system_name !== 'visa') {
+      throw new Error('Seul le mode de paiement Visa est accepté.');
+    }
+
+    // Si le système de paiement est Visa, on fixe un numéro de téléphone par défaut
+    payer_msisdn = '074699792';  // Fixe un numéro pour Visa
+
+    // Si le numéro de téléphone est toujours vide après cette vérification, on lève une erreur.
+    if (!payer_msisdn) {
+      throw new Error('Le numéro de téléphone est requis pour détecter le mode de paiement.');
+    }
+
+    console.log('payer_msisdn après vérification:', payer_msisdn);  // Log pour vérifier le numéro après modification
+
     // 1. Détection du mode de paiement (basé sur le numéro)
-    const modeLabel = this.detectPaymentLabel(payer_msisdn)
-    let modePaiement = await ModePaiement.query().where('label', modeLabel).first()
+    const modeLabel = this.detectPaymentLabel(payer_msisdn);
+
+    let modePaiement = await ModePaiement.query().where('label', modeLabel).first();
 
     if (!modePaiement) {
-      modePaiement = await ModePaiement.create({ label: modeLabel })
+      modePaiement = await ModePaiement.create({ label: modeLabel });
     }
 
     // 2. Création de la facture via eBilling
@@ -121,17 +140,17 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
       external_reference,
       description,
       expiry_period,
-    })
+    });
 
     // Vérifie si la facture est correctement générée
     if (!invoice?.e_bill?.bill_id) {
-      throw new Error('Erreur lors de la génération de la facture eBilling.')
+      throw new Error('Erreur lors de la génération de la facture eBilling.');
     }
 
-    const bill_id = invoice.e_bill.bill_id // Récupération de l'ID de la facture eBilling
+    const bill_id = invoice.e_bill.bill_id; // Récupération de l'ID de la facture eBilling
 
     // Déterminer si la facture est déjà payée (si applicable)
-    const isPaid = invoice.e_bill.status === 'PAYE' // Vérifier si la facture est payée
+    const isPaid = invoice.e_bill.status === 'PAYE'; // Vérifier si la facture est payée
 
     // 3. Création du paiement avec l'ID de la facture eBilling
     const paiement = await Paiement.create({
@@ -141,34 +160,34 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
       statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.EN_ATTENTE,
       datePaiement: DateTime.now(),
       modeId: modePaiement.id,
-      numeroTelephone: payer_msisdn,
+      numeroTelephone: payer_msisdn,  // Utilise le numéro de téléphone fixe pour Visa
       billing_id: bill_id,  // Enregistrement de l'ID de la facture
-    })
+    });
 
     // 4. Si payé immédiatement → mise à jour du rendez-vous
     if (isPaid) {
-      const appointment = await Appointment.find(idAppointment)
+      const appointment = await Appointment.find(idAppointment);
       if (appointment) {
-        appointment.etatRdv = EtatRDV.CONFIRME
-        await appointment.save()
+        appointment.etatRdv = EtatRDV.CONFIRME;
+        await appointment.save();
       }
     }
 
     // 5. Envoi du push USSD (optionnel)
-    let ussdResponse = null
+    let ussdResponse = null;
     try {
       if (bill_id) {
-        ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name })
-        console.log('Réponse USSD:', ussdResponse)
+        ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name });
+        console.log('Réponse USSD:', ussdResponse);
       } else {
-        console.warn('Pas de bill_id, push USSD ignoré.')
+        console.warn('Pas de bill_id, push USSD ignoré.');
       }
     } catch (pushError) {
-      console.error('Erreur lors de l\'envoi du push USSD :', pushError)
+      console.error('Erreur lors de l\'envoi du push USSD :', pushError);
     }
 
     // 6. Générer le lien de redirection pour Visa avec l'ID de la facture
-    const redirectUrl = `https://test.billing-easy.net?invoice=${bill_id}&redirect_url=https://myredirecturl.com`
+    const redirectUrl = `https://test.billing-easy.net?invoice=${bill_id}&redirect_url=https://myredirecturl.com`;
 
     // 7. Réponse finale avec le lien
     return response.created({
@@ -180,15 +199,16 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
       invoice,
       ussdResponse,
       redirectUrl,  // Ajoute le lien généré dans la réponse
-    })
+    });
   } catch (error: any) {
-    console.error('Erreur lors du traitement Mobile Money:', error)
+    console.error('Erreur lors du traitement Mobile Money:', error);
     return response.status(500).send({
       message: 'Erreur lors du traitement Mobile Money.',
       error: error.message,
-    })
+    });
   }
 }
+
 
   public async createMobileMoneyInvoice({ request, response }: HttpContextContract) {
     const {
