@@ -3575,6 +3575,13 @@ router.get('/disponibilites/doctor/:id', async (ctx) => {
   })
 })
 
+router.delete('/disponibilites/doctor/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await disponibilityuser.destroy(ctx)
+    })/*  */
+  })
+})
 
 router.post('/logins', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
