@@ -1,99 +1,80 @@
 import { DateTime } from 'luxon'
-import Paiement from '#models/paiement'
-import Notification from '#models/notification'
-import User from '#models/user'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { StatusPaiement } from '../enum/enums.js'
+import Appointment from '#models/appointment'
 
 export default class PaymentsController {
-  public async getBalance({ params, response }: HttpContextContract) {
+public async getBalance({ params, response }: HttpContextContract) {
     try {
-      const userId = params.userId
+      const { doctorId } = params  // ID du médecin passé en paramètre
 
-      // On additionne les montants des paiements validés
-      const result = await Paiement
-        .query()
-        .where('id_user', userId)
-        .andWhere('statut', StatusPaiement.PAYE) // ou 'PAYE' si c’est string
-        .sum('montant as total')
+      // Récupérer tous les rendez-vous associés au médecin spécifié (idDoctor)
+      const appointments = await Appointment.query()
+        .where('idDoctor', doctorId)  // Filtrer par l'ID du médecin (idDoctor)
+        .preload('paiements', (query) => {
+          query.where('statut', StatusPaiement.PAYE)  // Filtrer les paiements validés
+        })
 
-      const total = result[0]?.$extras.total ?? 0
+      // Calculer la somme de tous les paiements validés pour ce médecin
+      const total = appointments.reduce((sum, appointment) => {
+        const paiementTotal = appointment.paiements.reduce((appointmentSum, paiement) => {
+          return appointmentSum + (paiement.montant || 0)  // Additionner les montants des paiements validés
+        }, 0)
 
-      return response.ok({ userId, solde: Number(total) })
+        return sum + paiementTotal  // Ajouter au total global
+      }, 0)
+
+      // Retourner uniquement le solde total du médecin
+      return response.ok({ doctorId, solde: Number(total) })
+
     } catch (error) {
       console.error('Erreur lors du calcul du solde:', error)
       return response.status(500).json({ message: 'Erreur serveur' })
     }
   }
- 
-  
+
   /**
    * Retrieve the total earnings for the user in the current month
    * and send a push notification for each valid payment.
    */
-  public async getMonthlyEarnings({ params, response }: HttpContextContract) {
-    try {
-      const userId = params.userId
 
-      // Get the start and end of the current month
+    public async getMonthlyEarnings({ params, response }: HttpContextContract) {
+    try {
+      const { doctorId } = params  // ID du médecin passé en paramètre
+
+      // Obtenir le début et la fin du mois en cours
       const startOfMonth = DateTime.now().startOf('month').toJSDate()
       const endOfMonth = DateTime.now().endOf('month').toJSDate()
 
-      // Query the payments for the user within this month, and with 'PAYE' status
-      const paiements = await Paiement
-        .query()
-        .where('idUser', userId)
-        .andWhere('statut', 'PAYE') // 'PAYE' is the status for valid payments
-        .andWhere('created_at', '>=', startOfMonth)
-        .andWhere('created_at', '<=', endOfMonth)
-        .preload('user') // Preload the user who made the payment
-
-      // Calculate total earnings
-      const total = paiements.reduce((acc, p) => acc + p.montant, 0)
-
-      // Create notifications and send push notifications for each payment
-      await Promise.all(paiements.map(async (paiement) => {
-        // Create a notification for each payment
-        await Notification.create({
-          idUser: userId,
-          titre: 'Nouveau paiement reçu',
-          description: `Vous avez reçu un paiement de ${paiement.user?.first_name ?? 'un utilisateur'} pour un montant de ${paiement.montant} XFA.`,
-          isRead: false,
+      // Récupérer tous les rendez-vous associés au médecin spécifié (idDoctor) pour le mois en cours
+      const appointments = await Appointment.query()
+        .where('idDoctor', doctorId)  // Filtrer par l'ID du médecin (idDoctor)
+        .preload('paiements', (query) => {
+          query.where('statut', StatusPaiement.PAYE)  // Filtrer les paiements validés
+            .whereBetween('created_at', [startOfMonth, endOfMonth])  // Filtrer les paiements dans le mois en cours
         })
 
-        // Get the expo push token of the user
-        const user = await User.findOrFail(userId)
+      // Calculer la somme de tous les paiements validés pour ce médecin dans le mois
+      const total = appointments.reduce((sum, appointment) => {
+        const paiementTotal = appointment.paiements.reduce((appointmentSum, paiement) => {
+          return appointmentSum + (paiement.montant || 0)  // Additionner les montants des paiements validés
+        }, 0)
 
-        // Send push notification if expoPushToken exists
-        if (user.expoPushToken) {
-          await this.sendPushNotification(user.expoPushToken, paiement.montant)
-        }
-      }))
+        return sum + paiementTotal  // Ajouter au total global
+      }, 0)
 
-      // Prepare payers data
-      const payers = paiements.map((paiement) => ({
-        payerId: paiement.user?.id,
-        first_name: paiement.user?.first_name,
-        fullName: `${paiement.user?.last_name ?? ''} ${paiement.user?.last_name ?? ''}`.trim(),
-        montant: paiement.montant,
-        paiementId: paiement.id,
-      }))
+      // Retourner uniquement le solde total du médecin pour le mois en cours
+      return response.ok({ doctorId, solde: Number(total) })
 
-      // Return the total earnings and the payers information
-      return response.ok({
-        userId,
-        totalEarnings: total,
-        payers,
-      })
     } catch (error) {
-      console.error('Erreur lors du calcul des gains du mois:', error)
+      console.error('Erreur lors du calcul du solde:', error)
       return response.status(500).json({ message: 'Erreur serveur' })
     }
   }
 
   /**
    * Send a push notification to the user via Expo.
-   */
+
   private async sendPushNotification(expoPushToken: string, amount: number) {
     try {
       // Prepare the message for the push notification
@@ -126,4 +107,5 @@ export default class PaymentsController {
       console.error('Erreur lors de la création de la notification push:', error)
     }
   }
+  */
 }
