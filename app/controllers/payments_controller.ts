@@ -38,7 +38,7 @@ public async getBalance({ params, response }: HttpContextContract) {
    * and send a push notification for each valid payment.
    */
 
-    public async getMonthlyEarnings({ params, response }: HttpContextContract) {
+ public async getMonthlyEarnings({ params, response }: HttpContextContract) {
     try {
       const { doctorId } = params  // ID du médecin passé en paramètre
 
@@ -50,27 +50,60 @@ public async getBalance({ params, response }: HttpContextContract) {
       const appointments = await Appointment.query()
         .where('idDoctor', doctorId)  // Filtrer par l'ID du médecin (idDoctor)
         .preload('paiements', (query) => {
-          query.where('statut', StatusPaiement.PAYE)  // Filtrer les paiements validés
+          query
+            .where('statut', StatusPaiement.PAYE)  // Filtrer les paiements validés
             .whereBetween('created_at', [startOfMonth, endOfMonth])  // Filtrer les paiements dans le mois en cours
+            .preload('user')  // Précharger la relation 'user' pour récupérer les informations du payeur
         })
 
       // Calculer la somme de tous les paiements validés pour ce médecin dans le mois
-      const total = appointments.reduce((sum, appointment) => {
-        const paiementTotal = appointment.paiements.reduce((appointmentSum, paiement) => {
-          return appointmentSum + (paiement.montant || 0)  // Additionner les montants des paiements validés
-        }, 0)
+      let total = 0;
 
-        return sum + paiementTotal  // Ajouter au total global
-      }, 0)
+      // Typage explicite de payers : tableau contenant des objets avec les propriétés définies
+      const payers: {
+        paiementId: string;
+        first_name: string;
+        last_name: string;
+        montant: number;
+        timestamp: number;
+      }[] = []  // Liste pour stocker les payeurs
 
-      // Retourner uniquement le solde total du médecin pour le mois en cours
-      return response.ok({ doctorId, solde: Number(total) })
+      appointments.forEach(appointment => {
+        appointment.paiements.forEach(paiement => {
+          const montant = Number(paiement.montant) || 0;  // Assurer que le montant est un nombre valide
+          total += montant;
+
+          // Ajouter chaque payeur à la liste avec les propriétés attendues
+          payers.push({
+            paiementId: paiement.id,
+            first_name: paiement.user.first_name || "",  // Valeur par défaut si undefined
+            last_name: paiement.user.last_name || "",
+            montant,
+            timestamp: paiement.datePaiement.toMillis()  // Utiliser `datePaiement` qui est un `DateTime`
+          });
+        });
+      });
+
+      // Vérifier si 'total' est bien un nombre avant d'appeler 'toFixed'
+      if (isNaN(total)) {
+        throw new Error("Le total des paiements n'est pas un nombre valide");
+      }
+
+      // Retourner les informations formatées comme demandé
+      return response.ok({
+        doctorId,
+        totalEarnings: total.toFixed(2),  // Le total arrondi à deux décimales
+        solde: total.toFixed(2),  // Solde (identique au total dans ce cas)
+        payers
+      });
 
     } catch (error) {
       console.error('Erreur lors du calcul du solde:', error)
       return response.status(500).json({ message: 'Erreur serveur' })
     }
   }
+
+
 
   /**
    * Send a push notification to the user via Expo.
