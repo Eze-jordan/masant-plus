@@ -260,21 +260,23 @@ public async createCreneaux({ params, request, response }: HttpContextContract) 
 
 public async getByDoctor({ params, response }: HttpContextContract) {
   try {
-    // Récupérer toutes les disponibilités du docteur avec créneaux non utilisés
+    // 🔍 1. Récupérer toutes les disponibilités du docteur avec créneaux non utilisés
     const disponibilites = await Disponibilite.query()
       .where('idDoctor', params.id)
       .preload('creneaux', (query) => {
-        query.where('is_used', false)
+        query.where('isUsed', false)  // Nous filtrons les créneaux non utilisés
       })
       .preload('doctor', (doctorQuery) => {
-        doctorQuery.select(['id', 'first_name', 'type'])
+        doctorQuery.select(['id', 'first_name', 'type'])  // On charge certaines infos du médecin
       })
-      .orderBy('dateDebut', 'asc')
+      .orderBy('dateDebut', 'asc')  // Tri par date de début
 
     const groupedByDate: Record<string, any> = {}
 
+    // 📦 2. Regrouper les disponibilités par date
     for (const dispo of disponibilites) {
       if (!dispo.dateDebut) continue
+
       const dateKey = dispo.dateDebut.toISODate()
       if (!dateKey) continue
 
@@ -288,10 +290,11 @@ public async getByDoctor({ params, response }: HttpContextContract) {
           idDoctor: dispo.idDoctor,
           doctor: dispo.doctor,
           actif: dispo.actif,
-          creneaux: []
+          creneaux: [],
         }
       }
 
+      // 🔄 3. Ajouter les créneaux, incluant `isUsed`, et le formatage du jour
       groupedByDate[dateKey].creneaux.push(
         ...creneaux.map(c => {
           const jour = DateTime.fromISO(c.date).setLocale('fr').toFormat('cccc')
@@ -301,14 +304,16 @@ public async getByDoctor({ params, response }: HttpContextContract) {
             heureFin: c.heureFin,
             date: c.date,
             jour,
+            isUsed: c.isUsed,  // On ajoute `isUsed` dans le retour
           }
         })
       )
     }
 
+    // ✅ 4. Retourner les données groupées
     return response.ok(Object.values(groupedByDate))
   } catch (error) {
-    console.error(error)
+    console.error('Erreur dans getByDoctor:', error)
     return response.status(500).send({
       message: 'Erreur serveur',
       error: error.message,
