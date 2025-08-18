@@ -40,6 +40,12 @@ export default class Paiement extends BaseModel {
   @column()
 public numeroTelephone!: string
 
+  @column.dateTime()
+  public created_at!: DateTime
+
+  @column.dateTime()
+  public updated_at!: DateTime
+
 
   @belongsTo(() => User, { foreignKey: 'idUser' })
   public user!: BelongsTo<typeof User>
