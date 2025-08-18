@@ -323,19 +323,35 @@ public async getByDoctor({ params, response }: HttpContextContract) {
 
 
   // ➤ Détails d'une disponibilité
-  public async show({ params, response }: HttpContextContract) {
-    try {
-      const disponibilite = await Disponibilite.query()
-        .where('id', params.id)
-        .select(['id', 'date_debut', 'date_fin', 'created_at']) // champs que tu veux
-        .firstOrFail()
+public async show({ params, response }: HttpContextContract) {
+  try {
+    const disponibilite = await Disponibilite.query()
+      .where('id', params.id)
+      .select(['id', 'date_debut', 'date_fin', 'created_at'])
+      .first()
 
-      return response.ok(disponibilite)
-    } catch (error) {
-      console.error(error)
+    if (!disponibilite) {
       return response.status(404).send({ message: 'Disponibilité non trouvée.' })
     }
+
+    // If Disponibilite exists, then check the related Creneaux
+    const hasValidCreneau = await disponibilite.related('creneaux')
+      .query()
+      .where('isUsed', false)
+      .first()
+
+    if (!hasValidCreneau) {
+      return response.status(404).send({ message: 'Aucun créneau valide trouvé pour cette disponibilité.' })
+    }
+
+    return response.ok(disponibilite)
+  } catch (error) {
+    console.error(error)
+    return response.status(500).send({ message: 'Une erreur est survenue.' })
   }
+}
+
+
 
 
   // ➤ Mettre à jour une disponibilité
@@ -380,15 +396,35 @@ public async getByDoctor({ params, response }: HttpContextContract) {
     }
   }
 
-  // ➤ Supprimer une disponibilité
-  public async destroy({ params, response }: HttpContextContract) {
-    try {
-      const disponibilite = await Disponibilite.findOrFail(params.id)
-      await disponibilite.delete()
-      return response.ok({ message: 'Disponibilité supprimée avec succès.' })
-    } catch (error) {
-      console.error(error)
-      return response.status(404).send({ message: 'Disponibilité non trouvée.' })
+public async destroy(ctx: HttpContextContract) {
+  const { id } = ctx.params // ID du docteur passé en paramètre de l'URL
+
+  try {
+    // Trouver le docteur en fonction de l'ID
+    const doctor = await User.query().where('id', id).first() // Utilise User pour récupérer le docteur
+
+    if (!doctor) {
+      return ctx.response.status(404).send({ message: 'Docteur non trouvé.' })
     }
+
+    // Récupérer les disponibilités du docteur via la relation
+    const disponibilite = await doctor.related('disponibilites').query().first()
+
+    if (!disponibilite) {
+      return ctx.response.status(404).send({ message: 'Aucune disponibilité trouvée pour ce docteur.' })
+    }
+
+    // Supprimer tous les créneaux associés à cette disponibilité
+    await Creneau.query().where('id_disponibilite', disponibilite.id).delete()
+
+    // Supprimer la disponibilité
+    await disponibilite.delete()
+
+    return ctx.response.ok({ message: 'Disponibilité et ses créneaux supprimés avec succès.' })
+  } catch (error) {
+    console.error('Erreur:', error)
+    return ctx.response.status(500).send({ message: 'Une erreur est survenue.' })
   }
+}
+
 }
