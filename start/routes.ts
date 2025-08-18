@@ -2504,7 +2504,7 @@ router.post('/login', async (ctx) => {
 
 }).middleware([throttle])
 
-router.get('/paiements/solde/:userId', async (ctx) => {
+router.get('/paiements/solde/:doctorId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       const controller = new PaymentsController()
@@ -2523,7 +2523,7 @@ router.get('/medecins/:userId/specialty', async (ctx) => {
   })
 }).middleware([throttle])
 
-router.get('/paiements/gains-mois/:userId', async (ctx) => {
+router.get('/paiements/gains-mois/:doctorId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       const controller = new PaymentsController()
