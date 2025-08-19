@@ -3,35 +3,42 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { StatusPaiement } from '../enum/enums.js'
 import Appointment from '#models/appointment'
 
-export default class PaymentsController {
-public async getBalance({ params, response }: HttpContextContract) {
-    try {
-      const { doctorId } = params  // ID du médecin passé en paramètre
+export default class PaymentsController {public async getBalance({ params, response }: HttpContextContract) {
+  try {
+    const { doctorId } = params; // ID du médecin
 
-      // Récupérer tous les rendez-vous associés au médecin spécifié (idDoctor)
-      const appointments = await Appointment.query()
-        .where('idDoctor', doctorId)  // Filtrer par l'ID du médecin (idDoctor)
-        .preload('paiements', (query) => {
-          query.where('statut', StatusPaiement.PAYE)  // Filtrer les paiements validés
-        })
+    // Récupérer les rendez-vous du médecin, avec les paiements validés
+    const appointments = await Appointment.query()
+      .where('idDoctor', doctorId)
+      .preload('paiements', (query) => {
+        query.where('statut', StatusPaiement.PAYE); // seulement les paiements validés
+      });
 
-      // Calculer la somme de tous les paiements validés pour ce médecin
-      const total = appointments.reduce((sum, appointment) => {
-        const paiementTotal = appointment.paiements.reduce((appointmentSum, paiement) => {
-          return appointmentSum + (paiement.montant || 0)  // Additionner les montants des paiements validés
-        }, 0)
+    // Calcul du total sécurisé
+    const total = appointments.reduce((sum, appointment) => {
+      // Vérifier que la relation paiements est bien un tableau
+      const paiements = Array.isArray(appointment.paiements) ? appointment.paiements : [];
 
-        return sum + paiementTotal  // Ajouter au total global
-      }, 0)
+      // Calculer le total des paiements pour ce rendez-vous
+      const paiementTotal = paiements.reduce((appointmentSum, paiement) => {
+        // Sécuriser la conversion du montant en nombre
+        const montant = Number(paiement?.montant);
+        return appointmentSum + (Number.isFinite(montant) ? montant : 0);
+      }, 0);
 
-      // Retourner uniquement le solde total du médecin
-      return response.ok({ doctorId, solde: Number(total) })
+      return sum + paiementTotal;
+    }, 0);
 
-    } catch (error) {
-      console.error('Erreur lors du calcul du solde:', error)
-      return response.status(500).json({ message: 'Erreur serveur' })
-    }
+    // Sécuriser la réponse : si total est NaN, retourner 0
+    const solde = Number.isFinite(total) ? total : 0;
+
+    return response.ok({ doctorId, solde });
+
+  } catch (error) {
+    console.error('Erreur lors du calcul du solde:', error);
+    return response.status(500).json({ message: 'Erreur serveur' });
   }
+}
 
   /**
    * Retrieve the total earnings for the user in the current month
