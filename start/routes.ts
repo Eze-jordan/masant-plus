@@ -9,10 +9,12 @@ import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
 import RedvpatientsController from "#controllers/redvpatients_controller"
 import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
+import RecoursegetsController from "#controllers/recoursegets_controller"
 import UserStatusController from "#controllers/statusonlines_controller"
 const medicament =new   MedicamentFrancesController()
 const rdvdupatient =new  RedvpatientsController()
-const status   =new  UserStatusController()
+const status = new UserStatusController()
+const pdfuser  = new  RecoursegetsController()
 const userinfo  =new  pourcentage_comptes_controller()
 import ResourcesController from '#controllers/resources_controller';
 const resourcesController = new ResourcesController();
@@ -3843,7 +3845,7 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
   }
 })
 
-   
+
 
 router.get('/patient/rdv/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
@@ -3877,7 +3879,16 @@ router.put('/statuts/:id', async (ctx) => {
     });
   });
 }).middleware([throttle])
+//
 
+router.get('/resources/:userId', async (ctx) => {
+  console.log(ctx.params.userId)
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await pdfuser.getRessourcesByUser(ctx);
+    });
+  });
+}).middleware([throttle])
 router.get('/resources/files/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {

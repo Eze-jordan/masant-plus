@@ -6,6 +6,7 @@ import { EtatRDV, StatusPaiement } from '../enum/enums.js'
 import { CreateInvoice, GetInvoice, MakePushUSSD } from '#services/ebilling'
 import Appointment from '#models/appointment'
 import User from '#models/user'
+import EmailService from '#services/fature'
 
 export default class PaiementsController {
   /**
@@ -360,7 +361,7 @@ public async createMobileMoneyInvoice({ request, response }: HttpContextContract
 }
 
     }
-
+  await EmailService.sendInvoiceEmail(payer_email, bill_id, amount, description);
     return response.created({
       message: isPaid
         ? 'Paiement confirmé. Rendez-vous mis à jour.'
