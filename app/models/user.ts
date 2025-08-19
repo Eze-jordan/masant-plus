@@ -63,6 +63,11 @@ public groupeSanguin?: string
 public genre?: string
 
 
+  
+  @column()
+  public status: 'online' | 'offline' = 'offline'
+
+
 @column()
 public anneeExperience?: number
 

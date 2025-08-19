@@ -9,8 +9,10 @@ import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
 import RedvpatientsController from "#controllers/redvpatients_controller"
 import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
+import UserStatusController from "#controllers/statusonlines_controller"
 const medicament =new   MedicamentFrancesController()
 const rdvdupatient =new  RedvpatientsController()
+const status   =new  UserStatusController()
 const userinfo  =new  pourcentage_comptes_controller()
 import ResourcesController from '#controllers/resources_controller';
 const resourcesController = new ResourcesController();
@@ -3852,6 +3854,29 @@ router.get('/patient/rdv/:id', async (ctx) => {
 }).middleware([throttle])// Middleware pour limiter les requêtes (précaution supplémentaire)
 
 
+router.get('/statut/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await status.getStatus(ctx);
+    });
+  });
+}).middleware([throttle])
+
+router.put('/statut/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await status.setOffline(ctx);
+    });
+  });
+}).middleware([throttle])
+
+router.put('/statuts/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await status.setOnline(ctx);
+    });
+  });
+}).middleware([throttle])
 
 router.get('/resources/files/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
