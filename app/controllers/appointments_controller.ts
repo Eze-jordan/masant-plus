@@ -2,6 +2,8 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { EtatRDV, TypeRDV } from '../enum/enums.js'
 import Appointment from '#models/appointment'
 import { DateTime, Interval } from 'luxon'
+import User from '#models/user'
+import Notification from '#models/notification'
 
 export default class AppointmentController {
   /**
@@ -139,93 +141,159 @@ export default class AppointmentController {
       });
     }
   }
-  public async create({ request, response }: HttpContextContract) {
-    try {
-      const payload = request.only([
-        'idDoctor',
-        'idPatient',
-        'date',
-        'typeRdv',
-        'etatRdv',
-        'heureDebut',
-        'heureFin',
-        'description',
-        'idCreneau'
-      ])
-console.log('Payload:', payload);
 
-      // Vérification des champs obligatoires
-      const requiredFields = ['idDoctor', 'idPatient', 'date', 'typeRdv', 'etatRdv', 'idCreneau']
-      const missingFields = requiredFields.filter(field => !payload[field])
 
-      if (missingFields.length > 0) {
-        return response.badRequest({
-          message: `Champs requis manquants : ${missingFields.join(', ')}`
-        })
-      }
+  // Méthode pour créer un rendez-vous
+public async create({ request, response }: HttpContextContract) {
+  try {
+    const payload = request.only([
+      'idDoctor',
+      'idPatient',
+      'date',
+      'typeRdv',
+      'etatRdv',
+      'heureDebut',
+      'heureFin',
+      'description',
+      'idCreneau',
+    ]);
 
-      // Validation des valeurs d'enum
-      if (!Object.keys(TypeRDV).includes(payload.typeRdv)) {
-        return response.badRequest({ message: `typeRdv invalide : ${payload.typeRdv}` })
-      }
+    console.log('Payload:', payload);
 
-      if (!Object.keys(EtatRDV).includes(payload.etatRdv)) {
-        return response.badRequest({ message: `etatRdv invalide : ${payload.etatRdv}` })
-      }
+    // Vérification des champs obligatoires
+    const requiredFields = ['idDoctor', 'idPatient', 'date', 'typeRdv', 'etatRdv', 'idCreneau'];
+    const missingFields = requiredFields.filter((field) => !payload[field]);
 
-      // Validation de la date
-      const dateRdv = DateTime.fromISO(payload.date)
-      if (!dateRdv.isValid) {
-        return response.badRequest({ message: 'Date invalide.' })
-      }
-
-      // Validation des heures
-      let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`)
-      let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`)
-
-      if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
-        return response.badRequest({ message: 'Heures invalides ou fin avant début.' })
-      }
-
-      // Vérification des conflits de créneaux
-      const existingAppointments = await Appointment.query()
-        .where('idDoctor', payload.idDoctor)
-        .andWhere('dateRdv', dateRdv.toISODate())
-
-      const requestedInterval = Interval.fromDateTimes(heureDebut, heureFin)
-      const hasOverlap = existingAppointments.some(app => {
-        const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`)
-        const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`)
-        const appInterval = Interval.fromDateTimes(appStart, appEnd)
-        return requestedInterval.overlaps(appInterval)
-      })
-
-      if (hasOverlap) {
-        return response.badRequest({ message: 'Le créneau est déjà occupé.' })
-      }
-
-      // Création du rendez-vous
-      const appointment = await Appointment.create({
-        idDoctor: payload.idDoctor,
-        idUser: payload.idPatient,
-        dateRdv: dateRdv,
-        typeRdv: payload.typeRdv,
-        etatRdv: payload.etatRdv,
-        heureDebut: payload.heureDebut,
-        heureFin: payload.heureFin,
-        description: payload.description,
-        idCreneau: payload.idCreneau
-      })
-
-      return response.created(appointment)
-    } catch (error) {
-      console.error('[AppointmentController.create] Erreur :', error)
-      return response.internalServerError({
-        message: 'Erreur serveur lors de la création du rendez-vous.',
-        error: error.message
-      })
+    if (missingFields.length > 0) {
+      return response.badRequest({
+        message: `Champs requis manquants : ${missingFields.join(', ')}`,
+      });
     }
+
+    // Validation des valeurs d'enum
+    if (!Object.keys(TypeRDV).includes(payload.typeRdv)) {
+      return response.badRequest({ message: `typeRdv invalide : ${payload.typeRdv}` });
+    }
+
+    if (!Object.keys(EtatRDV).includes(payload.etatRdv)) {
+      return response.badRequest({ message: `etatRdv invalide : ${payload.etatRdv}` });
+    }
+
+    // Validation de la date
+    const dateRdv = DateTime.fromISO(payload.date);
+    if (!dateRdv.isValid) {
+      return response.badRequest({ message: 'Date invalide.' });
+    }
+
+    // Validation des heures
+    let heureDebut = DateTime.fromISO(`${payload.date}T${payload.heureDebut}`);
+    let heureFin = DateTime.fromISO(`${payload.date}T${payload.heureFin}`);
+
+    if (!heureDebut.isValid || !heureFin.isValid || heureFin <= heureDebut) {
+      return response.badRequest({ message: 'Heures invalides ou fin avant début.' });
+    }
+
+    // Vérification des conflits de créneaux
+    const existingAppointments = await Appointment.query()
+      .where('idDoctor', payload.idDoctor)
+      .andWhere('dateRdv', dateRdv.toISODate());
+
+    const requestedInterval = Interval.fromDateTimes(heureDebut, heureFin);
+    const hasOverlap = existingAppointments.some((app) => {
+      const appStart = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureDebut}`);
+      const appEnd = DateTime.fromISO(`${app.dateRdv.toISODate()}T${app.heureFin}`);
+      const appInterval = Interval.fromDateTimes(appStart, appEnd);
+      return requestedInterval.overlaps(appInterval);
+    });
+
+    if (hasOverlap) {
+      return response.badRequest({ message: 'Le créneau est déjà occupé.' });
+    }
+
+    // Création du rendez-vous
+    const appointment = await Appointment.create({
+      idDoctor: payload.idDoctor,
+      idUser: payload.idPatient,
+      dateRdv: dateRdv,
+      typeRdv: payload.typeRdv,
+      etatRdv: payload.etatRdv,
+      heureDebut: payload.heureDebut,
+      heureFin: payload.heureFin,
+      description: payload.description,
+      idCreneau: payload.idCreneau,
+    });
+
+    console.log('Rendez-vous créé:', appointment);
+
+    // Récupérer les données du patient
+    const patient = await User.find(payload.idPatient);
+
+    if (patient) {
+      const patientName = `${patient.first_name} ${patient.last_name}`;
+
+      // Créer la notification avec le nom du patient
+      const notification = await Notification.create({
+        idUser: payload.idPatient, // Associer la notification au patient
+        titre: 'Rendez-vous confirmé',
+        description: `Cher ${patientName}, votre rendez-vous avec le docteur a été confirmé pour le ${payload.date} à ${payload.heureDebut}.`,
+        isRead: false,
+      });
+
+      console.log('Notification créée:', notification);
+
+      // Envoi de la notification push
+      if (patient.expoPushToken) {
+        const pushBody = {
+          to: patient.expoPushToken,
+          title: notification.titre,
+          body: notification.description,
+          data: {
+            appointmentId: appointment.id, // Si tu veux envoyer l'ID du rendez-vous pour plus de détails
+          },
+        };
+
+      try {
+  const response = await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(pushBody), // Convertir le message en chaîne JSON
+  });
+
+  // Récupérer la réponse JSON de l'API
+  const responseData = await response.json();
+
+  // Vérification du format de la réponse et gestion des erreurs
+  if (responseData && typeof responseData === 'object') {
+    // Si 'errors' existe dans la réponse
+    if ('errors' in responseData) {
+      console.error('Erreur de notification push:', responseData.errors);
+    } else {
+      // Sinon, la notification a été envoyée avec succès
+      console.log('Notification push envoyée avec succès:', responseData);
+    }
+  } else {
+    // Si la réponse ne correspond pas au format attendu
+    console.error('Réponse inattendue de l\'API de notification push.');
   }
+} catch (error) {
+  console.error('Erreur lors de l\'envoi de la notification push:', error);
+}
+
+      }
+    }
+
+    return response.created(appointment);
+  } catch (error) {
+    console.error('[AppointmentController.create] Erreur :', error);
+    return response.internalServerError({
+      message: 'Erreur serveur lors de la création du rendez-vous.',
+      error: error.message,
+    });
+  }
+}
 
   /**
    * Annuler un rendez-vous
