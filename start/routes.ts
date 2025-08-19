@@ -7,8 +7,10 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
+import RedvpatientsController from "#controllers/redvpatients_controller"
 import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
 const medicament =new   MedicamentFrancesController()
+const rdvdupatient =new  RedvpatientsController()
 const userinfo  =new  pourcentage_comptes_controller()
 import ResourcesController from '#controllers/resources_controller';
 const resourcesController = new ResourcesController();
@@ -3838,6 +3840,17 @@ router.get('/dashboard', async ({ request, response, inertia }) => {
     return response.redirect('/login')
   }
 })
+
+   
+
+router.get('/patient/rdv/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await  rdvdupatient.hasAppointmentToday(ctx);
+    });
+  });
+}).middleware([throttle])// Middleware pour limiter les requêtes (précaution supplémentaire)
+
 
 
 router.get('/resources/files/:id', async (ctx) => {
