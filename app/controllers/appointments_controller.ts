@@ -89,58 +89,75 @@ export default class AppointmentController {
 
 
 
-  public async getUpcomingAppointmentsForPatient({ request, response }: HttpContextContract) {
-    try {
-      const idUser = request.param('id'); // ID du patient passé en paramètre
-      if (!idUser) {
-        return response.badRequest({ message: 'ID patient est requis.' });
-      }
 
-      const now = DateTime.local(); // Obtient l'heure actuelle
 
-      // Recherche des rendez-vous confirmés à venir pour un patient donné
-      const appointments = await Appointment.query()
-        .where('idUser', idUser) // Filtre par l'ID du patient
-        .andWhere('dateRdv', '>=', now.toISODate()) // Filtre les rendez-vous à venir
-        .andWhere('etatRdv', EtatRDV.CONFIRME) // Seuls les rendez-vous confirmés
-        .preload('doctor') // Précharge les informations sur le médecin
-        .orderBy('dateRdv', 'asc') // Trie par date de rendez-vous
-        .orderBy('heureDebut', 'asc'); // Trie par heure de début
+public async getAppointmentsForPatient({ request, response }: HttpContextContract) {
+  try {
+    const idUser = request.param('id'); // ID du patient passé en paramètre
+    if (!idUser) {
+      return response.badRequest({ message: 'ID patient est requis.' });
+    }
 
-      // Traitement des rendez-vous récupérés
-      const result = appointments.map((appointment) => {
-        // Vérifier si le médecin est bien chargé
-        const doctor = appointment.doctor || { first_name: 'Inconnu', last_name: 'Inconnu' };
+    const now = DateTime.local(); // Obtient l'heure actuelle
+    console.log('Date actuelle:', now.toISO()); // Log la date actuelle pour débogage
 
-        const dateIso = appointment.dateRdv.toISODate();
-        const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`);
-        const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`);
+    // Vérifier si le patient existe
+    const patient = await User.find(idUser);
+    if (!patient) {
+      return response.notFound({ message: 'Patient non trouvé.' });
+    }
 
-        return {
-          id: appointment.id,
-          typeRdv: appointment.typeRdv,
-          etatRdv: appointment.etatRdv ?? 'PENDING', // Si l'état est vide, mettre 'PENDING'
-          dateDebut: dateDebut.isValid ? dateDebut.toISO() : null, // Format ISO de la date de début
-          dateFin: dateFin.isValid ? dateFin.toISO() : null, // Format ISO de la date de fin
-          doctor: `${doctor.first_name} ${doctor.last_name}`, // Nom complet du médecin
-          doctorId: appointment.idDoctor, // ID du médecin
-        };
-      });
+    // Recherche des rendez-vous (tous, à venir, passés, récurrents)
+    const appointments = await Appointment.query()
+      .where('id_user', idUser) // Filtre par l'ID du patient (id_user)
+      .preload('doctor') // Précharge les informations sur le médecin
+      .orderBy('dateRdv', 'asc') // Trie par date de rendez-vous
+      .orderBy('heureDebut', 'asc'); // Trie par heure de début
 
-      // Retourner les rendez-vous avec un message explicite
+    console.log('Rendez-vous trouvés :', appointments); // Log les rendez-vous récupérés
+
+    if (appointments.length === 0) {
       return response.ok({
-        message: `Rendez-vous à venir pour le patient ${idUser}.`,
-        appointments: result,
-      });
-    } catch (error) {
-      console.error('[getUpcomingAppointmentsForPatient] Erreur :', error);
-
-      return response.internalServerError({
-        message: 'Erreur serveur lors de la récupération des rendez-vous.',
-        error: error.message,
+        message: `Aucun rendez-vous trouvé pour le patient ${idUser}.`,
+        appointments: [],
       });
     }
+
+    // Traitement des rendez-vous récupérés
+    const result = appointments.map((appointment) => this.formatAppointment(appointment));
+
+    // Retourner les rendez-vous avec un message explicite
+    return response.ok({
+      message: `Rendez-vous pour le patient ${idUser}.`,
+      appointments: result,
+    });
+  } catch (error) {
+    console.error('[getAppointmentsForPatient] Erreur :', error);
+
+    return response.internalServerError({
+      message: 'Erreur serveur lors de la récupération des rendez-vous.',
+      error: error.message,
+    });
   }
+}
+
+// Fonction pour formater un rendez-vous
+private formatAppointment(appointment: Appointment) {
+  const doctor = appointment.doctor || { first_name: 'Inconnu', last_name: 'Inconnu' };
+  const dateIso = appointment.dateRdv.toISODate();
+  const dateDebut = DateTime.fromISO(`${dateIso}T${appointment.heureDebut}`);
+  const dateFin = DateTime.fromISO(`${dateIso}T${appointment.heureFin}`);
+
+  return {
+    id: appointment.id,
+    typeRdv: appointment.typeRdv,
+    etatRdv: appointment.etatRdv ?? 'PENDING', // Si l'état est vide, mettre 'PENDING'
+    dateDebut: dateDebut.isValid ? dateDebut.toISO() : null, // Format ISO de la date de début
+    dateFin: dateFin.isValid ? dateFin.toISO() : null, // Format ISO de la date de fin
+    doctor: `${doctor.first_name} ${doctor.last_name}`, // Nom complet du médecin
+    doctorId: appointment.idDoctor, // ID du médecin
+  };
+}
 
 
   // Méthode pour créer un rendez-vous
