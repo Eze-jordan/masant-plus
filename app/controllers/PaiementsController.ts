@@ -240,40 +240,9 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
 }
 
 
-public async createMobileMoneyInvoice({ request, response }: HttpContextContract) {
-  const {
-    amount,
-    payer_msisdn,
-    payer_email,
-    short_description,
-    external_reference,
-    description,
-    expiry_period,
-    payment_system_name,
-    idUser,
-    idAppointment,
-  } = request.only([
-    'amount',
-    'payer_msisdn',
-    'payer_email',
-    'short_description',
-    'external_reference',
-    'description',
-    'expiry_period',
-    'payment_system_name',
-    'idUser',
-    'idAppointment',
-  ]);
 
-  try {
-    const modeLabel = this.detectPaymentLabel(payer_msisdn);
-    let modePaiement = await ModePaiement.query().where('label', modeLabel).first();
-
-    if (!modePaiement) {
-      modePaiement = await ModePaiement.create({ label: modeLabel });
-    }
-
-    const invoice = await CreateInvoice({
+  public async createMobileMoneyInvoice({ request, response }: HttpContextContract) {
+    const {
       amount,
       payer_msisdn,
       payer_email,
@@ -281,104 +250,99 @@ public async createMobileMoneyInvoice({ request, response }: HttpContextContract
       external_reference,
       description,
       expiry_period,
-    });
-
-    if (!invoice?.e_bill?.bill_id) {
-      throw new Error('Erreur lors de la génération de la facture eBilling.');
-    }
-
-    const bill_id = invoice.e_bill.bill_id;
-    const isPaid = invoice.e_bill.status === 'PAYE';
-
-    const paiement = await Paiement.create({
+      payment_system_name,
       idUser,
       idAppointment,
-      montant: amount,
-      statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.EN_ATTENTE,
-      datePaiement: DateTime.now(),
-      modeId: modePaiement.id,
-      numeroTelephone: payer_msisdn,
-      billing_id: bill_id,
-    });
+    } = request.only([
+      'amount',
+      'payer_msisdn',
+      'payer_email',
+      'short_description',
+      'external_reference',
+      'description',
+      'expiry_period',
+      'payment_system_name',
+      'idUser',
+      'idAppointment',
+    ])
 
-    if (isPaid) {
-      const appointment = await Appointment.find(idAppointment);
-      if (appointment) {
-        appointment.etatRdv = EtatRDV.CONFIRME;
-        await appointment.save();
-      }
-    }
-
-    let ussdResponse = null;
     try {
-      if (bill_id) {
-        ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name });
-        console.log('Réponse USSD:', ussdResponse);
-      } else {
-        console.warn('Pas de bill_id, push USSD ignoré.');
+      // 1. Détection du mode de paiement (basé sur le numéro)
+      const modeLabel = this.detectPaymentLabel(payer_msisdn)
+      let modePaiement = await ModePaiement.query().where('label', modeLabel).first()
+
+      if (!modePaiement) {
+        modePaiement = await ModePaiement.create({ label: modeLabel })
       }
-    } catch (pushError) {
-      console.error('Erreur lors de l\'envoi du push USSD :', pushError);
+
+      // 2. Création de la facture via eBilling
+      const invoice = await CreateInvoice({
+        amount,
+        payer_msisdn,
+        payer_email,
+        short_description,
+        external_reference,
+        description,
+        expiry_period,
+      })
+
+      const bill_id = invoice?.e_bill?.bill_id ?? null
+
+      // Déterminer si la facture est déjà payée (si applicable)
+      const isPaid = invoice?.e_bill?.status === 'PAYE' // à adapter selon l'API eBilling
+
+      // 3. Création du paiement avec le bon statut
+      const paiement = await Paiement.create({
+        idUser,
+        idAppointment,
+        montant: amount,
+        statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.EN_ATTENTE,
+        datePaiement: DateTime.now(),
+        modeId: modePaiement.id,
+        numeroTelephone: payer_msisdn,
+      })
+
+      // 4. Si payé immédiatement → mise à jour du rendez-vous
+      if (isPaid) {
+        const appointment = await Appointment.find(idAppointment)
+        if (appointment) {
+          appointment.etatRdv = 'CONFIRME'
+          await appointment.save()
+        }
+      }
+
+      // 5. Envoi du push USSD (optionnel)
+      let ussdResponse = null
+      try {
+        if (bill_id) {
+          ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name })
+          console.log('Réponse USSD:', ussdResponse)
+        } else {
+          console.warn('Pas de bill_id, push USSD ignoré.')
+        }
+      } catch (pushError) {
+        console.error('Erreur lors de l\'envoi du push USSD :', pushError)
+      }
+
+      // 6. Réponse finale
+      return response.created({
+        message: isPaid
+          ? 'Paiement confirmé. Rendez-vous mis à jour.'
+          : 'Paiement enregistré. Facture créée et push tenté.',
+        bill_id,
+        paiement,
+        invoice,
+        ussdResponse,
+      })
+    } catch (error: any) {
+      console.error('Erreur traitement Mobile Money:', error)
+      return response.status(500).send({
+        message: 'Erreur lors du traitement Mobile Money.',
+        error: error.message,
+      })
     }
-
-    // Notification Expo à l'utilisateur après la création du paiement
-    const user = await User.find(idUser);
-    if (user && user.expoPushToken) {
-      const notificationTitle = 'Paiement confirmé';
-      const notificationMessage = `Votre paiement de ${amount}€ pour le rendez-vous ${idAppointment} a été confirmé.`;
-
-      // Créer le corps de la notification Expo
-      const pushBody = {
-        to: user.expoPushToken,
-        title: notificationTitle,
-        body: notificationMessage,
-        data: {
-          bill_id: bill_id,
-          appointment_id: idAppointment,
-        },
-      };
-
-      // Envoi de la notification push via l'API Expo
-   try {
-  const response = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(pushBody),  // Convertir le message en chaîne JSON
-  });
-
-  const responseData: any = await response.json(); // Utilisation de 'any' pour contourner l'erreur
-
-  if (responseData.errors) {
-    console.error('Erreur lors de l\'envoi de la notification push Expo:', responseData.errors);
-  } else {
-    console.log('Notification push Expo envoyée avec succès:', responseData);
   }
-} catch (error) {
-  console.error('Erreur lors de l\'envoi de la notification push:', error);
-}
 
-    }
-  await EmailService.sendInvoiceEmail(payer_email, bill_id, amount, description);
-    return response.created({
-      message: isPaid
-        ? 'Paiement confirmé. Rendez-vous mis à jour.'
-        : 'Paiement enregistré. Facture créée et push tenté.',
-      bill_id,
-      paiement,
-      invoice,
-      ussdResponse,
-    });
-  } catch (error: any) {
-    console.error('Erreur lors du traitement Mobile Money:', error);
-    return response.status(500).send({
-      message: 'Erreur lors du traitement Mobile Money.',
-      error: error.message,
-    });
-  }
-}
 
 
 

@@ -2510,6 +2510,15 @@ router.post('/login', async (ctx) => {
 
 }).middleware([throttle])
 
+router.post('/loginpatient', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return authController.loginPatient(ctx)
+    })
+  })
+
+}).middleware([throttle])
+
 router.get('/paiements/solde/:doctorId', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
