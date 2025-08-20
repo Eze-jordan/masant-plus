@@ -6,7 +6,6 @@ import { EtatRDV, StatusPaiement } from '../enum/enums.js'
 import { CreateInvoice, GetInvoice, MakePushUSSD } from '#services/ebilling'
 import Appointment from '#models/appointment'
 import User from '#models/user'
-import EmailService from '#services/fature'
 
 export default class PaiementsController {
   /**
