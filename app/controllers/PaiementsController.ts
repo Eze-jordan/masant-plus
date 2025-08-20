@@ -80,8 +80,57 @@ public async create({ request, response }: HttpContextContract) {
   /**
    * Crée une facture Mobile Money via eBilling + push USSD, puis enregistre le paiement
    */
-  public async createvisaMoneyInvoice({ request, response }: HttpContextContract) {
-    let {
+public async createvisaMoneyInvoice({ request, response }: HttpContextContract) {
+  let {
+    amount,
+    payer_msisdn,
+    payer_email,
+    short_description,
+    external_reference,
+    description,
+    expiry_period,
+    payment_system_name,
+    idUser,
+    idAppointment,
+  } = request.only([
+    'amount',
+    'payer_msisdn',
+    'payer_email',
+    'short_description',
+    'external_reference',
+    'description',
+    'expiry_period',
+    'payment_system_name',
+    'idUser',
+    'idAppointment',
+  ]);
+
+  console.log('payer_msisdn:', payer_msisdn);
+  console.log('payment_system_name:', payment_system_name);
+
+  try {
+    if (payment_system_name !== 'visa') {
+      throw new Error('Seul le mode de paiement Visa est accepté.');
+    }
+
+    // Si tu veux forcer le numéro pour test
+    payer_msisdn = '074699792';
+
+    if (!payer_msisdn) {
+      throw new Error('Le numéro de téléphone est requis pour détecter le mode de paiement.');
+    }
+
+    console.log('payer_msisdn après vérification:', payer_msisdn);
+
+    // Détecter le mode de paiement
+    const modeLabel = this.detectPaymentLabel(payer_msisdn);
+    let modePaiement = await ModePaiement.query().where('label', modeLabel).first();
+    if (!modePaiement) {
+      modePaiement = await ModePaiement.create({ label: modeLabel });
+    }
+
+    // Créer la facture
+    const invoice = await CreateInvoice({
       amount,
       payer_msisdn,
       payer_email,
@@ -89,86 +138,39 @@ public async create({ request, response }: HttpContextContract) {
       external_reference,
       description,
       expiry_period,
-      payment_system_name,
+    });
+
+    if (!invoice?.e_bill?.bill_id) {
+      throw new Error('Erreur lors de la génération de la facture eBilling.');
+    }
+
+    const bill_id = invoice.e_bill.bill_id;
+    const isPaid = invoice.e_bill.status === 'PAYE';
+
+    // Créer le paiement
+    const paiement = await Paiement.create({
       idUser,
       idAppointment,
-    } = request.only([
-      'amount',
-      'payer_msisdn',
-      'payer_email',
-      'short_description',
-      'external_reference',
-      'description',
-      'expiry_period',
-      'payment_system_name',
-      'idUser',
-      'idAppointment',
-    ]);
+      montant: amount,
+      statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.PAYE,
+      datePaiement: DateTime.now(),
+      modeId: modePaiement.id,
+      numeroTelephone: payer_msisdn,
+      billing_id: bill_id,
+    });
 
-    console.log('payer_msisdn:', payer_msisdn);
-    console.log('payment_system_name:', payment_system_name);
+    // AJOUT DU BLOC DEMANDÉ ICI
+    if (isPaid) {
+      const appointment = await Appointment.find(idAppointment);
 
-    try {
-      if (payment_system_name !== 'visa') {
-        throw new Error('Seul le mode de paiement Visa est accepté.');
-      }
+      if (appointment) {
+        // Mise à jour du rendez-vous
+        appointment.etatRdv = EtatRDV.CONFIRME;
+        await appointment.save();
 
-      // Si tu veux forcer le numéro pour test
-      payer_msisdn = '074699792';
-
-      if (!payer_msisdn) {
-        throw new Error('Le numéro de téléphone est requis pour détecter le mode de paiement.');
-      }
-
-      console.log('payer_msisdn après vérification:', payer_msisdn);
-
-      // Détecter le mode de paiement
-      const modeLabel = this.detectPaymentLabel(payer_msisdn);
-      let modePaiement = await ModePaiement.query().where('label', modeLabel).first();
-      if (!modePaiement) {
-        modePaiement = await ModePaiement.create({ label: modeLabel });
-      }
-
-      // Créer la facture
-      const invoice = await CreateInvoice({
-        amount,
-        payer_msisdn,
-        payer_email,
-        short_description,
-        external_reference,
-        description,
-        expiry_period,
-      });
-
-      if (!invoice?.e_bill?.bill_id) {
-        throw new Error('Erreur lors de la génération de la facture eBilling.');
-      }
-
-      const bill_id = invoice.e_bill.bill_id;
-      const isPaid = invoice.e_bill.status === 'PAYE';
-
-      // Créer le paiement
-      const paiement = await Paiement.create({
-        idUser,
-        idAppointment,
-        montant: amount,
-        statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.PAYE,
-        datePaiement: DateTime.now(),
-        modeId: modePaiement.id,
-        numeroTelephone: payer_msisdn,
-        billing_id: bill_id,
-      });
-
-      // Après paiement confirmé
-      if (isPaid) {
-        const appointment = await Appointment.find(idAppointment);
-        if (appointment) {
-          // Mettre à jour l'état du rendez-vous
-          appointment.etatRdv = EtatRDV.CONFIRME;
-          await appointment.save();
-
-          // Charger le créneau associé
-          const creneau = await appointment.related('creneau').query().first();
+        // Mise à jour du créneau associé
+        if (appointment.idCreneau) {
+          const creneau = await Creneau.find(appointment.idCreneau);
           if (creneau) {
             creneau.disponible = false;
             creneau.isUsed = true;
@@ -177,69 +179,75 @@ public async create({ request, response }: HttpContextContract) {
           } else {
             console.warn('Aucun créneau trouvé pour ce rendez-vous.');
           }
-        }
-      }
-
-      // Push USSD
-      let ussdResponse = null;
-      try {
-        if (bill_id) {
-          ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name });
-          console.log('Réponse USSD:', ussdResponse);
         } else {
-          console.warn('Pas de bill_id, push USSD ignoré.');
+          console.warn('Le rendez-vous n\'a pas de idCreneau.');
         }
-      } catch (pushError) {
-        console.error('Erreur lors de l\'envoi du push USSD :', pushError);
+      } else {
+        console.warn('Aucun rendez-vous trouvé pour cet ID.');
       }
-
-      // Notification push Expo
-      const user = await User.find(idUser);
-      if (user && user.expoPushToken) {
-        const pushBody = {
-          to: user.expoPushToken,
-          title: 'Paiement confirmé',
-          body: `Votre paiement de ${amount}€ pour le rendez-vous ${idAppointment} a été confirmé.`,
-          data: { bill_id, appointment_id: idAppointment },
-        };
-
-        try {
-          const expoResponse = await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-            body: JSON.stringify(pushBody),
-          });
-          const responseData: any = await expoResponse.json();
-          if (responseData.errors) {
-            console.error('Erreur lors de l\'envoi de la notification push Expo:', responseData.errors);
-          } else {
-            console.log('Notification push Expo envoyée avec succès:', responseData);
-          }
-        } catch (error) {
-          console.error('Erreur lors de l\'envoi de la notification push:', error);
-        }
-      }
-
-      const redirectUrl = `https://test.billing-easy.net?invoice=${bill_id}&redirect_url=https://myredirecturl.com`;
-
-      return response.created({
-        message: isPaid
-          ? 'Paiement confirmé. Rendez-vous mis à jour.'
-          : 'Paiement enregistré. Facture créée et push tenté.',
-        bill_id,
-        paiement,
-        invoice,
-        ussdResponse,
-        redirectUrl,
-      });
-    } catch (error: any) {
-      console.error('Erreur lors du traitement Mobile Money:', error);
-      return response.status(500).send({
-        message: 'Erreur lors du traitement Mobile Money.',
-        error: error.message,
-      });
     }
+    // FIN DU BLOC AJOUTÉ
+
+    // Push USSD
+    let ussdResponse = null;
+    try {
+      if (bill_id) {
+        ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name });
+        console.log('Réponse USSD:', ussdResponse);
+      } else {
+        console.warn('Pas de bill_id, push USSD ignoré.');
+      }
+    } catch (pushError) {
+      console.error('Erreur lors de l\'envoi du push USSD :', pushError);
+    }
+
+    // Notification push Expo
+    const user = await User.find(idUser);
+    if (user && user.expoPushToken) {
+      const pushBody = {
+        to: user.expoPushToken,
+        title: 'Paiement confirmé',
+        body: `Votre paiement de ${amount}€ pour le rendez-vous ${idAppointment} a été confirmé.`,
+        data: { bill_id, appointment_id: idAppointment },
+      };
+
+      try {
+        const expoResponse = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify(pushBody),
+        });
+        const responseData: any = await expoResponse.json();
+        if (responseData.errors) {
+          console.error('Erreur lors de l\'envoi de la notification push Expo:', responseData.errors);
+        } else {
+          console.log('Notification push Expo envoyée avec succès:', responseData);
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi de la notification push:', error);
+      }
+    }
+
+    const redirectUrl = `https://test.billing-easy.net?invoice=${bill_id}&redirect_url=https://myredirecturl.com`;
+
+    return response.created({
+      message: isPaid
+        ? 'Paiement confirmé. Rendez-vous mis à jour.'
+        : 'Paiement enregistré. Facture créée et push tenté.',
+      bill_id,
+      paiement,
+      invoice,
+      ussdResponse,
+      redirectUrl,
+    });
+  } catch (error: any) {
+    console.error('Erreur lors du traitement Mobile Money:', error);
+    return response.status(500).send({
+      message: 'Erreur lors du traitement Mobile Money.',
+      error: error.message,
+    });
   }
+}
 public async createMobileMoneyInvoice({ request, response }: HttpContextContract) {
   const {
     amount,
@@ -292,7 +300,7 @@ public async createMobileMoneyInvoice({ request, response }: HttpContextContract
       idUser,
       idAppointment,
       montant: amount,
-      statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.EN_ATTENTE,
+      statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.PAYE,
       datePaiement: DateTime.now(),
       modeId: modePaiement.id,
       numeroTelephone: payer_msisdn,
