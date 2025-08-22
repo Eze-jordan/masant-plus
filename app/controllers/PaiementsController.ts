@@ -122,6 +122,26 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
 
     console.log('payer_msisdn après vérification:', payer_msisdn);
 
+    // AJOUT DU BLOC DEMANDÉ ICI (Mise à jour du créneau avant paiement)
+    if (idAppointment) {
+      const appointment = await Appointment.find(idAppointment);
+
+      if (appointment && appointment.idCreneau) {
+        const creneau = await Creneau.find(appointment.idCreneau);
+        if (creneau) {
+          creneau.disponible = false;
+          creneau.isUsed = true;
+          await creneau.save();
+          console.log(`Créneau ${creneau.id} réservé avant création du paiement.`);
+        } else {
+          console.warn('Aucun créneau trouvé pour ce rendez-vous.');
+        }
+      } else {
+        console.warn('Le rendez-vous est introuvable ou ne contient pas d\'idCreneau.');
+      }
+    }
+    // FIN DU BLOC AJOUTÉ
+
     // Détecter le mode de paiement
     const modeLabel = this.detectPaymentLabel(payer_msisdn);
     let modePaiement = await ModePaiement.query().where('label', modeLabel).first();
@@ -159,34 +179,20 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
       billing_id: bill_id,
     });
 
-    // AJOUT DU BLOC DEMANDÉ ICI
+    // Mise à jour du rendez-vous si payé
     if (isPaid) {
       const appointment = await Appointment.find(idAppointment);
 
       if (appointment) {
-        // Mise à jour du rendez-vous
         appointment.etatRdv = EtatRDV.CONFIRME;
         await appointment.save();
+        console.log(`Rendez-vous ${idAppointment} confirmé.`);
 
-        // Mise à jour du créneau associé
-        if (appointment.idCreneau) {
-          const creneau = await Creneau.find(appointment.idCreneau);
-          if (creneau) {
-            creneau.disponible = false;
-            creneau.isUsed = true;
-            await creneau.save();
-            console.log(`Creneau ${creneau.id} mis à jour : disponible=false, isUsed=true`);
-          } else {
-            console.warn('Aucun créneau trouvé pour ce rendez-vous.');
-          }
-        } else {
-          console.warn('Le rendez-vous n\'a pas de idCreneau.');
-        }
+        // Remarque : le créneau a déjà été mis à jour plus haut
       } else {
         console.warn('Aucun rendez-vous trouvé pour cet ID.');
       }
     }
-    // FIN DU BLOC AJOUTÉ
 
     // Push USSD
     let ussdResponse = null;
@@ -248,6 +254,8 @@ public async createvisaMoneyInvoice({ request, response }: HttpContextContract) 
     });
   }
 }
+
+
 public async createMobileMoneyInvoice({ request, response }: HttpContextContract) {
   const {
     amount,
@@ -271,17 +279,36 @@ public async createMobileMoneyInvoice({ request, response }: HttpContextContract
     'payment_system_name',
     'idUser',
     'idAppointment',
-  ]);
+  ])
 
   try {
-    // 1. Détection du mode de paiement
-    const modeLabel = this.detectPaymentLabel(payer_msisdn);
-    let modePaiement = await ModePaiement.query().where('label', modeLabel).first();
-    if (!modePaiement) {
-      modePaiement = await ModePaiement.create({ label: modeLabel });
+    // 1. Récupération et mise à jour du créneau associé (AVANT création du paiement)
+    if (idAppointment) {
+      const appointment = await Appointment.find(idAppointment)
+      if (appointment && appointment.idCreneau) {
+        const creneau = await Creneau.find(appointment.idCreneau)
+        if (creneau) {
+          creneau.isUsed = true
+          creneau.disponible = false
+          await creneau.save()
+          console.log(`Créneau ${creneau.id} réservé avant création du paiement.`)
+        } else {
+          console.warn(`Aucun créneau trouvé pour l'ID: ${appointment.idCreneau}`)
+        }
+      } else {
+        console.warn(`Aucun rendez-vous ou idCreneau trouvé pour l'ID: ${idAppointment}`)
+      }
     }
 
-    // 2. Création de la facture via eBilling
+    // 2. Détection du mode de paiement
+    const modeLabel = this.detectPaymentLabel(payer_msisdn)
+    let modePaiement = await ModePaiement.query().where('label', modeLabel).first()
+
+    if (!modePaiement) {
+      modePaiement = await ModePaiement.create({ label: modeLabel })
+    }
+
+    // 3. Création de la facture
     const invoice = await CreateInvoice({
       amount,
       payer_msisdn,
@@ -290,85 +317,62 @@ public async createMobileMoneyInvoice({ request, response }: HttpContextContract
       external_reference,
       description,
       expiry_period,
-    });
+    })
 
-    const bill_id = invoice?.e_bill?.bill_id ?? null;
-    const isPaid = invoice?.e_bill?.status === 'PAYE';
+    const bill_id = invoice?.e_bill?.bill_id ?? null
+    const isPaid = invoice?.e_bill?.status === 'PAYE'
 
-    // 3. Création du paiement
+    // 4. Création du paiement
     const paiement = await Paiement.create({
       idUser,
       idAppointment,
       montant: amount,
-      statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.PAYE,
+      statut: isPaid ? StatusPaiement.PAYE : StatusPaiement.EN_ATTENTE,
       datePaiement: DateTime.now(),
       modeId: modePaiement.id,
       numeroTelephone: payer_msisdn,
-    });
+    })
 
-    // 4. Mise à jour du rendez-vous et du créneau si payé
-    if (isPaid) {
-      const appointment = await Appointment.find(idAppointment);
-
+    // 5. Si payé immédiatement → mise à jour de l'état du RDV
+    if (isPaid && idAppointment) {
+      const appointment = await Appointment.find(idAppointment)
       if (appointment) {
-        // Mise à jour du rendez-vous
-        appointment.etatRdv = EtatRDV.CONFIRME;
-        await appointment.save();
-
-        // Mise à jour du créneau associé
-        if (appointment.idCreneau) {
-          const creneau = await Creneau.find(appointment.idCreneau);
-          if (creneau) {
-            creneau.disponible = false;
-            creneau.isUsed = true;
-            await creneau.save();
-            console.log(`Creneau ${creneau.id} mis à jour : disponible=false, isUsed=true`);
-          } else {
-            console.warn('Aucun créneau trouvé pour ce rendez-vous.');
-          }
-        } else {
-          console.warn('Le rendez-vous n\'a pas de idCreneau.');
-        }
-      } else {
-        console.warn('Aucun rendez-vous trouvé pour cet ID.');
+        appointment.etatRdv = 'CONFIRME'
+        await appointment.save()
       }
     }
 
-    // 5. Envoi du push USSD (optionnel)
-    let ussdResponse = null;
+    // 6. Push USSD
+    let ussdResponse = null
     try {
       if (bill_id) {
-        ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name });
-        console.log('Réponse USSD:', ussdResponse);
+        ussdResponse = await MakePushUSSD({ bill_id, payer_msisdn, payment_system_name })
+        console.log('Réponse USSD:', ussdResponse)
       } else {
-        console.warn('Pas de bill_id, push USSD ignoré.');
+        console.warn('Pas de bill_id, push USSD ignoré.')
       }
     } catch (pushError) {
-      console.error('Erreur lors de l\'envoi du push USSD :', pushError);
+      console.error('Erreur lors de l\'envoi du push USSD :', pushError)
     }
 
-    // 6. Réponse finale
+    // 7. Réponse finale
     return response.created({
       message: isPaid
-        ? 'Paiement confirmé. Rendez-vous et créneau mis à jour.'
+        ? 'Paiement confirmé. Rendez-vous mis à jour.'
         : 'Paiement enregistré. Facture créée et push tenté.',
       bill_id,
       paiement,
       invoice,
       ussdResponse,
-    });
-
+    })
   } catch (error: any) {
-    console.error('Erreur traitement Mobile Money:', error);
+    console.error('Erreur traitement Mobile Money:', error)
     return response.status(500).send({
       message: 'Erreur lors du traitement Mobile Money.',
-      error: error.message,
-    });
+      error: error.message || 'Erreur inconnue',
+    })
   }
 }
-
-
-
 
 
   /**
@@ -395,3 +399,6 @@ public async createMobileMoneyInvoice({ request, response }: HttpContextContract
     return 'liberits'
   }
 }
+
+
+

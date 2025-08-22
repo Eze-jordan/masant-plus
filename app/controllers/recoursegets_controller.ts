@@ -30,7 +30,7 @@ export default class RecoursegetsController {
         const ressourceJson = ressource.toJSON()
 
         // Log pour vérifier le modèle converti en JSON
-        console.log('[getRessourcesByUser] josue Ressource JSON:', ressourceJson)
+        console.log('[getRessourcesByUser]  Ressource JSON:', ressourceJson)
 
         // Extraire le nom du fichier à partir de l'URL
         const urlParts = ressourceJson.url.split('/')
