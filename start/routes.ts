@@ -6,6 +6,7 @@ import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
+import PrescriptionsController from '#controllers/PrescriptionsController'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
 import RedvpatientsController from "#controllers/redvpatients_controller"
 import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
@@ -15,6 +16,7 @@ const medicament =new   MedicamentFrancesController()
 const rdvdupatient =new  RedvpatientsController()
 const status = new UserStatusController()
 const pdfuser  = new  RecoursegetsController()
+const presction  = new  PrescriptionsController()
 const userinfo  =new  pourcentage_comptes_controller()
 import ResourcesController from '#controllers/resources_controller';
 const resourcesController = new ResourcesController();
@@ -2817,7 +2819,32 @@ router.get('/users/:id/info', async (ctx) => {
   })
 }).middleware([throttle])
 
+router.get('/prescriptions/:patientId', async (ctx) => {
+  console.log('[GET /prescriptions/:patientId] Début de traitement')
+  console.log('[GET /prescriptions/:patientId] Params:', JSON.stringify(ctx.request.params(), null, 2))
 
+  await onlyFrontend.handle(ctx, async () => {
+
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /prescriptions/:patientId] Avant appel controller show')
+      return presction.index(ctx)  // Méthode pour récupérer la prescription
+    })
+  })
+}).middleware([throttle])
+
+router.post('/prescriptions/:doctorId', async (ctx) => {
+  console.log('[GET /prescriptions/:patientId] Début de traitement')
+  console.log('[GET /prescriptions/:patientId] Params:', JSON.stringify(ctx.request.params(), null, 2))
+
+  await onlyFrontend.handle(ctx, async () => {
+
+    await appKeyGuard.handle(ctx, async () => {
+      console.log('[GET /prescriptions/:patientId] Avant appel controller show')
+      return presction.store(ctx)  // Méthode pour récupérer la prescription
+    })
+  })
+}).middleware([throttle])
+//
 router.delete('/users/:id', async (ctx) => {
   console.log('[GET /users/:id] Début de traitement')
   console.log('[GET /users/:id] Params:', JSON.stringify(ctx.request.params(), null, 2))

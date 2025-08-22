@@ -36,27 +36,45 @@ export default class MedicationsController {
 
 public async index({ params, request, response }: HttpContextContract) {
   try {
-    // Récupérer le paramètre dynamique :name
     const nameParam = params.name
-
-    // Ou la recherche en query
     const search = request.input('search')
+    const queryStr = nameParam || search
 
-    let medications
+    let medications = []
 
-    if (nameParam) {
+    if (queryStr) {
+      // Recherche principale : médicaments dont le nom contient la query
       medications = await Medication
         .query()
-        .whereILike('name', `%${nameParam}%`)
+        .whereNotNull('name')
+        .whereILike('name', `%${queryStr}%`)
         .limit(10)
-    } else if (search) {
-      medications = await Medication
-        .query()
-        .whereILike('name', `%${search}%`)
-        .limit(10)
+
+      // Si aucun résultat, on suggère un médicament proche (ex: premier médicament avec nom non null)
+      if (medications.length === 0) {
+        const suggestion = await Medication
+          .query()
+          .whereNotNull('name')
+          .limit(1)
+          .first()
+
+        if (suggestion) {
+          medications = [suggestion]
+        }
+      }
     } else {
-      medications = await Medication.all()
+      // Si pas de recherche, retourne les 10 premiers médicaments avec un nom non null
+      medications = await Medication
+        .query()
+        .whereNotNull('name')
+        .limit(10)
     }
+
+    // Transformer tous les noms en lowercase, et s'assurer que ce n'est jamais null
+    medications = medications.map(med => ({
+      ...med,
+      name: (med.name || '').toLowerCase(),
+    }))
 
     return response.ok(medications)
   } catch (error) {
@@ -67,4 +85,5 @@ public async index({ params, request, response }: HttpContextContract) {
     })
   }
 }
+
   }
