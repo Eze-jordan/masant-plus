@@ -31,4 +31,27 @@ export default class AppointmentDiscussionController {
 
     return response.ok({ doctors: uniqueDoctors })
   }
+
+
+  public async getAppointmentDates({ params, response }: HttpContextContract) {
+    const patientId = params.id
+
+    if (!patientId) {
+      return response.badRequest({ message: 'patientId manquant dans les paramètres' })
+    }
+
+    // Récupérer tous les RDV du patient, sans filtrer par statut
+    const appointments = await Appointment.query()
+      .where('idUser', patientId)
+      .select('dateRdv')  // Sélectionne uniquement la colonne 'date'
+
+    if (appointments.length === 0) {
+      return response.notFound({ message: 'Aucun rendez-vous trouvé pour ce patient.' })
+    }
+
+    // Extraire toutes les dates des RDV
+    const appointmentDates = appointments.map(app => app.dateRdv)
+
+    return response.ok({ appointmentDates })
+  }
 }
