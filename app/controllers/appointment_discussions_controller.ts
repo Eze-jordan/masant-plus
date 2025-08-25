@@ -33,25 +33,32 @@ export default class AppointmentDiscussionController {
   }
 
 
-  public async getAppointmentDates({ params, response }: HttpContextContract) {
+ public async getAppointmentHistory({ params, response }: HttpContextContract) {
     const patientId = params.id
 
+    // Vérification si le patientId est fourni
     if (!patientId) {
       return response.badRequest({ message: 'patientId manquant dans les paramètres' })
     }
 
-    // Récupérer tous les RDV du patient, sans filtrer par statut
+    // Récupérer les rendez-vous pour le patient
     const appointments = await Appointment.query()
-      .where('idUser', patientId)
-      .select('dateRdv')  // Sélectionne uniquement la colonne 'date'
+      .where('idUser', patientId)  // Assurez-vous que 'idUser' est correct
+      .select('id', 'dateRdv', 'description')  // Sélectionner les champs nécessaires
 
+    // Vérifier s'il y a des rendez-vous pour ce patient
     if (appointments.length === 0) {
       return response.notFound({ message: 'Aucun rendez-vous trouvé pour ce patient.' })
     }
 
-    // Extraire toutes les dates des RDV
-    const appointmentDates = appointments.map(app => app.dateRdv)
+    // Mapper les rendez-vous pour correspondre à la structure `History`
+    const history: History[] = appointments.map(app => ({
+      id: app.id,  // ID du rendez-vous
+      date: app.dateRdv,  // Date du rendez-vous
+      description: app.description || 'Pas de description disponible',  // Description du rendez-vous (s'il y en a une)
+    }))
 
-    return response.ok({ appointmentDates })
+    // Renvoi de l'historique des rendez-vous
+    return response.ok({ history })
   }
 }
