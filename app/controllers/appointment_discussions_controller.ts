@@ -33,7 +33,7 @@ export default class AppointmentDiscussionController {
   }
 
 
- public async getAppointmentHistory({ params, response }: HttpContextContract) {
+ public async getAppointmentDates({ params, response }: HttpContextContract) {
     const patientId = params.id
 
     // Vérification si le patientId est fourni
@@ -52,7 +52,7 @@ export default class AppointmentDiscussionController {
     }
 
     // Mapper les rendez-vous pour correspondre à la structure `History`
-    const history: History[] = appointments.map(app => ({
+    const history  = appointments.map(app => ({
       id: app.id,  // ID du rendez-vous
       date: app.dateRdv,  // Date du rendez-vous
       description: app.description || 'Pas de description disponible',  // Description du rendez-vous (s'il y en a une)
