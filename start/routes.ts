@@ -5,6 +5,7 @@ import { cuid } from '@adonisjs/core/helpers'
 import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import AppointmentDiscussionController from "#controllers/appointment_discussions_controller"
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import PrescriptionsController from '#controllers/PrescriptionsController'
 import AppKeyGuard from '#middleware/app_key_guard_middleware'
@@ -15,6 +16,7 @@ import UserStatusController from "#controllers/statusonlines_controller"
 const medicament =new   MedicamentFrancesController()
 const rdvdupatient =new  RedvpatientsController()
 const status = new UserStatusController()
+const appointmentDiscussion = new AppointmentDiscussionController()
 const pdfuser  = new  RecoursegetsController()
 const presction  = new  PrescriptionsController()
 const userinfo  =new  pourcentage_comptes_controller()
@@ -3925,13 +3927,21 @@ router.get('/resources/:userId', async (ctx) => {
     });
   });
 }).middleware([throttle])
+
 router.get('/resources/files/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       await resourcesController.index(ctx);
     });
   });
-}).middleware([throttle])// Middleware pour limiter les requêtes (précaution supplémentaire)
+}).middleware([throttle])
+router.get('/appointment-discussion/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentDiscussion.getDoctorsFromConfirmedAppointments(ctx);
+    });
+  });
+}).middleware([throttle])// appointmentDiscussion Middleware pour limiter les requêtes (précaution supplémentaire)
 
 
 

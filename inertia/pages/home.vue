@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 overflow-x-hidden">
-    
+
     <!-- Header Section -->
     <header class="bg-white shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,7 +35,7 @@
           Bienvenue sur <span class="text-indigo-600">ma sante plus</span>
         </h1>
         <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Découvrez une expérience unique qui transformera votre façon de travailler. 
+          Découvrez une expérience unique qui transformera votre façon de travailler.
           Rejoignez des milliers d'utilisateurs satisfaits qui ont déjà fait le choix de l'excellence.
         </p>
         <!-- Hero Buttons -->
@@ -95,7 +95,7 @@
             <ul class="space-y-2 text-gray-400">
               <li><a href="#" class="hover:text-white transition-colors">Fonctionnalités</a></li>
               <li><a href="#" class="hover:text-white transition-colors">Tarifs</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Documentation</a></li>
+              <li><a href="/docs" class="hover:text-white transition-colors">Documentation</a></li>
             </ul>
           </div>
           <div>
@@ -116,7 +116,7 @@
           </div>
         </div>
         <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 ma sante plus. Tous droits réservés.</p>
+          <p>&copy; 2025 ma sante plus. Tous droits réservés.</p>
         </div>
       </div>
     </footer>
@@ -152,7 +152,7 @@ const animatedProjects = ref(0)
 const animatedSatisfaction = ref(0)
 
 const startJourney = () => {
-  Inertia.visit('/subcrib') 
+  Inertia.visit('/subcrib')
 }
 
 const showWelcomeMessage = () => {
@@ -168,22 +168,22 @@ const animateNumbers = () => {
   const targetUsers = 10000
   const targetProjects = 5000
   const targetSatisfaction = 98
-  
+
   const startTime = Date.now()
-  
+
   const animate = () => {
     const elapsed = Date.now() - startTime
     const progress = Math.min(elapsed / duration, 1)
-    
+
     animatedUsers.value = Math.floor(targetUsers * progress)
     animatedProjects.value = Math.floor(targetProjects * progress)
     animatedSatisfaction.value = Math.floor(targetSatisfaction * progress)
-    
+
     if (progress < 1) {
       requestAnimationFrame(animate)
     }
   }
-  
+
   animate()
 }
 
@@ -193,7 +193,7 @@ onMounted(() => {
 })
 
 const showMoreInfo = () => {
-  Inertia.visit('/info') 
+  Inertia.visit('/info')
 }
 </script>
 
