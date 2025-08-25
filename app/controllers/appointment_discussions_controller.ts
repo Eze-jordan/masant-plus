@@ -1,6 +1,7 @@
 import Appointment from '#models/appointment'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { EtatRDV } from '../enum/enums.js'
+import User from '#models/user'
 
 export default class AppointmentDiscussionController {
   /**
@@ -60,5 +61,42 @@ export default class AppointmentDiscussionController {
 
     // Renvoi de l'historique des rendez-vous
     return response.ok({ history })
+  }
+
+  public async getPatientDetails({ params, response }: HttpContextContract) {
+    try {
+      // Chercher l'utilisateur en fonction de son ID (patient)
+      const user = await User.query()
+        .where('id', params.id)
+        .andWhere('type', 'patient')
+        .firstOrFail()
+
+      // Assurez-vous que l'utilisateur est bien un patient
+      if (user.type !== 'patient') {
+        return response.status(400).json({
+          message: 'Ce n\'est pas un patient',
+        })
+      }
+
+      // Récupérer les informations demandées
+      const patientDetails = {
+        genre: user.genre || 'Non renseigné',
+        bloodType: user.groupeSanguin || 'Non renseigné',
+        heartRate: '60-110 BPM',  // Exemple statique, cela pourrait provenir d'une autre source
+        weight: user.weight || 'Non renseigné',
+        chronic: 'Diabète',  // Exemple statique, pourrait venir d'une table ou d'une logique
+        lipids: '48g',  // Exemple statique
+      }
+
+      return response.json({
+        message: 'Détails du patient récupérés avec succès',
+        data: patientDetails
+      })
+    } catch (error) {
+      console.log(error)
+      return response.status(404).json({
+        message: 'Patient non trouvé',
+      })
+    }
   }
 }
