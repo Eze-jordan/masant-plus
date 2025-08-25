@@ -3945,6 +3945,16 @@ router.get('/appointment-discussion/:id', async (ctx) => {
 
 
 
+router.get('/appointment-user/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentDiscussion.getAppointmentDates(ctx);
+    });
+  });
+}).middleware([throttle])// appointmentDiscussion Middleware pour limiter les requêtes (précaution supplémentaire)
+
+
+
 // Route fallback - doit être la dernière route
 router.get('/*', async ({ request, inertia, response }) => {
   const acceptsHtml = request.accepts(['html', 'json']) === 'html'
