@@ -3935,6 +3935,14 @@ router.get('/resources/files/:id', async (ctx) => {
     });
   });
 }).middleware([throttle])
+
+router.post('/resources/files/:userId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await resourcesController.upload(ctx);
+    });
+  });
+}).middleware([throttle])
 router.get('/appointment-discussion/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
