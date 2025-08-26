@@ -2,8 +2,10 @@ import { DateTime } from 'luxon'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { StatusPaiement } from '../enum/enums.js'
 import Appointment from '#models/appointment'
+import Paiement from '#models/paiement';
 
-export default class PaymentsController {public async getBalance({ params, response }: HttpContextContract) {
+export default class PaymentsController {
+  public async getBalance({ params, response }: HttpContextContract) {
   try {
     const { doctorId } = params; // ID du médecin
 
@@ -109,8 +111,47 @@ export default class PaymentsController {public async getBalance({ params, respo
       return response.status(500).json({ message: 'Erreur serveur' })
     }
   }
+ public async getPaymentsByPatient({ params, response }: HttpContextContract) {
+    try {
+const { id: patientId } = params
+      if (!patientId) {
+        return response.status(400).json({ message: 'ID du patient manquant' })
+      }
+      const paiements = await Paiement.query()
+        .where('user_id', patientId)
+        .where('statut', 'PAYE')
+        .preload('appointment', (appointmentQuery) => {
+          appointmentQuery
+            .preload('doctor')     // Pour obtenir le nom du médecin
+            .preload('creneau')    // Pour accéder à la date du créneau
+        })
 
+      const payments = paiements.map((paiement) => {
+        const appointment = paiement.appointment
+        const doctor = appointment?.doctor
+        const creneau = appointment?.creneau
 
+        return {
+          doctorId: doctor?.id || null,
+          doctorName: doctor ? `${doctor.first_name} ${doctor.last_name}` : 'Inconnu',
+          dateCreneau: creneau?.date || null, // déjà un string au format "YYYY-MM-DD"
+          datePaiement: paiement.datePaiement
+            ? paiement.datePaiement.toFormat('dd/MM/yyyy HH:mm')
+            : null,
+          description: appointment.description || null,
+          montant: Number(paiement.montant) || 0,
+        }
+      })
+
+      return response.ok({
+        patientId,
+        payments,
+      })
+    } catch (error) {
+      console.error('Erreur lors de la récupération des paiements du patient:', error)
+      return response.status(500).json({ message: 'Erreur serveur' })
+    }
+  }
 
   /**
    * Send a push notification to the user via Expo.

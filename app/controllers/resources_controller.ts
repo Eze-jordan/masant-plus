@@ -9,55 +9,76 @@ import vine from '@vinejs/vine'
 export default class ResourcesController {
   // Récupérer toutes les ressources d'un utilisateur via son id
  public async upload({ request, response, params }: HttpContextContract) {
-    // Définir le schéma avec Vine
+    console.log("🔄 Début upload")
+    console.log("📥 Params :", params)
+    console.log("📥 Headers :", request.headers())
+    console.log("📥 Body :", request.all())
+
+    // Validation du payload (file + titre)
     const validator = vine.object({
-      file: vine.file({
-        size: '5mb',
-        extnames: ['pdf', 'doc', 'docx', 'txt'],
-      }),
+      file: vine.file({ size: '5mb' }),  // Pas de restriction d'extension
       titre: vine.string(),
     })
 
     try {
-      // Compiler le schéma pour avoir un validateur
       const validateFn = vine.compile(validator)
-
-      // Valider les données (fichier + titre)
       const payload = await validateFn.validate({
         ...request.all(),
         file: request.file('file'),
       })
 
       const uploadedFile = payload.file
-      const fileName = `uploads/docs/${cuid()}.${uploadedFile.extname}`
-      const fileBuffer = await fs.readFile(uploadedFile.tmpPath!)
+      if (!uploadedFile || !uploadedFile.tmpPath) {
+        throw new Error('Fichier manquant ou invalide')
+      }
 
+      // Générer nom fichier avec cuid et extension d'origine (sinon .bin)
+      const fileName = `uploads/docs/${cuid()}.${uploadedFile.extname || 'bin'}`
+      const fileBuffer = await fs.readFile(uploadedFile.tmpPath)
+
+      // Upload sur S3
       await drive.use('s3').put(fileName, fileBuffer)
 
-      const fileUrl = await drive.use('s3').getSignedUrl(fileName, { expiresIn: 60 * 60 * 24 * 7 })
+      // Générer URL signée (7 jours)
+      const fileUrl = await drive.use('s3').getSignedUrl(fileName, { expiresIn: '7d' })
 
+      // Création de la ressource (avec date du jour format jj/mm/aaaa)
       const ressource = new Ressource()
-      ressource.userId = params.userId
+      ressource.userId = params.id
       ressource.titre = payload.titre
       ressource.url = fileUrl
+
+      // Date du jour au format jj/mm/aaaa
+      const today = new Date()
+      const formattedDate = [
+        String(today.getDate()).padStart(2, '0'),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        today.getFullYear()
+      ].join('/')
+      ressource.date = formattedDate
+
       await ressource.save()
 
-      return response.ok({
+      return response.status(201).json({
         message: 'Document uploadé avec succès',
         data: {
           id: ressource.id,
           url: ressource.url,
           titre: ressource.titre,
+          date: ressource.date,
         },
       })
     } catch (error: any) {
-      console.error(error)
+      console.error('Erreur backend upload:', error)
+
       return response.status(400).json({
         message: "Erreur lors de l'upload",
-        error: error.messages || error.message,
+        error: error.messages || error.message || 'Erreur inconnue',
       })
     }
   }
+
+
   public async index({ params, response }: HttpContextContract) {
     try {
       const userId = params.id
