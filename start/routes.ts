@@ -2883,7 +2883,7 @@ router.put('/users/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
       console.log('[PUT /users/:id] Avant appel controller update')
-      return registerController.updateimage(ctx)  // Ton controller update ici
+      return registerController.update(ctx)  // Ton controller update ici
     })
   })
 }).middleware([throttle])

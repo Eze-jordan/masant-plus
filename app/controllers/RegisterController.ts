@@ -18,7 +18,7 @@ export default class RegisterController {
     const { request, response, logger } = ctx
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
-  
+
     const password = raw.password || 'changeme123'
     const requestData = {
       email: raw.email,
@@ -34,12 +34,12 @@ export default class RegisterController {
      console.log(password)
     try {
       const validatedData = await createDocteurValidator.validate(requestData)
-  
+
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
         return response.status(400).send({ message: 'Un utilisateur avec cet email existe déjà.' })
       }
-  
+
       // Recherche du rôle, création s'il n'existe pas
       const roleLabel = raw.role.toLowerCase()
       let selectedRole = await Role.findBy('label', roleLabel)
@@ -47,24 +47,24 @@ export default class RegisterController {
         selectedRole = await Role.create({ label: roleLabel })
         logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
-  
+
       // Envoi de l'email avant la création de l'utilisateur
       await MailFordoctor.sendApprovalEmail(
         raw.first_name, raw.email // email de l'utilisateur // mot de passe temporaire
       )
-  
+
       // Création de l'utilisateur après l'envoi de l'email
       const { role, ...sanitizedData } = validatedData
       const user = await User.create({
         ...sanitizedData,
         roleId: selectedRole.id,
       })
-  
+
       return response.status(201).send({
         message: 'Utilisateur créé avec succès.',
         user: user.serialize(),
       })
-  
+
     } catch (error: any) {
       logger.error('[RegisterController] Erreur création utilisateur', {
         message: error.message,
@@ -83,7 +83,7 @@ export default class RegisterController {
     const { request, response, logger } = ctx
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
-  
+
     const requestData = {
       email: raw.email,
       password: raw.password,
@@ -95,43 +95,43 @@ export default class RegisterController {
       role: raw.role,
       type: 'patient'
     }
-  
+
     try {
       const validatedData = await createPatientValidator.validate(requestData)
-  
+
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
-        return response.status(400).send({ 
-          message: 'Un utilisateur avec cet email existe déjà.' 
+        return response.status(400).send({
+          message: 'Un utilisateur avec cet email existe déjà.'
         })
       }
-  
+
       const roleLabel = (validatedData.role ?? 'patient').toLowerCase()
       let selectedRole = await Role.findBy('label', roleLabel)
       if (!selectedRole) {
         selectedRole = await Role.create({ label: roleLabel })
         logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
-  
+
       // Envoi de l'email avant la création du compte
       await WelcomeMailService.sendAccountInfo(
         validatedData.email,
         `${validatedData.first_name} ${validatedData.last_name}`,
       )
-  
+
       // Création de l'utilisateur
       const { role, ...sanitizedData } = validatedData
-  
+
       const user = await User.create({
         ...sanitizedData,
         roleId: selectedRole.id,
       })
-  
+
       return response.status(201).send({
         message: 'Patient créé avec succès.',
         user: user.serialize(),
       })
-  
+
     } catch (error: any) {
       logger.error('[RegisterController] Erreur création patient', {
         message: error.message,
@@ -145,12 +145,12 @@ export default class RegisterController {
       })
     }
   }
-  
+
   public async registerAdmin(ctx: HttpContextContract) {
     const { request, response, logger } = ctx
     const raw = request.all()
     logger.info('[RegisterController] Données brutes reçues :', raw)
-  
+
     const requestData = {
       email: raw.email,
       password: raw.password,
@@ -161,43 +161,43 @@ export default class RegisterController {
       role: raw.role,
       type: 'admin'
     }
-  
+
     try {
       const validatedData = await createAdminValidator.validate(requestData)
-  
+
       const userExists = await User.findBy('email', validatedData.email)
       if (userExists) {
-        return response.status(400).send({ 
-          message: 'Un utilisateur avec cet email existe déjà.' 
+        return response.status(400).send({
+          message: 'Un utilisateur avec cet email existe déjà.'
         })
       }
-  
+
       const roleLabel = (validatedData.role ?? 'admin').toLowerCase()
       let selectedRole = await Role.findBy('label', roleLabel)
       if (!selectedRole) {
         selectedRole = await Role.create({ label: roleLabel })
         logger.info(`[RegisterController] Rôle '${roleLabel}' créé automatiquement.`)
       }
-  
+
       // Envoi de l'email avant la création de l'administrateur
       await WelcomeMailService.sendAccountInfo(
         validatedData.email,
         `${validatedData.first_name} ${validatedData.last_name}`,
       )
-  
+
       // Création de l'utilisateur administrateur
       const { role, ...sanitizedData } = validatedData
-  
+
       const user = await User.create({
         ...sanitizedData,
         roleId: selectedRole.id,
       })
-  
+
       return response.status(201).send({
         message: 'Admin créé avec succès.',
         user: user.serialize(),
       })
-  
+
     } catch (error: any) {
       logger.error('[RegisterController] Erreur création Admin', {
         message: error.message,
@@ -211,7 +211,7 @@ export default class RegisterController {
       })
     }
   }
-   
+
 public async updateimage({ request, response, params }: HttpContextContract) {
   const updateUserSchema = vine.object({
     first_name: vine.string().trim().maxLength(50).optional(),
@@ -344,34 +344,15 @@ public async updateimage({ request, response, params }: HttpContextContract) {
   }
 }
 
-  public async update(ctx: HttpContextContract) {
+
+ public async update(ctx: HttpContextContract) {
     const { request, response, params, inertia } = ctx
 
     const updateUserSchema = vine.object({
-      firstName: vine.string().trim().maxLength(50).optional(),
-      lastName: vine.string().trim().maxLength(50).optional(),
-      email: vine
-        .string()
-        .trim()
-        .email()
-        .maxLength(255)
-        .unique(async (db, value) => {
-          const existingUser = await db
-            .from('users')
-            .where('email', value)
-            .whereNot('id', params.id)
-            .first()
-          return !existingUser
-        })
-        .optional(),
-      phone: vine.string().trim().mobile().maxLength(20).optional(),
       address: vine.string().trim().maxLength(255).optional(),
-      specialisation: vine.string().trim().maxLength(100).optional(),
-      about: vine.string().trim().optional(),
-      accountStatus: vine.enum(Object.values(Status) as [Status, ...Status[]]).optional(),
-      yearsExperience: vine.string().trim().optional(),
-      availability: vine.string().trim().optional(),
-      specialty: vine.string().trim().optional(),
+      groupeSanguin: vine.string().trim().maxLength(10).optional(),
+      genre: vine.enum(['HOMME', 'FEMME', 'AUTRE']).optional(),
+      weight: vine.string().trim().maxLength(10).optional(),
       profileImage: vine.file({
         size: '2mb',
         extnames: ['jpg', 'jpeg', 'png', 'webp'],
@@ -379,6 +360,7 @@ public async updateimage({ request, response, params }: HttpContextContract) {
     })
 
     try {
+      // 1️⃣ Validation des données
       const payload = await vine.validate({
         schema: updateUserSchema,
         data: {
@@ -389,14 +371,15 @@ public async updateimage({ request, response, params }: HttpContextContract) {
 
       const user = await User.findOrFail(params.id)
 
+      // 2️⃣ Traitement de l'image si envoyée
       const uploadedProfileImage = request.file('profileImage')
       if (uploadedProfileImage?.tmpPath) {
         const fileName = `uploads/profile/${cuid()}.${uploadedProfileImage.extname}`
         const fileBuffer = await fs.readFile(uploadedProfileImage.tmpPath)
 
+        // Upload S3
         await drive.use('s3').put(fileName, fileBuffer)
 
-        // Génération URL signée
         const {
           AWS_ACCESS_KEY_ID,
           AWS_SECRET_ACCESS_KEY,
@@ -406,13 +389,7 @@ public async updateimage({ request, response, params }: HttpContextContract) {
           S3_FORCE_PATH_STYLE,
         } = process.env
 
-        if (
-          AWS_ACCESS_KEY_ID &&
-          AWS_SECRET_ACCESS_KEY &&
-          AWS_REGION &&
-          S3_ENDPOINT &&
-          S3_BUCKET
-        ) {
+        if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && AWS_REGION && S3_ENDPOINT && S3_BUCKET) {
           const s3 = new S3Client({
             region: AWS_REGION,
             credentials: {
@@ -428,20 +405,26 @@ public async updateimage({ request, response, params }: HttpContextContract) {
             Key: fileName,
           })
 
-          const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 }) // 7 jours
-          console.log('URL signée générée :', signedUrl)
-
-          user.profileImage = signedUrl // <- Stocke l’URL signée directement
+          const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 })
+          user.profileImage = signedUrl
         } else {
-          // Si config S3 absente, stocke juste la clé
           user.profileImage = fileName
         }
       }
 
-      const { profileImage, ...restPayload } = payload
-      user.merge(restPayload)
+      // 3️⃣ Mise à jour des champs autorisés uniquement
+      const allowedFields: Partial<Pick<User, 'address' | 'groupeSanguin' | 'genre' | 'weight'>> = {}
+
+      for (const key of ['address', 'groupeSanguin', 'genre', 'weight'] as const) {
+        if (payload[key] !== undefined) {
+          allowedFields[key] = payload[key]!
+        }
+      }
+
+      user.merge(allowedFields)
       await user.save()
 
+      // 4️⃣ Réponse
       if (request.header('X-Inertia')) {
         inertia.share({ success: 'Profil mis à jour avec succès' })
         return response.redirect().back()
@@ -452,8 +435,6 @@ public async updateimage({ request, response, params }: HttpContextContract) {
         user: user.serialize(),
       })
     } catch (error: any) {
-      console.error(error)
-
       if (request.header('X-Inertia')) {
         inertia.share({
           errors: error.messages || { error: error.message },
@@ -467,4 +448,5 @@ public async updateimage({ request, response, params }: HttpContextContract) {
       })
     }
   }
+
 }
