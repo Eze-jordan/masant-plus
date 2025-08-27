@@ -2550,6 +2550,15 @@ router.get('/paiements/gains-mois/:doctorId', async (ctx) => {
     })
   })
 }).middleware([throttle])
+
+router.get('/paiements/patient/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new PaymentsController()
+      return controller.getPaymentsByPatient(ctx)  // méthode à créer dans ton controller
+    })
+  })
+}).middleware([throttle])
 ///
 
 router.post('/medicament', async (ctx) => {
@@ -3936,9 +3945,10 @@ router.get('/resources/files/:id', async (ctx) => {
   });
 }).middleware([throttle])
 
-router.post('/resources/files/:userId', async (ctx) => {
+router.post('/resources/files/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
+        console.log("📥 Params :", ctx);
       await resourcesController.upload(ctx);
     });
   });
