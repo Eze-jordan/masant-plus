@@ -5,6 +5,7 @@ import { cuid } from '@adonisjs/core/helpers'
 import {ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import SharesController from "#controllers/shares_controller"
 import AppointmentDiscussionController from "#controllers/appointment_discussions_controller"
 import OnlyFrontendMiddleware from '#middleware/only_frontend_middleware'
 import PrescriptionsController from '#controllers/PrescriptionsController'
@@ -14,6 +15,7 @@ import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_con
 import RecoursegetsController from "#controllers/recoursegets_controller"
 import UserStatusController from "#controllers/statusonlines_controller"
 const medicament =new   MedicamentFrancesController()
+const share = new SharesController()
 const rdvdupatient =new  RedvpatientsController()
 const status = new UserStatusController()
 const appointmentDiscussion = new AppointmentDiscussionController()
@@ -3352,8 +3354,14 @@ router.put('/feedbacks/:id', async (ctx) => {
   })
 })
 
-
-// Récupérer tous les feedbacks
+router.post('/share', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      return await share.store(ctx)
+    })
+  })
+})
+// share
 router.get('/admin/feedbacks', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3959,7 +3967,7 @@ router.get('/appointment-discussion/:id', async (ctx) => {
       await appointmentDiscussion.getDoctorsFromConfirmedAppointments(ctx);
     });
   });
-}).middleware([throttle])// appointmentDiscussion Middleware pour limiter les requêtes (précaution supplémentaire)
+}).middleware([throttle])// partage les resouses q avec les docteurs qui m on deja ete consulte
 
 
 
