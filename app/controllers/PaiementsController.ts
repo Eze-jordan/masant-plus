@@ -13,28 +13,51 @@ export default class PaiementsController {
    * Crée un paiement simple en base (ex: Stripe ou autre)
    */
 
-  public async getByPatient({ params, response }: HttpContextContract) {
+public async getByPatient({ params, response }: HttpContextContract) {
   try {
     const { patientId } = params
 
+    // Vérifiez d'abord que le patient existe
+    const patient = await User.find(patientId)
+    if (!patient) {
+      return response.notFound({
+        message: 'Patient non trouvé.'
+      })
+    }
+
+    // Récupérez les paiements avec la relation user
     const paiements = await Paiement.query()
-      .where('user_id', patientId) // Assurez-vous que le champ s'appelle 'user_id'
-      .preload('user')
+      .where('id_user', patientId) // Assurez-vous que c'est le bon nom de colonne
+      .preload('user') // Charge la relation user
       .orderBy('datePaiement', 'desc')
 
-    const data = paiements.map(paiement => ({
-      id: paiement.id,
-      montant: paiement.montant,
-      datePaiement: paiement.datePaiement,
-      first_name: paiement.user?.first_name,
-      last_name: paiement.user?.last_name,
-      email: paiement.user?.email,
-    }))
+    // Formatez les données en vérifiant que user existe
+    const data = paiements.map(paiement => {
+      // Vérification sécurisée de l'utilisateur
+      const user = paiement.user
 
-    return response.ok(data)
+      return {
+        id: paiement.id,
+        montant: paiement.montant,
+        datePaiement: paiement.datePaiement,
+        first_name: user?.first_name || 'Non spécifié',
+        last_name: user?.last_name || 'Non spécifié',
+        email: user?.email || 'Non spécifié',
+      }
+    })
+
+    return response.ok({
+      success: true,
+      data: data,
+      count: data.length
+    })
   } catch (error) {
-    console.error(error)
-    return response.status(500).json({ message: 'Erreur lors de la récupération des paiements du patient.' })
+    console.error('Erreur détaillée:', error)
+    return response.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des paiements du patient.',
+      error: error.message
+    })
   }
 }
 
