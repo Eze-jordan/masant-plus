@@ -3361,7 +3361,18 @@ router.post('/share', async (ctx) => {
     })
   })
 })
-// share
+
+router.get('/paiement/patient/:patientId', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+        const paiementsController = new PaiementsController()
+
+      // Appeler la méthode d'instance sur l'objet paiementsController
+      return await paiementsController.getByPatient(ctx)
+    })
+  })
+})
+//paiement/patient/
 router.get('/admin/feedbacks', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
