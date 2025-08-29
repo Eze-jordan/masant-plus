@@ -62,11 +62,11 @@ public async store({ params, request, response }: HttpContextContract) {
 
   try {
     // ✅ Correction des noms de colonnes : id_doctor et id_patient
-    const appointment = await Appointment.query()
-      .where('id_doctor', doctorId)
-      .andWhere('id_patient', patientId)
-      .orderBy('date', 'desc') // supposé que tu as une colonne "date"
-      .first();
+  const appointment = await Appointment.query()
+  .where('idDoctor', doctorId)  // ou 'id_doctor' selon le nom en DB (snake_case probable)
+  .andWhere('idUser', patientId)  // ou 'id_user' en DB
+  .orderBy('dateRdv', 'desc')  // ou 'date_rdv' en DB
+  .first()
 
     if (!appointment) {
       return response.notFound({ message: 'Aucun rendez-vous trouvé pour ce patient' });
