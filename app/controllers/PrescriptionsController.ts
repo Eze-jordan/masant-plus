@@ -40,10 +40,10 @@ export default class PrescriptionsController {
    * Vérifie que l'appointment appartient bien au docteur
    */
 public async store({ params, request, response }: HttpContextContract) {
-  const { doctorId, patientId } = params
+  const { doctorId, patientId } = params;
 
   if (!doctorId || !patientId) {
-    return response.badRequest({ message: 'ID docteur et ID patient requis' })
+    return response.badRequest({ message: 'ID docteur et ID patient requis' });
   }
 
   const {
@@ -58,18 +58,18 @@ public async store({ params, request, response }: HttpContextContract) {
     'dosage',
     'medications',
     'instructions',
-  ])
+  ]);
 
   try {
-    // On récupère le dernier rendez-vous du docteur avec ce patient
+    // ✅ Correction des noms de colonnes : id_doctor et id_patient
     const appointment = await Appointment.query()
-      .where('idDoctor', doctorId)
-      .andWhere('idPatient', patientId)
-      .orderBy('date', 'desc') // supposons que la colonne date existe
-      .first()
+      .where('id_doctor', doctorId)
+      .andWhere('id_patient', patientId)
+      .orderBy('date', 'desc') // supposé que tu as une colonne "date"
+      .first();
 
     if (!appointment) {
-      return response.notFound({ message: 'Aucun rendez-vous trouvé pour ce patient' })
+      return response.notFound({ message: 'Aucun rendez-vous trouvé pour ce patient' });
     }
 
     const prescription = await Prescription.create({
@@ -77,15 +77,16 @@ public async store({ params, request, response }: HttpContextContract) {
       label,
       duration,
       dosage,
-      medications,
+      medications: JSON.stringify(medications), // 🟡 attention : à convertir si c’est un array
       instructions,
-    })
+    });
 
-    return response.created(prescription)
+    return response.created(prescription);
   } catch (error) {
-    console.error(error)
-    return response.status(500).json({ message: 'Erreur lors de la création de la prescription' })
+    console.error(error);
+    return response.status(500).json({ message: 'Erreur lors de la création de la prescription' });
   }
 }
 
 }
+

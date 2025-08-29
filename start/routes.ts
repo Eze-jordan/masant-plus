@@ -2845,7 +2845,7 @@ router.get('/prescriptions/:patientId', async (ctx) => {
   })
 }).middleware([throttle])
 
-router.post('/prescriptions/:doctorId', async (ctx) => {
+router.post('/prescriptions/:doctorId/:patientId', async (ctx) => {
   console.log('[GET /prescriptions/:patientId] Début de traitement')
   console.log('[GET /prescriptions/:patientId] Params:', JSON.stringify(ctx.request.params(), null, 2))
 
