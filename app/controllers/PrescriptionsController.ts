@@ -39,53 +39,53 @@ export default class PrescriptionsController {
    * Création d'une prescription via params.doctorId
    * Vérifie que l'appointment appartient bien au docteur
    */
-  public async store({ params, request, response }: HttpContextContract) {
-    const { doctorId } = params
+public async store({ params, request, response }: HttpContextContract) {
+  const { doctorId, patientId } = params
 
-    if (!doctorId) {
-      return response.badRequest({ message: 'ID docteur requis' })
+  if (!doctorId || !patientId) {
+    return response.badRequest({ message: 'ID docteur et ID patient requis' })
+  }
+
+  const {
+    label,
+    duration,
+    dosage,
+    medications,
+    instructions,
+  } = request.only([
+    'label',
+    'duration',
+    'dosage',
+    'medications',
+    'instructions',
+  ])
+
+  try {
+    // On récupère le dernier rendez-vous du docteur avec ce patient
+    const appointment = await Appointment.query()
+      .where('idDoctor', doctorId)
+      .andWhere('idPatient', patientId)
+      .orderBy('date', 'desc') // supposons que la colonne date existe
+      .first()
+
+    if (!appointment) {
+      return response.notFound({ message: 'Aucun rendez-vous trouvé pour ce patient' })
     }
 
-    const {
-      idAppointment,
+    const prescription = await Prescription.create({
+      idAppointment: appointment.id,
       label,
       duration,
       dosage,
       medications,
       instructions,
-    } = request.only([
-      'idAppointment',
-      'label',
-      'duration',
-      'dosage',
-      'medications',
-      'instructions',
-    ])
+    })
 
-    try {
-      const appointment = await Appointment.find(idAppointment)
-
-      if (!appointment) {
-        return response.notFound({ message: 'Rendez-vous introuvable' })
-      }
-
-      if (appointment.idDoctor !== doctorId) {
-        return response.unauthorized({ message: "Le rendez-vous n'appartient pas à ce docteur" })
-      }
-
-      const prescription = await Prescription.create({
-        idAppointment,
-        label,
-        duration,
-        dosage,
-        medications,
-        instructions,
-      })
-
-      return response.created(prescription)
-    } catch (error) {
-      console.error(error)
-      return response.status(500).json({ message: 'Erreur lors de la création de la prescription' })
-    }
+    return response.created(prescription)
+  } catch (error) {
+    console.error(error)
+    return response.status(500).json({ message: 'Erreur lors de la création de la prescription' })
   }
+}
+
 }
