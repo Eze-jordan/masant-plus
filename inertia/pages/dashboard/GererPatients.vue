@@ -47,7 +47,32 @@ async function fetchPatients() {
     const response = await fetch('/patient') // Mets ici ton endpoint API réel
     if (!response.ok) throw new Error('Erreur lors de la récupération des patients')
     const data = await response.json()
-    patients.value = data
+    const list = Array.isArray(data) ? data : (data.users || data.patients || [])
+
+    // Normaliser les champs pour l'affichage
+    patients.value = list.map(p => ({
+      ...p,
+      id: p.id,
+      firstName: p.firstName || p.first_name || p.firstName || p.firstname || p.first,
+      lastName: p.lastName || p.last_name || p.lastName || p.lastname || p.last,
+      phone: p.phone || p.telephone || p.phoneNumber || p.phonenumber,
+      email: p.email,
+      address: p.address || p.adresse || null,
+      accountStatus: p.accountStatus || p.account_status || (p.status ? String(p.status).toUpperCase() : null),
+      status: p.status || null,
+      type: p.type || null,
+      profileImage: p.profileImage || p.profile_image || null,
+      expoPushToken: p.expoPushToken || p.expo_push_token || null,
+      roleId: p.roleId || p.role_id || null,
+      createdAt: p.createdAt || p.created_at || null,
+      updatedAt: p.updatedAt || p.updated_at || null,
+      dateNaissance: p.dateNaissance || p.date_naissance || null,
+      about: p.about || null,
+      groupeSanguin: p.groupeSanguin || p.groupe_sanguin || null,
+      anneeExperience: p.anneeExperience || p.annee_experience || null,
+      genre: p.genre || null,
+      weight: p.weight || null,
+    }))
   } catch (error) {
     console.error(error)
   }
@@ -120,9 +145,7 @@ function ajouterPatient() {
           placeholder="Rechercher un patient"
           class="px-4 py-2 border rounded-md"
         />
-        <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold" @click="showAddForm = true">
-          + Ajouter un patient
-        </button>
+       
       </div>
     </div>
 
@@ -227,10 +250,21 @@ function ajouterPatient() {
           <div class="mb-4 flex flex-col items-center">
             <span class="font-bold text-xl">{{ selectedPatient.lastName }} {{ selectedPatient.firstName }}</span>
           </div>
-          <div class="mb-2"><b>Téléphone :</b> {{ selectedPatient.phone }}</div>
-          <div class="mb-2"><b>Email :</b> {{ selectedPatient.email }}</div>
-          <div class="mb-2"><b>Adresse :</b> {{ selectedPatient.adresse }}</div>
-          <div class="mb-2"><b>Statut :</b> {{ selectedPatient.accountStatus }}</div>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div><b>Type :</b> {{ selectedPatient.type || '-' }}</div>
+              <div><b>Téléphone :</b> {{ selectedPatient.phone || '-' }}</div>
+              <div><b>Email :</b> {{ selectedPatient.email || '-' }}</div>
+              <div><b>Adresse :</b> {{ selectedPatient.address || selectedPatient.adresse || '-' }}</div>
+              <div><b>Account Status :</b> {{ selectedPatient.accountStatus || '-' }}</div>
+              <div><b>Date de naissance :</b> {{ selectedPatient.dateNaissance || '-' }}</div>
+              <div><b>Années d'expérience :</b> {{ selectedPatient.anneeExperience || '-' }}</div>
+              <div><b>Groupe sanguin :</b> {{ selectedPatient.groupeSanguin || '-' }}</div>
+              <div><b>Genre :</b> {{ selectedPatient.genre || '-' }}</div>
+              <div><b>Poids :</b> {{ selectedPatient.weight || '-' }}</div>
+              <div class="col-span-2"><b>À propos :</b> {{ selectedPatient.about || '-' }}</div>
+              <div><b>Créé le :</b> {{ selectedPatient.createdAt || '-' }}</div>
+              <div><b>Mis à jour le :</b> {{ selectedPatient.updatedAt || '-' }}</div>
+            </div>
           <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold w-full"
             @click="isEditing = true">
             Modifier

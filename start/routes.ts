@@ -3599,6 +3599,7 @@ router.get('/lives', async (ctx) => {
   });
 });
 
+//  Création de rendez-vous 
 router.post('/appointments', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3607,6 +3608,7 @@ router.post('/appointments', async (ctx) => {
   })
 })
 
+//  Rendez-vous d'un médecin (avec query params)
 router.get('/appointments/doctor', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3614,8 +3616,16 @@ router.get('/appointments/doctor', async (ctx) => {
     })
   })
 })
+//  Tous les rendez-vous (admin) 
+router.get('/appointments', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      await appointmentController.listAllAppointments(ctx)
+    })
+  })
+})
 
-
+// Rendez-vous d'un patient 
 router.get('/appointments/patient/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {
@@ -3623,6 +3633,7 @@ router.get('/appointments/patient/:id', async (ctx) => {
     })
   })
 })
+
 router.put('/appointments/cancel/:id', async (ctx) => {
   await onlyFrontend.handle(ctx, async () => {
     await appKeyGuard.handle(ctx, async () => {

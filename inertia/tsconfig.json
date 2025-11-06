@@ -6,8 +6,19 @@
     "module": "ESNext",
     "jsxImportSource": "vue",
     "paths": {
-      "~/*": ["./*"],
+      "~/*": ["./*"]
     },
+    "types": ["vite/client", "node"]
   },
-  "include": ["./**/*.ts", "./**/*.vue"],
+  "include": [
+    "**/*",
+    "../app/**/*",
+    "../resources/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "public",
+    "**/*.spec.ts"
+  ]
 }

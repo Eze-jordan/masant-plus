@@ -2,20 +2,19 @@
   <div class="flex h-screen bg-gray-100">
     <!-- Sidebar -->
     <aside
-  :class="[sidebarOpen ? 'w-64' : 'w-20', 'bg-blue-600 text-white flex flex-col justify-between p-4 transition-all duration-300']"
->
+      :class="[sidebarOpen ? 'w-64' : 'w-20', 'bg-blue-600 text-white flex flex-col justify-between p-4 transition-all duration-300']"
+    >
       <div>
-
         <div class="flex justify-between items-center mb-10">
-  <img src="/public/logo.png" alt="Logo Mindiva" class="h- w-40 object-contain" v-if="sidebarOpen" />
-  <button @click="toggleSidebar" class="text-white">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-         viewBox="0 0 24 24" stroke="currentColor">
-      <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
-      <line x1="9" y1="4" x2="9" y2="20" stroke="currentColor" stroke-width="2"/>
-    </svg>
-  </button>
-</div>
+          <img src="/public/logo.png" alt="Logo Mindiva" class="h- w-40 object-contain" v-if="sidebarOpen" />
+          <button @click="toggleSidebar" class="text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+              <line x1="9" y1="4" x2="9" y2="20" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
 
         <ul class="space-y-5">
           <li
@@ -32,17 +31,18 @@
           <li class="flex flex-col">
             <div
               class="flex items-center justify-between cursor-pointer p-2 rounded"
-              :class="activeMenu === 'docteurs' ? 'bg-white  font-bold text-black shadow' : 'text-white'"
+              :class="activeMenu === 'docteurs' ? 'bg-white font-bold text-black shadow' : 'text-white'"
               @click="toggleSubMenu('docteurs'); setActiveMenu('docteurs')"
             >
               <div class="flex items-center gap-6">
                 <Stethoscope class="w-5 h-5" :class="activeMenu === 'docteurs' ? 'text-black' : 'text-white'" />
                 <span v-if="sidebarOpen">Docteurs</span>
               </div>
-              <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-90' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
-              /></span>
-
+              <span v-if="sidebarOpen">
+                <ChevronRight
+                  :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-90' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
+                />
+              </span>
             </div>
             <ul
               v-if="openSubMenu === 'docteurs'"
@@ -52,15 +52,16 @@
                 class="cursor-pointer px-2 py-1 rounded"
                 :class="activeSubMenu === 'liste-docteurs' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('docteurs', 'liste-docteurs')"
-                style="text-decoration: none;"
-              ><span v-if="sidebarOpen">Gérer les docteurs</span>
+              >
+                <span v-if="sidebarOpen">Gérer les docteurs</span>
               </li>
               <li
                 class="cursor-pointer px-2 py-1 rounded"
                 :class="activeSubMenu === 'Liste-demande' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('docteurs', 'Liste-demande')"
-                style="text-decoration: none;"
-              ><span v-if="sidebarOpen">Liste des demandes</span></li>
+              >
+                <span v-if="sidebarOpen">Liste des demandes</span>
+              </li>
             </ul>
           </li>
 
@@ -74,10 +75,11 @@
                 <User class="w-5 h-5" :class="activeMenu === 'patients' ? 'text-black' : 'text-white'" />
                 <span v-if="sidebarOpen">Patients</span>
               </div>
-              <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-90' : '', activeMenu === 'patients' ? 'text-black' : 'text-white']"
-              /></span>
-
+              <span v-if="sidebarOpen">
+                <ChevronRight
+                  :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-90' : '', activeMenu === 'patients' ? 'text-black' : 'text-white']"
+                />
+              </span>
             </div>
             <ul
               v-if="openSubMenu === 'patients'"
@@ -87,8 +89,8 @@
                 class="cursor-pointer px-2 py-1 rounded"
                 :class="activeSubMenu === 'gerer-patients' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('patients', 'gerer-patients')"
-                style="text-decoration: none;"
-              >                <span v-if="sidebarOpen">Gérer les patients</span>
+              >
+                <span v-if="sidebarOpen">Gérer les patients</span>
               </li>
             </ul>
           </li>
@@ -96,28 +98,30 @@
           <li class="flex flex-col">
             <div
               class="flex items-center justify-between cursor-pointer p-2 rounded"
-              :class="activeMenu === 'urgent' ? 'bg-white text-black shadow font-bold' : 'text-white'"
-              @click="toggleSubMenu('urgent'); setActiveMenu('urgent')"
+              :class="activeMenu === 'Rendez-vous' ? 'bg-white text-black shadow font-bold' : 'text-white'"
+              @click="toggleSubMenu('Rendez-vous'); setActiveMenu('Rendez-vous')"
             >
               <div class="flex items-center gap-6">
-                <Calendar class="w-5 h-5" :class="activeMenu === 'urgent' ? 'text-black' : 'text-white'" />
-                <span v-if="sidebarOpen">Urgent</span>
+                <Calendar class="w-5 h-5" :class="activeMenu === 'Rendez-vous' ? 'text-black' : 'text-white'" />
+                <span v-if="sidebarOpen">Rendez-vous</span>
               </div>
-              <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-90' : '', activeMenu === 'urgent' ? 'text-black' : 'text-white']"
-              /></span>
-
+              <span v-if="sidebarOpen">
+                <ChevronRight
+                  :class="['w-4 h-4 transition-transform', openSubMenu === 'Rendez-vous' ? 'rotate-90' : '', activeMenu === 'Rendez-vous' ? 'text-black' : 'text-white']"
+                />
+              </span>
             </div>
             <ul
-              v-if="openSubMenu === 'urgent'"
+              v-if="openSubMenu === 'Rendez-vous'"
               class="ml-8 mt-2 space-y-2 text-sm"
             >
               <li
                 class="cursor-pointer px-2 py-1 rounded"
-                :class="activeSubMenu === 'gerer-urgences' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
-                @click.stop="setActiveSubMenu('urgent', 'gerer-urgences')"
-                style="text-decoration: none;"
-              ><span v-if="sidebarOpen">Gérer les urgences</span> </li>
+                :class="activeSubMenu === 'gerer-Rendez-vous' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
+                @click.stop="setActiveSubMenu('Rendez-vous', 'gerer-Rendez-vous')"
+              >
+                <span v-if="sidebarOpen">Gérer les Rendez-vous</span>
+              </li>
             </ul>
           </li>
 
@@ -131,10 +135,11 @@
                 <CreditCard class="w-5 h-5" :class="activeMenu === 'paiement' ? 'text-black' : 'text-white'" />
                 <span v-if="sidebarOpen">Paiement</span>
               </div>
-              <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-90' : '', activeMenu === 'paiement' ? 'text-black' : 'text-white']"
-              /></span>
-
+              <span v-if="sidebarOpen">
+                <ChevronRight
+                  :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-90' : '', activeMenu === 'paiement' ? 'text-black' : 'text-white']"
+                />
+              </span>
             </div>
             <ul
               v-if="openSubMenu === 'paiement'"
@@ -144,35 +149,34 @@
                 class="cursor-pointer px-2 py-1 rounded"
                 :class="activeSubMenu === 'historique' ? 'bg-blue-200 text-black font-bold' : 'text-white'"
                 @click.stop="setActiveSubMenu('paiement', 'historique')"
-                style="text-decoration: none;"
-              ><span v-if="sidebarOpen">Historique</span>
-            </li>
+              >
+                <span v-if="sidebarOpen">Historique</span>
+              </li>
             </ul>
           </li>
-
         </ul>
-
       </div>
 
       <div class="text-sm">
-        <span v-if="sidebarOpen"><p class="font-semibold">{{ user?.name || '' }}</p>
-        <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
-</span>
+        <span v-if="sidebarOpen">
+          <p class="font-semibold">{{ user?.name || '' }}</p>
+          <p class="text-gray-200">{{ user?.email || 'email@example.com' }}</p>
+        </span>
 
-
-        <div class="text-sm"> <span v-if="sidebarOpen"> <p class="font-semibold">        Administrateur</p>
-     </span>
-
+        <div class="text-sm">
+          <span v-if="sidebarOpen">
+            <p class="font-semibold">Administrateur</p>
+          </span>
+        </div>
       </div>
-    </div>
     </aside>
 
     <!-- Main -->
     <main class="flex-1 p-6 overflow-auto">
-      <GererDocteur v-if="activeSubMenu === 'liste-docteurs'"  :user="user" :users="users"/>
+      <GererDocteur v-if="activeSubMenu === 'liste-docteurs'" :user="user" :users="users"/>
       <ListeDemande v-else-if="activeSubMenu === 'Liste-demande'" :user="user" :users="users" />
       <GererPatients v-else-if="activeSubMenu === 'gerer-patients'" />
-      <GererUrgences v-else-if="activeSubMenu === 'gerer-urgences'" />
+      <GererRendezVous v-else-if="activeSubMenu === 'gerer-Rendez-vous'" />
       <HistoriquePaiement v-else-if="activeSubMenu === 'historique'" />
       <div v-else>
         <!-- Topbar -->
@@ -182,8 +186,8 @@
             <MessageCircle class="w-6 h-6 text-gray-600 cursor-pointer" @click="showMessagesModal = true" />
             <Bell class="w-6 h-6 text-gray-600 cursor-pointer" @click="showNotificationsModal = true" />
             <button @click="logout" class="focus:outline-none">
-            <User class="w-6 h-6 text-gray-600" />
-             </button>
+              <LogOut class="w-6 h-6 text-gray-600" />
+            </button>
           </div>
         </div>
 
@@ -200,7 +204,6 @@
           </div>
         </div>
 
-
         <!-- Chart Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <!-- Chart Patients -->
@@ -212,9 +215,8 @@
               <div class="flex items-center gap-2">
                 <User class="w-6 h-6 text-blue-600" />
                 <div>
-                  <p class="font-semibold">{{ props.stats.totalPatients }}</p>
-                    <p class="text-sm text-gray-500">{{ props.stats.percentActive }}% actif</p>
-
+                  <p class="font-semibold">{{ statsData.totalPatients }}</p>
+                  <p class="text-sm text-gray-500">{{ statsData.percentActive }}% actif</p>
                 </div>
               </div>
               <select class="border rounded px-2 py-1 text-sm">
@@ -233,6 +235,7 @@
               </span>
             </div>
           </div>
+          
           <!-- Chart Médecins -->
           <div class="bg-white p-6 rounded-lg shadow border border-green-100">
             <h3 class="text-lg font-bold mb-4 text-green-700 flex items-center gap-2">
@@ -242,9 +245,8 @@
               <div class="flex items-center gap-2">
                 <Stethoscope class="w-6 h-6 text-green-500" />
                 <div>
-                  <p class="font-semibold">{{ props.users.length }}</p>
-                  <p class="text-sm text-gray-500">{{ Math.round((activeDoctors / props.users.length) * 100) || 0 }}% actif</p>
-
+                  <p class="font-semibold">{{ statsData.totalDoctors }}</p>
+                  <p class="text-sm text-gray-500">{{ statsData.doctorActivePercent }}% actif</p>
                 </div>
               </div>
               <select class="border rounded px-2 py-1 text-sm">
@@ -265,28 +267,10 @@
           </div>
         </div>
 
-        <!-- Top Doctors -->
-        <h2 class="text-lg font-semibold mb-4">Top Docteurs</h2>
-<div class="grid grid-cols-4 gap-4">
-  <div
-    v-for="doctor in topDoctors"
-    :key="doctor.id"
-    class="bg-white p-2 rounded-lg shadow text-center"
-  >
-    <img
-      :src="doctor.profileImage || '/default-doctor.jpg'"
-      class="h-28 w-full object-cover rounded mb-2"
-      alt="Photo du docteur"
-    />
-    <p class="font-medium">
-      Dr {{ doctor.firstName }} {{ doctor.lastName }}
-    </p>
-    <p class="text-sm text-gray-500">
-      {{ doctor.specialty || 'Spécialité inconnue' }}
-    </p>
-  </div>
-</div>
-
+        <!-- Section vide pour permettre un éventuel contenu futur -->
+        <div class="mt-8 text-center text-gray-500">
+          <p>Dashboard principal - Sélectionnez une section dans le menu de gauche pour gérer le contenu</p>
+        </div>
       </div>
     </main>
 
@@ -334,25 +318,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed, ref } from 'vue'
-// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
-import GererDocteur from './geredocteur.vue'
-// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
-import ListeDemande from './ListeDemande.vue'
-// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
-import GererPatients from './GererPatients.vue'
-// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
-import GererUrgences from './GererUrgences.vue'
-// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
-import HistoriquePaiement from './HistoriquePaiement.vue'
-
-const sidebarOpen = ref(true)
-
-function toggleSidebar() {
-  sidebarOpen.value = !sidebarOpen.value
-}
-
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -374,66 +341,159 @@ import {
   DollarSign,
   Bell,
   MessageCircle,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from 'lucide-vue-next'
 
-
-
-// Props typés
-const props = defineProps<{
-  stats: {
-    totalPatients: number
-    activePatients: number
-    inactivePatients: number
-    percentActive: number
-    montantTotalPlateforme: number // ✅ AJOUT
-
-  },
-  user: any,
-  users: any[]
-}>()
-
-
-
-const totalPatients = computed(() => {
-  console.log('All users:', props.users)
-  return props.users.filter(user => (user.role?.label || '').toLowerCase() === 'patient').length
-})
-
-
-const topDoctors = computed(() => {
-  return props.users
-    .filter(user => ['doctor', 'medecin'].includes((user.role || '').toLowerCase()))
-    .slice(0, 4) // Les 4 premiers
-})
-console.log('Top Doctors:', topDoctors.value)
-
-
-// Stat cards dynamiques
-const stats = [
-  { label: 'Total Patients', value: totalPatients, icon: Users },
-  { label: 'Total Docteurs', value: props.users.length, icon: Stethoscope },
-  { label: 'Urgent', value: '0', icon: Calendar },
-  { label: 'Revenus', value: `XAF ${props.stats.montantTotalPlateforme.toLocaleString()}`, icon: DollarSign }
-  ]
-
-// Docteurs actifs/inactifs estimés
-const activeDoctors = computed(() => Math.round(props.users.length * 0.8))
-const inactiveDoctors = computed(() => props.users.length - activeDoctors.value)
-
-// Chart.js registration
+// Enregistrer les composants Chart.js
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
 
-// Fonction pour générer les labels des mois jusqu'au mois actuel
-function getMonthLabelsUntilNow(): string[] {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+// Composants de page
+import GererDocteur from './geredocteur.vue'
+import ListeDemande from './ListeDemande.vue'
+import GererPatients from './GererPatients.vue'
+import GererRendezVous from './GererRendezVous.vue'
+import HistoriquePaiement from './HistoriquePaiement.vue'
+
+// États réactifs
+const sidebarOpen = ref(true)
+const openSubMenu = ref(null)
+const activeMenu = ref('dashboard')
+const activeSubMenu = ref('')
+const showMessagesModal = ref(false)
+const showNotificationsModal = ref(false)
+
+// Props avec valeurs par défaut
+const props = defineProps({
+  stats: {
+    type: Object,
+    default: () => ({
+      totalPatients: 0,
+      activePatients: 0,
+      inactivePatients: 0,
+      percentActive: 0,
+      montantTotalPlateforme: 0
+    })
+  },
+  user: {
+    type: Object,
+    default: () => ({})
+  },
+  users: {
+    type: Array,
+    default: () => []
+  }
+})
+
+// État pour les données de l'API
+const apiStats = ref({
+  appointments: [],
+  doctors: [],
+  patients: []
+})
+
+// Fonction pour charger les données
+async function fetchStatsData() {
+  try {
+    const [appointmentsRes, patientsRes, doctorsRes] = await Promise.all([
+      fetch('/appointments').catch(() => ({ ok: false })),
+      fetch('/patient').catch(() => ({ ok: false })),
+      fetch('/doctors').catch(() => ({ ok: false }))
+    ])
+
+    if (!appointmentsRes.ok) {
+      apiStats.value.appointments = []
+    } else {
+      const appointmentsData = await appointmentsRes.json()
+      apiStats.value.appointments = Array.isArray(appointmentsData) ? appointmentsData : appointmentsData.appointments || []
+    }
+
+    if (!patientsRes.ok) {
+      apiStats.value.patients = []
+    } else {
+      const patientsData = await patientsRes.json()
+      apiStats.value.patients = Array.isArray(patientsData) ? patientsData : patientsData.patients || []
+    }
+
+    if (!doctorsRes.ok) {
+      apiStats.value.doctors = []
+    } else {
+      const doctorsData = await doctorsRes.json()
+      apiStats.value.doctors = Array.isArray(doctorsData) ? doctorsData : doctorsData.doctors || []
+    }
+
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques:', error)
+    apiStats.value = {
+      appointments: [],
+      patients: [],
+      doctors: []
+    }
+  }
+}
+
+// Charger les données au montage du composant
+onMounted(() => {
+  fetchStatsData()
+})
+
+// Données statistiques calculées
+const statsData = computed(() => {
+  const patients = apiStats.value.patients || []
+  const doctors = apiStats.value.doctors || []
+  
+  const activePatients = patients.filter(p => p.accountStatus === 'ACTIVE').length
+  const activeDoctors = doctors.filter(d => d.accountStatus === 'ACTIVE').length
+  
+  return {
+    totalPatients: patients.length,
+    activePatients,
+    inactivePatients: patients.length - activePatients,
+    percentActive: patients.length > 0 ? Math.round((activePatients / patients.length) * 100) : 0,
+    totalDoctors: doctors.length,
+    activeDoctors,
+    inactiveDoctors: doctors.length - activeDoctors,
+    doctorActivePercent: doctors.length > 0 ? Math.round((activeDoctors / doctors.length) * 100) : 0
+  }
+})
+
+// Cartes de statistiques
+const stats = computed(() => [
+  { 
+    label: 'Total Patients', 
+    value: statsData.value.totalPatients, 
+    icon: Users 
+  },
+  { 
+    label: 'Total Docteurs', 
+    value: statsData.value.totalDoctors, 
+    icon: Stethoscope 
+  },
+  { 
+    label: 'Rendez-vous', 
+    value: apiStats.value.appointments.length, 
+    icon: Calendar 
+  },
+  { 
+    label: 'Revenus', 
+    value: `XAF ${props.stats.montantTotalPlateforme.toLocaleString()}`, 
+    icon: DollarSign 
+  }
+])
+
+// Fonction pour générer les labels des mois
+function getMonthLabelsUntilNow() {
+  const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
   const currentMonth = new Date().getMonth()
   return months.slice(0, currentMonth + 1)
 }
 
-// Patients chart (dynamique)
+// Données du graphique Patients
 const chartData = computed(() => {
   const months = getMonthLabelsUntilNow()
+  const activePatients = statsData.value.activePatients
+  const inactivePatients = statsData.value.inactivePatients
+  
   return {
     labels: months,
     datasets: [
@@ -441,7 +501,7 @@ const chartData = computed(() => {
         label: 'Compte actif',
         backgroundColor: '#2563eb',
         borderColor: '#2563eb',
-        data: Array(months.length - 1).fill(0).concat(props.stats.activePatients),
+        data: Array(months.length - 1).fill(0).concat(activePatients),
         fill: true,
         tension: 0.4
       },
@@ -449,7 +509,7 @@ const chartData = computed(() => {
         label: 'Compte inactif',
         backgroundColor: '#93c5fd',
         borderColor: '#93c5fd',
-        data: Array(months.length - 1).fill(0).concat(props.stats.inactivePatients),
+        data: Array(months.length - 1).fill(0).concat(inactivePatients),
         fill: true,
         tension: 0.4
       }
@@ -457,9 +517,12 @@ const chartData = computed(() => {
   }
 })
 
-// Docteurs chart (dynamique)
+// Données du graphique Médecins
 const chartDataMedecins = computed(() => {
   const months = getMonthLabelsUntilNow()
+  const activeDoctors = statsData.value.activeDoctors
+  const inactiveDoctors = statsData.value.inactiveDoctors
+  
   return {
     labels: months,
     datasets: [
@@ -467,7 +530,7 @@ const chartDataMedecins = computed(() => {
         label: 'Compte actif',
         backgroundColor: '#16a34a',
         borderColor: '#16a34a',
-        data: Array(months.length - 1).fill(0).concat(activeDoctors.value),
+        data: Array(months.length - 1).fill(0).concat(activeDoctors),
         fill: true,
         tension: 0.4
       },
@@ -475,7 +538,7 @@ const chartDataMedecins = computed(() => {
         label: 'Compte inactif',
         backgroundColor: '#86efac',
         borderColor: '#86efac',
-        data: Array(months.length - 1).fill(0).concat(inactiveDoctors.value),
+        data: Array(months.length - 1).fill(0).concat(inactiveDoctors),
         fill: true,
         tension: 0.4
       }
@@ -483,7 +546,7 @@ const chartDataMedecins = computed(() => {
   }
 })
 
-// Chart options (communs)
+// Options des graphiques
 const chartOptions = {
   responsive: true,
   plugins: {
@@ -495,38 +558,43 @@ const chartOptions = {
   }
 }
 
-// État UI sidebar
-const openSubMenu = ref<string | null>(null)
-const activeMenu = ref('dashboard')
-const activeSubMenu = ref('')
+// Méthodes de navigation
+function toggleSidebar() {
+  sidebarOpen.value = !sidebarOpen.value
+}
 
-function toggleSubMenu(menu: string) {
+function toggleSubMenu(menu) {
   openSubMenu.value = openSubMenu.value === menu ? null : menu
 }
 
-function setActiveMenu(menu: string) {
+function setActiveMenu(menu) {
   activeMenu.value = menu
-
-  // Si on clique sur Dashboard, on vide le sous-menu
   if (menu === 'dashboard') {
     activeSubMenu.value = ''
   }
 }
 
-
-function setActiveSubMenu(parent: string, submenu: string) {
+function setActiveSubMenu(parent, submenu) {
   activeMenu.value = parent
   activeSubMenu.value = submenu
 }
 
 function logout() {
-  // Basic logout handler — replace with your auth/logout logic (e.g. Inertia.post('/logout')) as needed
-  // Using a redirect to the logout route so the template's @click="logout" has a valid function.
   window.location.href = '/logout'
 }
-
-const showMessagesModal = ref(false)
-const showNotificationsModal = ref(false)
 </script>
 
-<style scoped></style>
+<style scoped>
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+</style>
