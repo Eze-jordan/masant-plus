@@ -46,10 +46,20 @@ export default class DemandeDocteurController {
   
 
   // Lister toutes les demandes (admin)
- public async index({ response }: HttpContextContract) {
-  const demandes = await DemandeDocteur.query().where('status', 'pending')
-  return response.ok(demandes)
-}
+  // Accepte un paramètre de query `status` (ex: ?status=pending, ?status=approved, ?status=rejected, ?status=all)
+  // Si `status` n'est pas fourni, renvoie toutes les demandes.
+  public async index({ request, response }: HttpContextContract) {
+    const { status } = request.qs() as { status?: string }
+
+    let demandes
+    if (status && status !== 'all') {
+      demandes = await DemandeDocteur.query().where('status', status)
+    } else {
+      demandes = await DemandeDocteur.all()
+    }
+
+    return response.ok(demandes)
+  }
 
 
   // Voir le détail d'une demande

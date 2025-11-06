@@ -7,7 +7,7 @@
       <div>
 
         <div class="flex justify-between items-center mb-10">
-  <img src="/public/logo.png" alt="Logo Mindiva" class="h-30 w-50 object-contain" v-if="sidebarOpen" />
+  <img src="/public/logo.png" alt="Logo Mindiva" class="h- w-40 object-contain" v-if="sidebarOpen" />
   <button @click="toggleSidebar" class="text-white">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
          viewBox="0 0 24 24" stroke="currentColor">
@@ -40,7 +40,7 @@
                 <span v-if="sidebarOpen">Docteurs</span>
               </div>
               <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-45' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'docteurs' ? 'rotate-90' : '', activeMenu === 'docteurs' ? 'text-black' : 'text-white']"
               /></span>
 
             </div>
@@ -75,7 +75,7 @@
                 <span v-if="sidebarOpen">Patients</span>
               </div>
               <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-45' : '', activeMenu === 'patients' ? 'text-black' : 'text-white']"
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'patients' ? 'rotate-90' : '', activeMenu === 'patients' ? 'text-black' : 'text-white']"
               /></span>
 
             </div>
@@ -104,7 +104,7 @@
                 <span v-if="sidebarOpen">Urgent</span>
               </div>
               <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-45' : '', activeMenu === 'urgent' ? 'text-black' : 'text-white']"
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'urgent' ? 'rotate-90' : '', activeMenu === 'urgent' ? 'text-black' : 'text-white']"
               /></span>
 
             </div>
@@ -132,7 +132,7 @@
                 <span v-if="sidebarOpen">Paiement</span>
               </div>
               <span v-if="sidebarOpen"><ChevronRight
-                :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-45' : '', activeMenu === 'paiement' ? 'text-black' : 'text-white']"
+                :class="['w-4 h-4 transition-transform', openSubMenu === 'paiement' ? 'rotate-90' : '', activeMenu === 'paiement' ? 'text-black' : 'text-white']"
               /></span>
 
             </div>
@@ -336,10 +336,15 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
 import GererDocteur from './geredocteur.vue'
+// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
 import ListeDemande from './ListeDemande.vue'
+// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
 import GererPatients from './GererPatients.vue'
+// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
 import GererUrgences from './GererUrgences.vue'
+// @ts-ignore: missing declaration file for .vue import; consider adding a global shims-vue.d.ts for proper typing
 import HistoriquePaiement from './HistoriquePaiement.vue'
 
 const sidebarOpen = ref(true)
@@ -512,6 +517,12 @@ function setActiveMenu(menu: string) {
 function setActiveSubMenu(parent: string, submenu: string) {
   activeMenu.value = parent
   activeSubMenu.value = submenu
+}
+
+function logout() {
+  // Basic logout handler — replace with your auth/logout logic (e.g. Inertia.post('/logout')) as needed
+  // Using a redirect to the logout route so the template's @click="logout" has a valid function.
+  window.location.href = '/logout'
 }
 
 const showMessagesModal = ref(false)

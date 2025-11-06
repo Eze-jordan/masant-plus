@@ -37,7 +37,8 @@
             <th class="py-2 px-2">Email</th>
             <th class="py-2 px-2">Spécialité</th>
             <th class="py-2 px-2">Matricule</th>
-            <th class="py-2 px-2"></th>
+            <th class="py-2 px-2">Statut</th>
+            <th class="py-2 px-2">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -55,9 +56,19 @@
             <td class="py-2 px-2">{{ demande.email }}</td>
             <td class="py-2 px-2">{{ demande.specialite }}</td>
             <td class="py-2 px-2">{{ demande.matricule }}</td>
-            <td class="py-2 px-2 flex gap-2">
-              <button class="text-blue-600 text-xl font-bold" @click="voirDetails(demande)">+</button>
-              <button class="text-red-600 text-xl font-bold" @click="refuserDemande(demande)">−</button>
+            <td class="py-2 px-2">
+              <span class="px-2 py-1 rounded-full text-sm" :class="statusClass(demande.status)">{{ demande.status || 'pending' }}</span>
+            </td>
+            <td class="py-2 px-2 relative">
+              <div class="flex items-center">
+                <button @click="toggleMenu(demande.id)" class="text-xl font-bold px-2">⋯</button>
+              </div>
+              <!-- Inline menu -->
+              <div v-if="openMenuId === demande.id" class="absolute right-0 mt-2 w-40 bg-white border rounded shadow-md z-50">
+                <button @click="accepterDemande(demande)" class="w-full text-left px-4 py-2 hover:bg-green-50">Approuver</button>
+                <button @click="refuserDemande(demande)" class="w-full text-left px-4 py-2 hover:bg-red-50">Refuser</button>
+                <button @click="voirDetails(demande)" class="w-full text-left px-4 py-2 hover:bg-gray-50">Voir détails</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -113,7 +124,7 @@ const filteredDemandes = computed(() => {
 })
 
 // API endpoint
-const API_URL = '/demandes-docteurs'
+const API_URL = '/ListeDemande'
 
 // Appel API pour récupérer les demandes
 async function fetchDemandes() {
@@ -121,18 +132,33 @@ async function fetchDemandes() {
     const response = await fetch(API_URL)
     if (!response.ok) throw new Error('Erreur de récupération des données')
     const data = await response.json()
+    const list = Array.isArray(data) ? data : (data.demandes || [])
 
     // Mapper les champs de l'API vers ceux attendus dans le template
-    demandes.value = data
-      .filter(d => d.status === 'pending') // seulement les demandes en attente
-      .map(d => ({
-        ...d,
-        nom: d.firstName,
-        prenom: d.lastName,
-        telephone: d.phone,
-        specialite: d.specialisation,
-        matricule: d.licenseNumber
-      }))
+    demandes.value = list.map(d => ({
+      ...d,
+      id: d.id,
+      nom: d.firstName || d.first_name || d.nom,
+      prenom: d.lastName || d.last_name || d.prenom,
+      telephone: d.phone || d.telephone,
+      specialite: d.specialisation || d.speciality || d.specialite,
+      matricule: d.licenseNumber || d.license_number,
+      status: d.status || 'pending',
+      type: d.type || null,
+      profileImage: d.profileImage || d.profile_image || null,
+      accountStatus: d.accountStatus || d.account_status || null,
+      expoPushToken: d.expoPushToken || d.expo_push_token || null,
+      address: d.address || null,
+      roleId: d.roleId || d.role_id || null,
+      createdAt: d.createdAt || d.created_at || null,
+      updatedAt: d.updatedAt || d.updated_at || null,
+      dateNaissance: d.dateNaissance || d.date_naissance || null,
+      about: d.about || null,
+      groupeSanguin: d.groupeSanguin || d.groupe_sanguin || null,
+      anneeExperience: d.anneeExperience || d.annee_experience || null,
+      genre: d.genre || null,
+      weight: d.weight || null,
+    }))
   } catch (err) {
     console.error('Erreur API:', err)
   }
@@ -187,6 +213,20 @@ async function refuserDemande(demande) {
 function voirDetails(demande) {
   selectedDemande.value = demande
   showDetails.value = true
+}
+
+// menu state for inline actions
+const openMenuId = ref(null)
+function toggleMenu(id) {
+  openMenuId.value = openMenuId.value === id ? null : id
+}
+
+function statusClass(status) {
+  if (!status) return 'bg-yellow-100 text-yellow-800'
+  const s = String(status).toLowerCase()
+  if (s === 'approved') return 'bg-green-100 text-green-800'
+  if (s === 'rejected') return 'bg-red-100 text-red-800'
+  return 'bg-yellow-100 text-yellow-800'
 }
 </script>
 

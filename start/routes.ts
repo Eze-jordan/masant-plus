@@ -3733,35 +3733,28 @@ router.get('/doctor', async ({ inertia }) => {
   return inertia.render('/dashboard/docteurs')
 })
 
-
-
 // Route protégée pour afficher les docteurs en attente
-router.get('/ListeDemande', async ({ request, response, auth, inertia }) => {
-  const token = request.cookie('token')
+router.get('/ListeDemande', async (ctx) => {
+  // Cette route renvoie toutes les demandes par défaut.
+  // Option: ?status=pending|approved|rejected|all
+  const { request, response } = ctx
 
-  if (!token) {
-    return response.redirect('/login')
-  }
+  const token = request.cookie('token')
+  if (!token) return response.status(401).json({ message: 'Unauthorized' })
 
   try {
     const payload = verifyJwtToken(token) as { id: string; email: string }
     const currentUser = await User.find(payload.id)
+    if (!currentUser) return response.status(401).json({ message: 'Utilisateur non trouvé' })
 
-    if (!currentUser) {
-      return response.redirect('/login')
-    }
-
-    // Appeler la méthode index du controller
-    const controller = new UsersController()
-    return await controller.show({ request, response, auth, inertia })
-
+    // Déléguer à DemandeDocteurController.index qui gère le filtre status
+    const controller = new DemandeDocteurController()
+    return await controller.index(ctx)
   } catch (error: any) {
-    console.error('[Demandes] Erreur JWT :', error.message)
-    return response.redirect('/login')
+    console.error('[ListeDemande] Erreur :', error?.message ?? error)
+    return response.status(500).json({ message: 'Erreur serveur', error: String(error) })
   }
 })
-
-
 
 router.group(() => {
   // Route pour créer un live
@@ -3811,6 +3804,16 @@ router.get('/demandes-docteurs', async (ctx) => {
     await appKeyGuard.handle(ctx, async () => {
       const controller = new DemandeDocteurController()
       return await controller.index(ctx)
+    })
+  })
+}).middleware([throttle])
+
+// Récupérer une demande par son ID
+router.get('/demandes-docteurs/:id', async (ctx) => {
+  await onlyFrontend.handle(ctx, async () => {
+    await appKeyGuard.handle(ctx, async () => {
+      const controller = new DemandeDocteurController()
+      return await controller.show(ctx)
     })
   })
 }).middleware([throttle])

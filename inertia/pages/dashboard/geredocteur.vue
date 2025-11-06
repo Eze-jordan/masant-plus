@@ -18,12 +18,7 @@
           placeholder="Rechercher un Docteur par Matricule, nom, etc."
           class="px-4 py-2 border rounded-md"
         />
-        <button
-          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold"
-          @click="showForm = true"
-        >
-          + Ajouter un Docteur
-        </button>
+        
       </div>
     </div>
 
@@ -40,6 +35,7 @@
             <th class="py-2 px-2 border border-gray-200">Spécialité</th>
             <th class="py-2 px-2 border border-gray-200">Matricule</th>
             <th class="py-2 px-2 border border-gray-200">Statut</th>
+            <th class="py-2 px-2 border border-gray-200">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -48,15 +44,67 @@
             <td class="py-2 px-2 border border-gray-200">{{ docteur.firstName || 'N/A' }}</td>
             <td class="py-2 px-2 border border-gray-200">{{ docteur.email || 'N/A' }}</td>
             <td class="py-2 px-2 border border-gray-200">{{ docteur.phone || 'N/A' }}</td>
-            <td class="py-2 px-2 border border-gray-200">{{ docteur.specialty || 'N/A' }}</td>
-            <td class="py-2 px-2 border border-gray-200">{{ docteur.registrationNumber || 'N/A' }}</td>
+            <td class="py-2 px-2 border border-gray-200">{{ docteur.specialisation || 'N/A' }}</td>
+            <td class="py-2 px-2 border border-gray-200">{{ docteur.licenseNumber || 'N/A' }}</td>
             <td class="py-2 px-2 border border-gray-200">{{ docteur.accountStatus || 'Pending' }}</td>
+            <td class="py-2 px-2 border border-gray-200">
+              <!-- Trois points ouvrant la sidebar -->
+              <button
+                class="px-2 py-1 rounded hover:bg-gray-100"
+                aria-label="Plus d'actions"
+                @click="openSidebar(docteur)"
+              >
+                <!-- simple ellipsis -->
+                <span class="text-xl">⋯</span>
+              </button>
+            </td>
           </tr>
           <tr v-if="filteredDocteurs.length === 0">
-            <td colspan="7" class="py-4 text-center text-gray-500">Aucun docteur trouvé.</td>
+            <td colspan="8" class="py-4 text-center text-gray-500">Aucun docteur trouvé.</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Sidebar: détails du docteur -->
+    <div v-if="showSidebar" class="fixed inset-0 z-40">
+      <!-- overlay -->
+      <div class="absolute inset-0 bg-black opacity-40" @click="closeSidebar"></div>
+
+      <!-- panel -->
+      <aside class="absolute right-0 top-0 h-full w-96 bg-white shadow-lg p-6 overflow-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="text-lg font-bold">Détails du docteur</h4>
+          <button class="text-gray-500 hover:text-gray-800" @click="closeSidebar">✕</button>
+        </div>
+
+        <div v-if="selectedDoctor">
+          <!-- Profile image -->
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-16 h-16 bg-gray-100 rounded-full overflow-hidden flex items-center justify-center">
+              <img v-if="selectedDoctor.profileImage" :src="selectedDoctor.profileImage" alt="profile" class="w-full h-full object-cover" />
+              <span v-else class="text-gray-500">No Image</span>
+            </div>
+            <div>
+              <h5 class="font-bold text-lg">{{ selectedDoctor.name || `${selectedDoctor.firstName || ''} ${selectedDoctor.lastName || ''}`.trim() || 'N/A' }}</h5>
+              <div class="text-sm text-gray-500">{{ selectedDoctor.type || selectedDoctor.role || 'N/A' }}</div>
+            </div>
+          </div>
+
+          <p class="mb-2"><strong>Email :</strong> {{ selectedDoctor.email || 'N/A' }}</p>
+          <p class="mb-2"><strong>Adresse :</strong> {{ selectedDoctor.address || 'N/A' }}</p>
+          <p class="mb-2"><strong>Téléphone :</strong> {{ selectedDoctor.phone || 'N/A' }}</p>
+          <p class="mb-2"><strong>Spécialité :</strong> {{ selectedDoctor.specialisation || selectedDoctor.specialty || 'N/A' }}</p>
+          <p class="mb-2"><strong>Année d'expérience :</strong> {{ selectedDoctor.annee_experience ?? 'N/A' }}</p>
+          <p class="mb-2"><strong>À propos :</strong> {{ selectedDoctor.about || 'N/A' }}</p>
+          <p class="mb-2"><strong>Statut :</strong> {{ selectedDoctor.accountStatus || 'Pending' }}</p>
+
+          <div class="mt-4">
+          </div>
+        </div>
+
+        <div v-else class="text-gray-500">Aucun docteur sélectionné.</div>
+      </aside>
     </div>
   </div>
 </template>
@@ -73,6 +121,20 @@ const search = ref('')
 // Compteur total docteurs
 const totalDocteurs = computed(() => docteurs.value.length)
 
+// Sidebar / sélection
+const showSidebar = ref(false)
+const selectedDoctor = ref(null)
+
+function openSidebar(doctor) {
+  selectedDoctor.value = doctor
+  showSidebar.value = true
+}
+
+function closeSidebar() {
+  showSidebar.value = false
+  selectedDoctor.value = null
+}
+
 // Chargement des docteurs via l’API /alldoctors au montage
 onMounted(async () => {
   try {
@@ -80,15 +142,30 @@ onMounted(async () => {
     if (!response.ok) throw new Error('Erreur lors de la récupération des docteurs')
 
     // Récupérer les données et ajouter champs manquants par défaut
-    const data = await response.json()
-    console.log(data)
-    docteurs.value = data.map(d => ({
-      phone: '',
-      specialty: '',
-      registrationNumber: '',
-      accountStatus: 'Pending',
-      ...d,
-    }))
+      const data = await response.json()
+      console.log(data)
+
+      // Filtre pour ne garder que les comptes de type docteur.
+      // On utilise un prédicat flexible au cas où l'API utilise `type`, `role`,
+      // `accountType` ou un booléen `isDoctor`.
+      const isDoctor = (d) => (
+        d && (
+          d.type === 'doctor' ||
+          d.role === 'doctor' ||
+          d.accountType === 'doctor' ||
+          d.isDoctor === true
+        )
+      )
+
+      docteurs.value = data
+        .filter(isDoctor)
+        .map(d => ({
+          phone: '',
+          specialisation: '',
+          licenseNumber: '',
+          accountStatus: 'Pending',
+          ...d,
+        }))
   } catch (error) {
     console.error(error)
   }
@@ -101,12 +178,15 @@ const filteredDocteurs = computed(() => {
     d.firstName?.toLowerCase().includes(q) ||
     d.lastName?.toLowerCase().includes(q) ||
     d.email?.toLowerCase().includes(q) ||
-    d.registrationNumber?.toLowerCase().includes(q) ||
+    d.licenseNumber?.toLowerCase().includes(q) ||
     d.phone?.toLowerCase().includes(q) ||
-    d.specialty?.toLowerCase().includes(q)
+    d.specialisation?.toLowerCase().includes(q)
   )
 })
 </script>
+
+<!-- Sidebar template placé ici en dehors du script -->
+ 
 
 <style>
 /* optionnel : style simple pour le tableau */

@@ -23,7 +23,7 @@ const addForm = ref({
   lastName: '',
   phone: '',
   email: '',
-  adresse: '',
+  address: '',
   accountStatus: 'active'
 })
 
@@ -38,7 +38,7 @@ const filteredPatients = computed(() => {
     p.firstName?.toLowerCase().includes(search.value.toLowerCase()) ||
     p.phone?.toLowerCase().includes(search.value.toLowerCase()) ||
     p.email?.toLowerCase().includes(search.value.toLowerCase()) ||
-    p.adresse?.toLowerCase().includes(search.value.toLowerCase())
+    p.address?.toLowerCase().includes(search.value.toLowerCase())
   )
 })
 
@@ -94,7 +94,7 @@ function ajouterPatient() {
     lastName: '',
     phone: '',
     email: '',
-    adresse: '',
+    address: '',
     accountStatus: 'active'
   }
 }
@@ -137,7 +137,7 @@ function ajouterPatient() {
             <th class="py-2 px-2">Prénom</th>
             <th class="py-2 px-2">Téléphone</th>
             <th class="py-2 px-2">Email</th>
-            <th class="py-2 px-2">Adresse</th>
+            <th class="py-2 px-2">Adress</th>
             <th class="py-2 px-2">Statut</th>
             <th class="py-2 px-2"></th>
           </tr>
@@ -153,7 +153,7 @@ function ajouterPatient() {
             <td class="py-2 px-2">{{ patient.firstName }}</td>
             <td class="py-2 px-2">{{ patient.phone }}</td>
             <td class="py-2 px-2">{{ patient.email }}</td>
-            <td class="py-2 px-2">{{ patient.adresse }}</td>
+            <td class="py-2 px-2">{{ patient.address }}</td>
             <td class="py-2 px-2">
               <span
                 :class="[ 'px-3 py-1 rounded-full text-xs font-semibold',

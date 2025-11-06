@@ -149,7 +149,7 @@ const handleLogin = async () => {
   const data = { email: email.value, password: password.value, remember_me: rememberMe.value }
 
   try {
-    const response = await fetch('/login', {  // Assure-toi que c'est bien '/login'
+    const response = await fetch('/logins', {  // Assure-toi que c'est bien '/login'
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
