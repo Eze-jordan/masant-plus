@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm install --production=false
 
 COPY . .
-RUN node ace build --production
+RUN node ace build
 
 # Étape 2 : Image finale
 FROM node:20-alpine
@@ -21,4 +21,9 @@ RUN npm install --production
 
 EXPOSE 3333
 
-CMD ["node", "server.js"]
+CMD ["node", "build/bin/server.js"]
+
+
+
+
+
