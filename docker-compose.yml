@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: 123456789
       POSTGRES_DB: masanteplus
     ports:
-      - "5432:5432"   # 🔥 accès à la base depuis l’extérieur (ex: pgAdmin)
+      - "5437:5432"   # 🔥 accès à la base depuis l’extérieur (ex: pgAdmin)
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
