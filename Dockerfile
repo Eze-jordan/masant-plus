@@ -20,4 +20,4 @@ RUN npm run build
 EXPOSE 3333
 
 # Commande pour démarrer l’application
-CMD ["node", "build/server.js"]
+CMD ["node", "build/bin/server.js"]
