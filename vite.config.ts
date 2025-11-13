@@ -9,18 +9,34 @@ import autoprefixer from 'autoprefixer'
 import tailwindcss from '@tailwindcss/postcss'
 
 export default defineConfig({
-  plugins: [inertia({ ssr: { enabled: false } }), vue(), adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] }), inertia({ ssr: { enabled: false } })],
+  plugins: [
+    inertia({ ssr: { enabled: false } }),
+    vue(),
+    adonisjs({ entrypoints: ['inertia/app/app.ts'], reload: ['resources/views/**/*.edge'] }),
+  ],
+
   css: {
     postcss: {
       plugins: [
-        tailwindcss,  // Use the correct Tailwind PostCSS plugin
+        tailwindcss,
         autoprefixer,
       ],
     },
   },
+
   resolve: {
     alias: {
       '~/': `${getDirname(import.meta.url)}/inertia/`,
     },
+  },
+
+  // 🟢 AJOUT OBLIGATOIRE POUR CORRIGER TON ERREUR
+  server: {
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'api-masanteplus.solutech-one.com', // ton domaine autorisé
+    ],
+    host: true, // utile si tu serres derrière un proxy
   },
 })
