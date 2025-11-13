@@ -18,9 +18,7 @@
           placeholder="Rechercher un Docteur par Matricule, nom, etc."
           class="px-4 py-2 border rounded-md"
         />
-        <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold">
-          + Ajouter un Docteur
-        </button>
+       
       </div>
     </div>
 

@@ -1,25 +1,26 @@
 import swaggerJSDoc from 'swagger-jsdoc'
 
-const swaggerDefinition = {
-  openapi: '3.0.0',
-  info: {
-    title: 'API AdonisJS',
-    version: '1.0.0',
-    description: 'Documentation de l’API',
-  },
-  servers: [
-    {
-      url: 'https://backend.sammomed.online',
-      description: 'Serveur local',
+export const swaggerSpec = swaggerJSDoc({
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'API MasantePlus',
+      version: '1.0.0',
+      description: 'Documentation Swagger de MasantePlus',
     },
+    servers: [
+      {
+        url: 'https://api-masanteplus.solutech-one.com',
+      },
+    ],
+  },
+
+  // Indiquer où Swagger doit trouver les commentaires @swagger
+  apis: [
+    './app/Controllers/**/*.ts',
+    './start/swagger/docs.ts',
   ],
-}
+})
 
-const options = {
-  swaggerDefinition,
-  apis: ['app/Controllers/Http/**/*.ts', 'start/routes.ts'], // utilise .ts au lieu de .js si tu es en TypeScript
-}
-
-const swaggerSpec = swaggerJSDoc(options)
 
 export default swaggerSpec
