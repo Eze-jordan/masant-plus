@@ -2,13 +2,15 @@ import nodemailer from 'nodemailer';
 
 export default class WelcomeMailService {
   private static transporter = nodemailer.createTransport({
-    service: 'gmail', // ✔ plus fiable que host/port
+    host: process.env.SMTP_HOST || 'solutech-one.com',
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: process.env.SMTP_SECURE === 'true', // ✔ SSL obligatoire avec port 465
     auth: {
-      user: 'elieboulingui2@gmail.com',
-      pass: 'ozdf cset gqcr ofsd', // ✔ mot de passe d'application Google
+      user: process.env.SMTP_EMAIL,     // noreply@solutech-one.com
+      pass: process.env.SMTP_PASSWORD,  // mot de passe réel du compte
     },
     tls: {
-      rejectUnauthorized: false, // ✔ évite les erreurs SSL sur serveurs non certifiés
+      rejectUnauthorized: false, // ✔ utile si ton serveur SMTP n'a pas un certificat valide
     },
   });
 
@@ -39,7 +41,7 @@ export default class WelcomeMailService {
 
     try {
       const info = await this.transporter.sendMail({
-        from: '"Support MASANTE+" <elieboulingui2@gmail.com>',
+        from: `"Support MASANTE+" <${process.env.SMTP_EMAIL}>`,
         to: email,
         subject: 'Bienvenue sur notre plateforme',
         html,

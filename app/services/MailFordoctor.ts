@@ -1,19 +1,16 @@
-// app/Services/ApprovalMailService.ts
 import nodemailer from 'nodemailer'
-
-const GMAIL_USER = process.env.MAIL_USER || 'elieboulingui2@gmail.com'
-const GMAIL_APP_PASSWORD = process.env.MAIL_PASS || 'ozdf cset gqcr ofsd' // remplace par process.env en prod
 
 export default class ApprovalMailService {
   private static transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.SMTP_HOST || 'solutech-one.com',
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: process.env.SMTP_SECURE === 'true', // SSL obligatoire pour port 465
     auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD,
+      user: process.env.SMTP_EMAIL,
+      pass: process.env.SMTP_PASSWORD,
     },
     tls: {
-      // utile si le serveur d'exécution a un certificat auto-signé
-      rejectUnauthorized: false,
+      rejectUnauthorized: false, // utile si certificat non standard
     },
   })
 
@@ -30,7 +27,7 @@ export default class ApprovalMailService {
 
     try {
       const info = await this.transporter.sendMail({
-        from: `"Support MASANTE+" <${GMAIL_USER}>`,
+        from: `"Support MASANTE+" <${process.env.SMTP_EMAIL}>`,
         to: email,
         subject: 'Votre demande est en cours de validation',
         html,
@@ -40,7 +37,6 @@ export default class ApprovalMailService {
       return info
     } catch (err) {
       console.error('❌ Failed to send approval email:', err)
-      // rejeter l'erreur pour la remonter (controller/service appelant)
       throw err
     }
   }
