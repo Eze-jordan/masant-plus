@@ -1,43 +1,23 @@
-# Étape 1 : Build
-FROM node:20-alpine AS builder
-WORKDIR /app
+# Utiliser une image Node légère
+FROM node:20-alpine
 
-# S'assurer que les devDependencies sont installées
-ENV NODE_ENV=development
+# Définir le répertoire de travail
+WORKDIR /app
 
 # Copier les fichiers de dépendances
 COPY package*.json ./
 
-# Installer toutes les dépendances (y compris dev)
+# Installer les dépendances
 RUN npm install
 
-# Copier le code source
+# Copier tout le code du projet
 COPY . .
 
-# Construire le projet avec l'assembler
-RUN npx node ace build
+# Compiler le projet TypeScript
+RUN npm run build
 
-# Étape 2 : Runtime (léger)
-FROM node:20-alpine AS runner
-WORKDIR /app
-
-# Passer en mode production
-ENV NODE_ENV=production
-
-# Copier uniquement les fichiers nécessaires
-COPY package*.json ./
-
-# Installer uniquement les dépendances de production
-RUN npm install --omit=dev
-
-# Copier la build compilée depuis le builder
-COPY --from=builder /app/build ./build
-
-# Copier aussi le fichier .env si nécessaire
-COPY .env .env
-
-# Exposer le port du serveur
+# Exposer le port utilisé par Adonis
 EXPOSE 3333
 
-# Démarrer le serveur
+# Commande pour démarrer l’application
 CMD ["node", "build/server.js"]

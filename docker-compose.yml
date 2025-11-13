@@ -1,36 +1,35 @@
-version: "3.8"
+version: '3.8'
+
 services:
-  masanteplus_db:
+  api:
+    build: .
+    container_name: masanteplus_api
+    restart: always
+    ports:
+      - "3333:3333"
+    env_file: .env
+    depends_on:
+      - db
+    networks:
+      - masanteplus_network
+
+  db:
     image: postgres:16
     container_name: masanteplus_db
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456789
       POSTGRES_DB: masanteplus
     ports:
-      - "5437:5432"
+      - "5432:5432"   # 🔥 accès à la base depuis l’extérieur (ex: pgAdmin)
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - masanteplus_network
 
-  adonis_api:
-    build: .
-    container_name: adonis_api
-    ports:
-      - "3333:3333"
-    env_file:
-      - .env       # <-- on lie le fichier externe
-    depends_on:
-      - masanteplus_db
-    networks:
-      - masanteplus_network
+volumes:
+  postgres_data:
 
 networks:
   masanteplus_network:
-    driver: bridge
-
-volumes:
-  pgdata:
-
-
