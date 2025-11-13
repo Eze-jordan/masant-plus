@@ -1,12 +1,11 @@
-// app/Services/MailService.ts
 import nodemailer from 'nodemailer'
 
 export default class MailService {
   private static transporter = nodemailer.createTransport({
-    service: 'gmail', // ← PLUS FIABLE QUE host + port
+    service: 'gmail',
     auth: {
       user: 'elieboulingui2@gmail.com',
-      pass: 'ozdf cset gqcr ofsd', // ← Ton mot de passe d’application (16 caractères)
+      pass: 'ozdf cset gqcr ofsd',
     },
     tls: {
       rejectUnauthorized: false,
