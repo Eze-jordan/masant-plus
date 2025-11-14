@@ -77,6 +77,18 @@ async function fetchPatients() {
     console.error(error)
   }
 }
+// Auto-refresh toutes les 5 secondes
+let intervalId = null
+
+onMounted(() => {
+  fetchPatients()
+
+  intervalId = setInterval(() => {
+    fetchPatients()
+  }, 5000) // 5 sec
+})
+
+
 
 onMounted(() => {
   fetchPatients()

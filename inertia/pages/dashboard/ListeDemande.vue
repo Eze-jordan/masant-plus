@@ -98,21 +98,27 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Stethoscope } from 'lucide-vue-next'
 
 const search = ref('')
 const demandes = ref([])
 const showDetails = ref(false)
 const selectedDemande = ref(null)
+const openMenuId = ref(null)
 
 const totalDemandes = computed(() => demandes.value.length)
 
 const filteredDemandes = computed(() => {
-  if (!search.value) return demandes.value
-  return demandes.value.filter(d =>
+  const list = demandes.value.filter(d => {
+    const s = (d.status || '').toLowerCase()
+    return s === 'pending' || s === 'rejected'
+  })
+
+  if (!search.value) return list
+
+  return list.filter(d =>
     d.nom?.toLowerCase().includes(search.value.toLowerCase()) ||
     d.prenom?.toLowerCase().includes(search.value.toLowerCase()) ||
     d.email?.toLowerCase().includes(search.value.toLowerCase()) ||
@@ -121,18 +127,18 @@ const filteredDemandes = computed(() => {
   )
 })
 
-// API endpoint
+
 const API_URL = '/ListeDemande'
 
-// Appel API pour récupérer les demandes
+// ➤ Fonction pour charger toutes les demandes
 async function fetchDemandes() {
   try {
     const response = await fetch(API_URL)
     if (!response.ok) throw new Error('Erreur de récupération des données')
+
     const data = await response.json()
     const list = Array.isArray(data) ? data : (data.demandes || [])
 
-    // Mapper les champs de l'API vers ceux attendus dans le template
     demandes.value = list.map(d => ({
       ...d,
       id: d.id,
@@ -162,7 +168,20 @@ async function fetchDemandes() {
   }
 }
 
-onMounted(fetchDemandes)
+// ➤ Rafraîchissement automatique toutes les 10 secondes
+let refreshInterval = null
+
+onMounted(() => {
+  fetchDemandes()
+
+  refreshInterval = setInterval(() => {
+    fetchDemandes()
+  }, 10000) // 10 sec
+})
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval)
+})
 
 // Actions
 async function accepterDemande(demande) {
@@ -171,7 +190,7 @@ async function accepterDemande(demande) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-           "x-app-key": "boulinguiboulingui"
+        "x-app-key": "boulinguiboulingui"
       },
     })
 
@@ -180,6 +199,7 @@ async function accepterDemande(demande) {
     alert('Demande approuvée pour ' + demande.nom)
     demandes.value = demandes.value.filter(d => d.id !== demande.id)
     showDetails.value = false
+
   } catch (err) {
     console.error(err)
     alert('Erreur lors de l\'approbation de la demande.')
@@ -207,14 +227,11 @@ async function refuserDemande(demande) {
   }
 }
 
-
 function voirDetails(demande) {
   selectedDemande.value = demande
   showDetails.value = true
 }
 
-// menu state for inline actions
-const openMenuId = ref(null)
 function toggleMenu(id) {
   openMenuId.value = openMenuId.value === id ? null : id
 }
@@ -227,6 +244,7 @@ function statusClass(status) {
   return 'bg-yellow-100 text-yellow-800'
 }
 </script>
+
 
 
 <style scoped>

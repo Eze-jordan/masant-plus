@@ -431,6 +431,17 @@ async function fetchStatsData() {
     }
   }
 }
+let refreshInterval = null
+
+onMounted(() => {
+  fetchStatsData()
+
+  refreshInterval = setInterval(() => {
+    fetchStatsData()
+  }, 20000)
+})
+
+
 
 // Charger les données au montage du composant
 onMounted(() => {
@@ -487,64 +498,80 @@ function getMonthLabelsUntilNow() {
   const currentMonth = new Date().getMonth()
   return months.slice(0, currentMonth + 1)
 }
-
-// Données du graphique Patients
-const chartData = computed(() => {
+function buildMonthlyStats(items) {
   const months = getMonthLabelsUntilNow()
-  const activePatients = statsData.value.activePatients
-  const inactivePatients = statsData.value.inactivePatients
-  
+  const monthIndex = (date) => new Date(date).getMonth()
+
+  const activePerMonth = Array(months.length).fill(0)
+  const inactivePerMonth = Array(months.length).fill(0)
+
+  items.forEach(item => {
+    const month = monthIndex(item.createdAt || item.created_at || item.dateCreation || item.date || new Date())
+
+    if (item.accountStatus === 'ACTIVE') {
+      activePerMonth[month]++
+    } else {
+      inactivePerMonth[month]++
+    }
+  })
+
+  return { months, activePerMonth, inactivePerMonth }
+}
+
+const chartData = computed(() => {
+  const { months, activePerMonth, inactivePerMonth } = buildMonthlyStats(apiStats.value.patients)
+
   return {
     labels: months,
     datasets: [
       {
-        label: 'Compte actif',
+        label: 'Actifs',
         backgroundColor: '#2563eb',
         borderColor: '#2563eb',
-        data: Array(months.length - 1).fill(0).concat(activePatients),
-        fill: true,
-        tension: 0.4
+        data: activePerMonth,
+        fill: false,
+        tension: 0.3
       },
       {
-        label: 'Compte inactif',
+        label: 'Inactifs',
         backgroundColor: '#93c5fd',
         borderColor: '#93c5fd',
-        data: Array(months.length - 1).fill(0).concat(inactivePatients),
-        fill: true,
-        tension: 0.4
+        data: inactivePerMonth,
+        fill: false,
+        tension: 0.3
       }
     ]
   }
 })
 
-// Données du graphique Médecins
+
 const chartDataMedecins = computed(() => {
-  const months = getMonthLabelsUntilNow()
-  const activeDoctors = statsData.value.activeDoctors
-  const inactiveDoctors = statsData.value.inactiveDoctors
-  
+  const { months, activePerMonth, inactivePerMonth } = buildMonthlyStats(apiStats.value.doctors)
+
   return {
     labels: months,
     datasets: [
       {
-        label: 'Compte actif',
-        backgroundColor: '#16a34a',
-        borderColor: '#16a34a',
-        data: Array(months.length - 1).fill(0).concat(activeDoctors),
-        fill: true,
-        tension: 0.4
-      },
-      {
-        label: 'Compte inactif',
+        label: 'Actifs',
         backgroundColor: '#86efac',
         borderColor: '#86efac',
-        data: Array(months.length - 1).fill(0).concat(inactiveDoctors),
-        fill: true,
-        tension: 0.4
+        data: activePerMonth,
+        fill: false,
+        tension: 0.3
+      },
+      {
+        label: 'Inactifs',
+        backgroundColor: '#16a34a',
+        borderColor: '#16a34a',
+        data: inactivePerMonth,
+        fill: false,
+        tension: 0.3
       }
     ]
   }
 })
+
+
 
 // Options des graphiques
 const chartOptions = {

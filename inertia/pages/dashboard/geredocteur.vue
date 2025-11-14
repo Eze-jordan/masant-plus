@@ -46,7 +46,14 @@
             <td class="py-2 px-2 border border-gray-200">{{ docteur.phone || 'N/A' }}</td>
             <td class="py-2 px-2 border border-gray-200">{{ docteur.specialisation || 'N/A' }}</td>
             <td class="py-2 px-2 border border-gray-200">{{ docteur.licenseNumber || 'N/A' }}</td>
-            <td class="py-2 px-2 border border-gray-200">{{ docteur.accountStatus || 'Pending' }}</td>
+<td class="py-2 px-2 border border-gray-200">
+  <span
+    class="px-3 py-1 rounded-full text-sm font-semibold"
+    :class="getStatusClass(docteur.accountStatus)"
+  >
+    {{ docteur.accountStatus || 'Pending' }}
+  </span>
+</td>
             <td class="py-2 px-2 border border-gray-200">
               <!-- Trois points ouvrant la sidebar -->
               <button
@@ -97,7 +104,15 @@
           <p class="mb-2"><strong>Spécialité :</strong> {{ selectedDoctor.specialisation || selectedDoctor.specialty || 'N/A' }}</p>
           <p class="mb-2"><strong>Année d'expérience :</strong> {{ selectedDoctor.annee_experience ?? 'N/A' }}</p>
           <p class="mb-2"><strong>À propos :</strong> {{ selectedDoctor.about || 'N/A' }}</p>
-          <p class="mb-2"><strong>Statut :</strong> {{ selectedDoctor.accountStatus || 'Pending' }}</p>
+<p class="mb-2 flex items-center gap-2">
+  <strong>Statut :</strong>
+  <span
+    class="px-3 py-1 rounded-full text-sm font-semibold"
+    :class="getStatusClass(selectedDoctor.accountStatus)"
+  >
+    {{ selectedDoctor.accountStatus || 'Pending' }}
+  </span>
+</p>
 
           <div class="mt-4">
           </div>
@@ -110,7 +125,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // Données
 const docteurs = ref([])
@@ -135,40 +150,67 @@ function closeSidebar() {
   selectedDoctor.value = null
 }
 
-// Chargement des docteurs via l’API /alldoctors au montage
-onMounted(async () => {
+// Classes Tailwind selon statut
+const getStatusClass = (status) => {
+  const s = status?.toLowerCase() || ''
+
+  if (s === 'approved' || s === 'active')
+    return 'bg-green-100 text-green-700 border border-green-300'
+
+  if (s === 'pending')
+    return 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+
+  if (s === 'rejected' || s === 'blocked')
+    return 'bg-red-100 text-red-700 border border-red-300'
+
+  return 'bg-gray-200 text-gray-600 border border-gray-300'
+}
+
+// ➤ Fonction de récupération
+async function fetchDoctors() {
   try {
     const response = await fetch('/alldoctors')
     if (!response.ok) throw new Error('Erreur lors de la récupération des docteurs')
 
-    // Récupérer les données et ajouter champs manquants par défaut
-      const data = await response.json()
-      console.log(data)
+    const data = await response.json()
 
-      // Filtre pour ne garder que les comptes de type docteur.
-      // On utilise un prédicat flexible au cas où l'API utilise `type`, `role`,
-      // `accountType` ou un booléen `isDoctor`.
-      const isDoctor = (d) => (
-        d && (
-          d.type === 'doctor' ||
-          d.role === 'doctor' ||
-          d.accountType === 'doctor' ||
-          d.isDoctor === true
-        )
+    const isDoctor = (d) => (
+      d && (
+        d.type === 'doctor' ||
+        d.role === 'doctor' ||
+        d.accountType === 'doctor' ||
+        d.isDoctor === true
       )
+    )
 
-      docteurs.value = data
-        .filter(isDoctor)
-        .map(d => ({
-          phone: '',
-          specialisation: '',
-          licenseNumber: '',
-          accountStatus: 'Pending',
-          ...d,
-        }))
+    docteurs.value = data
+      .filter(isDoctor)
+      .map(d => ({
+        phone: '',
+        specialisation: '',
+        licenseNumber: '',
+        accountStatus: 'Pending',
+        ...d,
+      }))
+
   } catch (error) {
-    console.error(error)
+    console.error("Erreur de chargement :", error)
   }
+}
+
+// ➤ Rafraîchissement automatique toutes les 10 secondes
+let refreshInterval = null
+
+onMounted(() => {
+  fetchDoctors()
+
+  refreshInterval = setInterval(() => {
+    fetchDoctors()
+  }, 10000) // 10 secondes
+})
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval)
 })
 
 // Computed : liste filtrée selon la recherche
@@ -184,6 +226,7 @@ const filteredDocteurs = computed(() => {
   )
 })
 </script>
+
 
 <!-- Sidebar template placé ici en dehors du script -->
  

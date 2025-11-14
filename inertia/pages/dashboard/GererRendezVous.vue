@@ -436,16 +436,30 @@ const closeDetails = () => {
   showDetails.value = false
 }
 
-/* 🔄 Refresh auto */
+/* 🔄 Refresh auto intelligent */
 let refreshInterval = null
 
+async function autoRefresh() {
+  console.log("🔄 Refresh automatique des rendez-vous…")
+  
+  // Recharge la liste
+  await fetchAppointments()
+
+  // Si un rendez-vous est ouvert en détails, on le met à jour
+  if (selectedAppointment.value) {
+    const updated = appointments.value.find(a => a.id === selectedAppointment.value.id)
+    if (updated) {
+      selectedAppointment.value = updated
+    }
+  }
+}
 onMounted(() => {
   fetchAppointments()
 
   refreshInterval = setInterval(() => {
     console.log("🔄 Refresh automatique…")
     fetchAppointments()
-  }, 30000) // 30s
+  }, 10000) // 10s
 })
 
 onUnmounted(() => {
