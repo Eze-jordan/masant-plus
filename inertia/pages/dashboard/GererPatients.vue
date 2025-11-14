@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { User } from 'lucide-vue-next'
+import { User, RefreshCw } from 'lucide-vue-next'
 
 const props = defineProps({
   user: Object,
@@ -28,6 +28,7 @@ const addForm = ref({
 })
 
 const patients = ref([...props.users])
+const isFetching = ref(false)   // pour afficher le loader du bouton
 
 const totalPatients = computed(() => patients.value.length)
 
@@ -41,12 +42,10 @@ const filteredPatients = computed(() => {
     p.address?.toLowerCase().includes(search.value.toLowerCase())
   )
 })
-let isFetching = false      // 🔥 Empêche le spam
-let intervalId = null       // 🔥 Permet clearInterval
 
 async function fetchPatients() {
-  if (isFetching) return       // 🔥 Empêche le spam
-  isFetching = true
+  if (isFetching.value) return
+  isFetching.value = true
 
   try {
     const response = await fetch('/patient', { cache: "no-cache" })
@@ -55,7 +54,6 @@ async function fetchPatients() {
     const data = await response.json()
     const list = Array.isArray(data) ? data : (data.users || data.patients || [])
 
-    // Normalisation
     patients.value = list.map(p => ({
       ...p,
       id: p.id,
@@ -71,17 +69,12 @@ async function fetchPatients() {
   } catch (e) {
     console.error("Fetch patients error:", e)
   } finally {
-    isFetching = false
+    isFetching.value = false
   }
 }
 
 onMounted(() => {
   fetchPatients()
-
-  // 🔥 Auto-refresh toutes les 60 sec → pas assez pour spam mais assez pour rester à jour
-  intervalId = setInterval(() => {
-    fetchPatients()
-  }, 60000)
 })
 
 
@@ -150,6 +143,15 @@ function ajouterPatient() {
         />
        
       </div>
+      <button
+  @click="fetchPatients"
+  class="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+>
+  <RefreshCw class="w-4 h-4" />
+  <span v-if="!isFetching">Actualiser</span>
+  <span v-else>Chargement...</span>
+</button>
+
     </div>
 
     <!-- Tableau des patients -->
