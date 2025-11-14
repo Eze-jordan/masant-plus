@@ -42,10 +42,6 @@ const filteredPatients = computed(() => {
   )
 })
 
-// REFRESH PROTÉGÉ ET OPTIMISÉ
-let intervalId = null
-let isFetching = false        // empêche appels doublés
-
 async function fetchPatients() {
   if (isFetching) return       // 🔥 Empêche le spam
   isFetching = true
@@ -83,11 +79,7 @@ onMounted(() => {
   // 🔥 Auto-refresh toutes les 60 sec → pas assez pour spam mais assez pour rester à jour
   intervalId = setInterval(() => {
     fetchPatients()
-  }, 40000)
-})
-
-onBeforeUnmount(() => {
-  clearInterval(intervalId)   // 🔥 Stoppe le refresh quand on quitte la page
+  }, 60000)
 })
 
 
