@@ -206,7 +206,7 @@ onMounted(() => {
 
   refreshInterval = setInterval(() => {
     fetchDoctors()
-  }, 10000) // 10 secondes
+  }, 15000) // 10 secondes
 })
 
 onUnmounted(() => {

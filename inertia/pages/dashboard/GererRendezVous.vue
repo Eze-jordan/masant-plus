@@ -459,7 +459,7 @@ onMounted(() => {
   refreshInterval = setInterval(() => {
     console.log("🔄 Refresh automatique…")
     fetchAppointments()
-  }, 10000) // 10s
+  }, 15000) // 10s
 })
 
 onUnmounted(() => {

@@ -176,7 +176,7 @@ onMounted(() => {
 
   refreshInterval = setInterval(() => {
     fetchDemandes()
-  }, 10000) // 10 sec
+  }, 15000) // 10 sec
 })
 
 onUnmounted(() => {

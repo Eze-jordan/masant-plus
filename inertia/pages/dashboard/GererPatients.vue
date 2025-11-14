@@ -85,7 +85,7 @@ onMounted(() => {
 
   intervalId = setInterval(() => {
     fetchPatients()
-  }, 5000) // 5 sec
+  }, 15000) // 30 sec
 })
 
 

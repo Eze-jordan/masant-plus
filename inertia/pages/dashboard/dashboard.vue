@@ -438,7 +438,7 @@ onMounted(() => {
 
   refreshInterval = setInterval(() => {
     fetchStatsData()
-  }, 20000)
+  }, 15000)
 })
 
 
