@@ -14,6 +14,7 @@ import RedvpatientsController from "#controllers/redvpatients_controller"
 import pourcentage_comptes_controller from '#controllers/pourcentage_comptes_controller'
 import RecoursegetsController from "#controllers/recoursegets_controller"
 import UserStatusController from "#controllers/statusonlines_controller"
+import { middleware } from '#start/kernel'
 const medicament =new   MedicamentFrancesController()
 const share = new SharesController()
 const rdvdupatient =new  RedvpatientsController()
@@ -75,6 +76,7 @@ import SpecialiteController from '#controllers/SpecialiteController';
 import MedicamentFrancesController from '#controllers/medicament_frances_controller';
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext';
 import PatientlistingDoctorsController from '#controllers/patientlisting_doctors_controller';
+
 const disponibilityuser  =  new    DisponibilitesController()
 const userupdate    =  new   update_users_controller()
 const emailverify = new verify_emails_controller()
@@ -1452,8 +1454,20 @@ router.get('/medicaments/:name', async (ctx) => {
     })
   })
 }).middleware([throttle])
-// Route d'accueil avec le contrôleur home
-router.on('/').renderInertia('home')
+router.get('/logs/all', async (ctx) => {
+  const controller = new (await import('#controllers/logs_controller')).default()
+  return controller.all(ctx)
+})
+router.get('/admin/logs', '#controllers/logs_controller.index')
+// si admin only
+router.get('/api/logs', '#controllers/logs_controller.api')
+  .use(middleware.authJwt())   // OU auth() selon ton projet
+
+// ➤ Route logs API
+
+
+
+
 
 
 
@@ -1607,6 +1621,10 @@ router.get('/info-user/:id', async (ctx) => {
     });
   });
 }).middleware([throttle])
+
+
+// Route d'accueil avec le contrôleur home
+router.on('/').renderInertia('home')
 
 // Route fallback - doit être la dernière route
 router.get('/*', async ({ request, inertia, response }) => {

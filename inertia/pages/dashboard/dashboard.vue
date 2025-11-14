@@ -154,6 +154,17 @@
               </li>
             </ul>
           </li>
+          <li
+  class="p-2 rounded flex items-center justify-between font-bold cursor-pointer"
+  :class="activeMenu === 'logs' ? 'bg-white text-black shadow' : 'text-white'"
+  @click="setActiveMenu('logs'); activeSubMenu = 'logs'"
+>
+  <div class="flex items-center gap-4">
+    <Archive class="w-5 h-5" :class="activeMenu === 'logs' ? 'text-black' : 'text-white'" />
+    <span v-if="sidebarOpen">Logs</span>
+  </div>
+</li>
+
         </ul>
       </div>
 
@@ -178,6 +189,8 @@
       <GererPatients v-else-if="activeSubMenu === 'gerer-patients'" />
       <GererRendezVous v-else-if="activeSubMenu === 'gerer-Rendez-vous'" />
       <HistoriquePaiement v-else-if="activeSubMenu === 'historique'" />
+      <LogsPage v-else-if="activeSubMenu === 'logs'" />
+
       <div v-else>
         <!-- Topbar -->
         <div class="flex justify-between items-center mb-6">
@@ -342,8 +355,10 @@ import {
   Bell,
   MessageCircle,
   ChevronRight,
-  LogOut
+  LogOut,
+  Archive
 } from 'lucide-vue-next'
+
 
 // Enregistrer les composants Chart.js
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
@@ -354,6 +369,8 @@ import ListeDemande from './ListeDemande.vue'
 import GererPatients from './GererPatients.vue'
 import GererRendezVous from './GererRendezVous.vue'
 import HistoriquePaiement from './HistoriquePaiement.vue'
+import LogsPage from './LogsPage.vue'
+
 
 // États réactifs
 const sidebarOpen = ref(true)
