@@ -42,57 +42,54 @@ const filteredPatients = computed(() => {
   )
 })
 
+// REFRESH PROTÉGÉ ET OPTIMISÉ
+let intervalId = null
+let isFetching = false        // empêche appels doublés
+
 async function fetchPatients() {
+  if (isFetching) return       // 🔥 Empêche le spam
+  isFetching = true
+
   try {
-    const response = await fetch('/patient') // Mets ici ton endpoint API réel
-    if (!response.ok) throw new Error('Erreur lors de la récupération des patients')
+    const response = await fetch('/patient', { cache: "no-cache" })
+    if (!response.ok) throw new Error("Erreur API")
+
     const data = await response.json()
     const list = Array.isArray(data) ? data : (data.users || data.patients || [])
 
-    // Normaliser les champs pour l'affichage
+    // Normalisation
     patients.value = list.map(p => ({
       ...p,
       id: p.id,
-      firstName: p.firstName || p.first_name || p.firstName || p.firstname || p.first,
-      lastName: p.lastName || p.last_name || p.lastName || p.lastname || p.last,
-      phone: p.phone || p.telephone || p.phoneNumber || p.phonenumber,
+      firstName: p.firstName || p.first_name || p.firstname,
+      lastName: p.lastName || p.last_name || p.lastname,
+      phone: p.phone || p.telephone,
       email: p.email,
-      address: p.address || p.adresse || null,
-      accountStatus: p.accountStatus || p.account_status || (p.status ? String(p.status).toUpperCase() : null),
-      status: p.status || null,
-      type: p.type || null,
-      profileImage: p.profileImage || p.profile_image || null,
-      expoPushToken: p.expoPushToken || p.expo_push_token || null,
-      roleId: p.roleId || p.role_id || null,
-      createdAt: p.createdAt || p.created_at || null,
-      updatedAt: p.updatedAt || p.updated_at || null,
-      dateNaissance: p.dateNaissance || p.date_naissance || null,
-      about: p.about || null,
-      groupeSanguin: p.groupeSanguin || p.groupe_sanguin || null,
-      anneeExperience: p.anneeExperience || p.annee_experience || null,
-      genre: p.genre || null,
-      weight: p.weight || null,
+      address: p.address || p.adresse,
+      accountStatus: p.accountStatus || p.account_status,
+      createdAt: p.createdAt || p.created_at,
+      updatedAt: p.updatedAt || p.updated_at,
     }))
-  } catch (error) {
-    console.error(error)
+  } catch (e) {
+    console.error("Fetch patients error:", e)
+  } finally {
+    isFetching = false
   }
 }
-// Auto-refresh toutes les 5 secondes
-let intervalId = null
 
 onMounted(() => {
-  fetchPatients()
+  fetchPatients()   // 🔥 1 seule exécution
 
+  // 🔥 Auto-refresh toutes les 60 sec → pas assez pour spam mais assez pour rester à jour
   intervalId = setInterval(() => {
     fetchPatients()
-  }, 15000) // 30 sec
+  }, 40000)
 })
 
-
-
-onMounted(() => {
-  fetchPatients()
+onBeforeUnmount(() => {
+  clearInterval(intervalId)   // 🔥 Stoppe le refresh quand on quitte la page
 })
+
 
 function toggleMenu(id) {
   openMenu.value = openMenu.value === id ? null : id
