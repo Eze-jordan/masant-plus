@@ -41,6 +41,8 @@ const filteredPatients = computed(() => {
     p.address?.toLowerCase().includes(search.value.toLowerCase())
   )
 })
+let isFetching = false      // 🔥 Empêche le spam
+let intervalId = null       // 🔥 Permet clearInterval
 
 async function fetchPatients() {
   if (isFetching) return       // 🔥 Empêche le spam
@@ -74,7 +76,7 @@ async function fetchPatients() {
 }
 
 onMounted(() => {
-  fetchPatients()   // 🔥 1 seule exécution
+  fetchPatients()
 
   // 🔥 Auto-refresh toutes les 60 sec → pas assez pour spam mais assez pour rester à jour
   intervalId = setInterval(() => {
